@@ -246,6 +246,15 @@ export interface TrustRule {
   action: string
   requiresApproval: boolean
   autonomyLevel: AutonomyLevel
+  /**
+   * If set, the Trust Engine will verify that an active consent record exists
+   * for this action before permitting it. The value is the ConsentScope category
+   * (see shared/consent/types.ts) that classifies why consent is needed.
+   *
+   * Uses `string` rather than `ConsentScope` to avoid a circular import:
+   * consent/types.ts already imports from platform.ts.
+   */
+  requiredConsentScope?: string
 }
 
 // ---------------------------------------------------------------------------
