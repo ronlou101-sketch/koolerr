@@ -8,3 +8,5 @@
  */
 
 export { getApiKeyPlatformContext, getRequestPlatformContext } from './resolve'
+export { provisionPlatformAccount } from './provision'
+export type { ProvisionError, ProvisionResult } from './provision'
