@@ -87,6 +87,7 @@ If a breaking change is necessary, identify it explicitly, document it in an ADR
 ### Explain significant architectural decisions before making them.
 
 If a proposed change is non-obvious, architectural in scope, or deviates from the most straightforward path, explain:
+
 - What you are changing and why
 - What alternatives you considered
 - What assumptions you are making
@@ -110,7 +111,7 @@ Do this before writing code, not after.
 ## Documentation Standards
 
 - Every public function, class, and module has a documentation comment.
-- Comments explain *why*, not *what*. The code explains what.
+- Comments explain _why_, not _what_. The code explains what.
 - Architecture Decision Records go in `docs/adr/`.
 - Foundation documents are updated when the platform evolves in ways they do not yet reflect.
 - Foundation documents are never updated to justify a decision that should not have been made.
@@ -160,11 +161,43 @@ public/           — Public-facing static assets
 
 ## Current Phase
 
-This repository is in **Phase 1** of the Development Roadmap.
+This repository is in **Phase 2** of the Development Roadmap.
 
-Phase 1 scope: Identity, Business Brain foundation, Model Gateway, Trust Engine foundation,
-Consent & Rights Ledger, Orchestration Engine foundation, Deliverable framework,
-Billing foundation, and Content Workforce MVP.
+**Foundation Phase 1 is complete.** All platform primitives are built and verified:
+Identity & Access, Business Brain foundation, Model Gateway, Trust Engine foundation,
+Consent & Rights Ledger, Orchestration Engine (with persistence), Deliverable framework,
+Billing foundation, and Content Workforce MVP. Second Workforce (SEO) proved the
+architecture supports additional Workforces without platform changes.
 
-Do not build Phase 2, 3, or 4 capabilities during Phase 1.
-If a request would introduce a Phase 2+ capability, say so before proceeding.
+**Pre-Phase 2 hardening is complete:**
+
+- Hardening Item 1: Orchestration Engine persistence (write-through cache, Supabase repo, ADR-011)
+- Hardening Item 2: RLS JWT hook — `auth_user_id` on users, `custom_access_token_hook`, ADR-012
+- Hardening Item 3: Test suite expanded from 22 → 76 tests across 5 files
+
+**Phase 2 scope** (FOUNDATION_003 §Phase 2 — Trust, Autonomy & Customer Experience):
+
+1. Trust Engine — Full Implementation (content safety, output validation, autonomy conditions)
+2. Approval Workflows (customer-facing review, approve, reject Deliverables)
+3. Business Brain — Intelligence Layer (pattern synthesis, trend identification)
+4. Customer Dashboard (Workforces, Engagement Runs, Deliverables, Brain health, Consent history)
+5. Workforce Management (configure Workforce goals and Digital Employee responsibilities)
+6. Analytics — Foundation Layer (Engagement Run counts, Deliverable status, Brain additions)
+
+Do not build Phase 3 or Phase 4 capabilities during Phase 2.
+If a request would introduce a Phase 3+ capability, say so before proceeding.
+
+---
+
+## Milestone Commit and Push Protocol
+
+After each completed Phase 2 milestone:
+
+1. Run `npx tsc --noEmit`. If it fails, fix it before committing.
+2. Run `npx vitest run`. If any test fails, fix it before committing.
+3. Stage all files created or modified for this milestone.
+4. Commit with a conventional commit message describing what changed and why.
+5. Push to `origin master`.
+6. Stop and wait for approval before beginning the next milestone.
+
+This protocol is active from Phase 2 onward. Never skip the build or test step before pushing.
