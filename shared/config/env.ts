@@ -36,5 +36,14 @@ export const env = {
     anonKey(): string {
       return required('NEXT_PUBLIC_SUPABASE_ANON_KEY')
     },
+    /**
+     * Service role key for server-side repository operations.
+     * This key bypasses Row-Level Security — it must NEVER be exposed
+     * to the client or committed to version control.
+     * Used only by the server-side Supabase client in repository implementations.
+     */
+    serviceRoleKey(): string {
+      return required('SUPABASE_SERVICE_ROLE_KEY')
+    },
   },
 }
