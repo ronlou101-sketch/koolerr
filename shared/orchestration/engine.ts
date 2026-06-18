@@ -25,7 +25,7 @@ import type { IOrchestrationRepository } from './repository'
  *
  * See FOUNDATION_001_ARCHITECTURE.md §2.13 — Orchestration Engine.
  */
-class OrchestrationEngine implements IOrchestrationEngine {
+export class OrchestrationEngine implements IOrchestrationEngine {
   private readonly workflows = new Map<WorkflowId, Workflow>()
   private repo: IOrchestrationRepository | null = null
 

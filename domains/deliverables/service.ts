@@ -96,7 +96,7 @@ export interface IDeliverablesService {
 // Service implementation
 // ---------------------------------------------------------------------------
 
-class DeliverablesService implements IDeliverablesService {
+export class DeliverablesService implements IDeliverablesService {
   constructor(private readonly repo: IDeliverablesRepository) {}
 
   async storeDeliverable(input: StoreDeliverableInput): Promise<PlatformResult<Deliverable>> {

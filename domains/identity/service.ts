@@ -85,7 +85,7 @@ export interface IIdentityService {
 
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000
 
-class IdentityService implements IIdentityService {
+export class IdentityService implements IIdentityService {
   constructor(private readonly repo: IIdentityRepository) {}
 
   async createOrganization(input: CreateOrganizationInput): Promise<PlatformResult<Organization>> {
