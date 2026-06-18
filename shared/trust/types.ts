@@ -5,6 +5,7 @@ import type {
   OrganizationId,
   TenantId,
   TrustRule,
+  UserId,
   WorkforceId,
 } from '@/shared/types'
 
@@ -72,4 +73,67 @@ export interface ITrustEngine {
 
   /** Returns all rules registered for a given Digital Employee. */
   rulesFor(digitalEmployeeId: DigitalEmployeeId): TrustRule[]
+
+  /**
+   * Record a customer's approval or rejection of a Digital Employee action.
+   *
+   * Each recorded evaluation updates the EarnedAutonomy tracker for the
+   * (organization, digitalEmployee, action) tuple. Consecutive approvals
+   * accumulate toward the earned-autonomy threshold; any rejection resets
+   * the counter to zero so trust must be re-earned from the beginning.
+   */
+  recordEvaluation(input: RecordEvaluationInput): Promise<void>
+}
+
+// ---------------------------------------------------------------------------
+// Trust Evaluation
+// Records a customer's explicit decision on a Digital Employee's proposed action.
+// Append-only — evaluations are never deleted; they form the performance history
+// that the earned-autonomy mechanism depends on.
+// ---------------------------------------------------------------------------
+
+export type EvaluationDecision = 'approved' | 'rejected'
+
+export interface TrustEvaluation {
+  id: string
+  tenantId: TenantId
+  organizationId: OrganizationId
+  digitalEmployeeId: DigitalEmployeeId
+  action: string
+  engagementRunId: EngagementRunId
+  decision: EvaluationDecision
+  decidedBy: UserId
+  decidedAt: Date
+  reason?: string
+}
+
+export interface RecordEvaluationInput {
+  tenantId: TenantId
+  organizationId: OrganizationId
+  digitalEmployeeId: DigitalEmployeeId
+  action: string
+  engagementRunId: EngagementRunId
+  decision: EvaluationDecision
+  decidedBy: UserId
+  decidedAt: Date
+  reason?: string
+}
+
+// ---------------------------------------------------------------------------
+// Earned Autonomy
+// Tracks consecutive customer approvals toward the threshold at which a
+// Digital Employee may act without requiring fresh per-action approval.
+// One record per (organization, digitalEmployee, action) tuple.
+// ---------------------------------------------------------------------------
+
+export interface EarnedAutonomy {
+  id: string
+  tenantId: TenantId
+  organizationId: OrganizationId
+  digitalEmployeeId: DigitalEmployeeId
+  action: string
+  consecutiveApprovals: number
+  isEarned: boolean
+  earnedAt?: Date
+  lastEvaluatedAt: Date
 }

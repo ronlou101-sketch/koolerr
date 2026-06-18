@@ -67,6 +67,9 @@ export type AuditAction =
   | 'trust_engine.action_permitted'
   | 'trust_engine.action_denied'
   | 'trust_engine.autonomy_level_changed'
+  | 'trust_engine.evaluation_approved'
+  | 'trust_engine.evaluation_rejected'
+  | 'trust_engine.autonomy_earned'
   // Billing
   | 'billing.subscription_created'
   | 'billing.subscription_updated'

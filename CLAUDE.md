@@ -193,11 +193,13 @@ If a request would introduce a Phase 3+ capability, say so before proceeding.
 
 After each completed Phase 2 milestone:
 
-1. Run `npx tsc --noEmit`. If it fails, fix it before committing.
-2. Run `npx vitest run`. If any test fails, fix it before committing.
+1. Run `npx tsc --noEmit`. Fix any errors before continuing.
+2. Run `npx vitest run`. Fix any failures before continuing.
 3. Stage all files created or modified for this milestone.
-4. Commit with a conventional commit message describing what changed and why.
-5. Push to `origin master`.
-6. Stop and wait for approval before beginning the next milestone.
+4. Commit locally with a conventional commit message.
+5. Output the exact `git push` command for the user to run in their authenticated terminal.
+6. Wait for the user to confirm the push succeeded, then continue with the next milestone.
 
-This protocol is active from Phase 2 onward. Never skip the build or test step before pushing.
+GitHub credentials are not available in the Claude Code execution environment.
+Never attempt `git push` directly — always hand it off to the user.
+Never block development waiting for a push to complete.

@@ -12,6 +12,13 @@
  */
 
 export * from './types'
-export { trustEngine, _configureTrustRepository, _loadTrustRulesFromRepository } from './engine'
+export {
+  TrustEngine,
+  EARNED_AUTONOMY_THRESHOLD,
+  trustEngine,
+  _configureTrustRepository,
+  _loadTrustRulesFromRepository,
+} from './engine'
 export type { ITrustRuleRepository } from './repository'
 export { SupabaseTrustRuleRepository } from './supabase-repository'
+export { InMemoryTrustRuleRepository } from './in-memory-repository'
