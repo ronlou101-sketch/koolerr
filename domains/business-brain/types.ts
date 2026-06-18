@@ -3,6 +3,7 @@ import type {
   BusinessMemory,
   BusinessMemoryType,
   OrganizationId,
+  TenantId,
 } from '@/shared/types'
 
 /**
@@ -24,6 +25,7 @@ export interface BusinessBrainQueryResult {
 }
 
 export interface BusinessBrainContribution {
+  tenantId: TenantId
   organizationId: OrganizationId
   source: string
   memories: Omit<BusinessMemory, 'id' | 'businessBrainId' | 'version' | 'createdAt' | 'updatedAt'>[]

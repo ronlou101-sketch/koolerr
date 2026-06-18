@@ -18,6 +18,8 @@ import type {
   EngagementRunTrigger,
   WorkforceRegistration,
 } from './types'
+import type { IWorkforceEngineRepository } from './repository'
+import { InMemoryWorkforceEngineRepository } from './in-memory-repository'
 
 /**
  * Workforce Engine Domain Service Interface & Stub
@@ -30,14 +32,8 @@ import type {
  *
  * Key invariants:
  * - Digital Employees belong to exactly one Workforce
- * - An Engagement Run always produces a Deliverable (handed to the
- *   deliverables domain through its service interface)
- * - No Workforce or Digital Employee definition embeds provider-specific
- *   AI logic — all invocations route through the Model Gateway
- *
- * The stub manages state in memory. The production implementation will
- * persist to Supabase and integrate with the Orchestration Engine to
- * advance Engagement Run state as steps complete.
+ * - An Engagement Run always produces a Deliverable
+ * - No Workforce or Digital Employee embeds provider-specific AI logic
  *
  * See FOUNDATION_001_ARCHITECTURE.md §2.6, §2.7, §2.8, §3.
  */
@@ -94,214 +90,224 @@ export interface IWorkforceEngineService {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory stub implementation
+// Service implementation
 // ---------------------------------------------------------------------------
 
 class WorkforceEngineService implements IWorkforceEngineService {
-  private readonly workforces = new Map<WorkforceId, Workforce>()
-  private readonly digitalEmployees = new Map<DigitalEmployeeId, DigitalEmployee>()
-  private readonly engagementRuns = new Map<EngagementRunId, EngagementRun>()
-  /** organizationId → Set<WorkforceId> */
-  private readonly workforceIndex = new Map<OrganizationId, Set<WorkforceId>>()
-  /** workforceId → Set<DigitalEmployeeId> */
-  private readonly employeeIndex = new Map<WorkforceId, Set<DigitalEmployeeId>>()
-  /** organizationId → Set<EngagementRunId> */
-  private readonly runIndex = new Map<OrganizationId, Set<EngagementRunId>>()
+  constructor(private readonly repo: IWorkforceEngineRepository) {}
 
   async registerWorkforce(input: RegisterWorkforceInput): Promise<PlatformResult<Workforce>> {
-    const workforce: Workforce = {
-      id: `workforce_${crypto.randomUUID()}` as WorkforceId,
-      organizationId: input.organizationId,
-      name: input.name,
-      businessFunction: input.businessFunction,
-      status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
+    try {
+      const workforce: Workforce = {
+        id: `workforce_${crypto.randomUUID()}` as WorkforceId,
+        organizationId: input.organizationId,
+        name: input.name,
+        businessFunction: input.businessFunction,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
 
-    this.workforces.set(workforce.id, workforce)
-    this.indexWorkforce(input.organizationId, workforce.id)
-    this.employeeIndex.set(workforce.id, new Set())
-
-    logger.info('[WORKFORCE_ENGINE] Workforce registered', {
-      tenantId: input.tenantId,
-      organizationId: input.organizationId,
-    })
-
-    // Register Digital Employees declared in the WorkforceRegistration
-    for (const employeeDef of input.digitalEmployees) {
-      await this.registerDigitalEmployee({
-        ...employeeDef,
+      await this.repo.saveWorkforce(workforce, input.tenantId)
+      logger.info('[WORKFORCE_ENGINE] Workforce registered', {
         tenantId: input.tenantId,
-        workforceId: workforce.id,
         organizationId: input.organizationId,
       })
-    }
 
-    return ok(workforce)
+      for (const employeeDef of input.digitalEmployees) {
+        await this.registerDigitalEmployee({
+          ...employeeDef,
+          tenantId: input.tenantId,
+          workforceId: workforce.id,
+          organizationId: input.organizationId,
+        })
+      }
+
+      return ok(workforce)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
   }
 
   async getWorkforce(
     workforceId: WorkforceId,
     organizationId: OrganizationId
   ): Promise<PlatformResult<Workforce>> {
-    const workforce = this.workforces.get(workforceId)
-    if (!workforce)
-      return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Workforce not found' })
-    if (workforce.organizationId !== organizationId) {
-      return err({
-        code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
-        message: 'Workforce does not belong to this organization',
-      })
+    try {
+      const workforce = await this.repo.findWorkforceById(workforceId)
+      if (!workforce)
+        return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Workforce not found' })
+      if (workforce.organizationId !== organizationId) {
+        return err({
+          code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
+          message: 'Workforce does not belong to this organization',
+        })
+      }
+      return ok(workforce)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-    return ok(workforce)
   }
 
   async listWorkforces(organizationId: OrganizationId): Promise<PlatformResult<Workforce[]>> {
-    const ids = this.workforceIndex.get(organizationId) ?? new Set()
-    const results: Workforce[] = []
-    for (const id of ids) {
-      const w = this.workforces.get(id)
-      if (w) results.push(w)
+    try {
+      const workforces = await this.repo.listWorkforcesByOrganization(organizationId)
+      return ok(workforces)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-    return ok(results)
   }
 
   async registerDigitalEmployee(
     input: RegisterDigitalEmployeeInput
   ): Promise<PlatformResult<DigitalEmployee>> {
-    const workforceResult = await this.getWorkforce(input.workforceId, input.organizationId)
-    if (!workforceResult.ok) return workforceResult
+    try {
+      const workforceResult = await this.getWorkforce(input.workforceId, input.organizationId)
+      if (!workforceResult.ok) return workforceResult
 
-    const employee: DigitalEmployee = {
-      id: `employee_${crypto.randomUUID()}` as DigitalEmployeeId,
-      workforceId: input.workforceId,
-      organizationId: input.organizationId,
-      name: input.name,
-      role: input.role,
-      responsibilities: input.responsibilities,
-      permittedTools: input.permittedTools,
-      status: 'active',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      const employee: DigitalEmployee = {
+        id: `employee_${crypto.randomUUID()}` as DigitalEmployeeId,
+        workforceId: input.workforceId,
+        organizationId: input.organizationId,
+        name: input.name,
+        role: input.role,
+        responsibilities: input.responsibilities,
+        permittedTools: input.permittedTools,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      await this.repo.saveDigitalEmployee(employee, input.tenantId)
+      logger.info('[WORKFORCE_ENGINE] Digital Employee registered', {
+        tenantId: input.tenantId,
+        organizationId: input.organizationId,
+      })
+      return ok(employee)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-
-    this.digitalEmployees.set(employee.id, employee)
-    const existing = this.employeeIndex.get(input.workforceId) ?? new Set<DigitalEmployeeId>()
-    existing.add(employee.id)
-    this.employeeIndex.set(input.workforceId, existing)
-
-    logger.info('[WORKFORCE_ENGINE] Digital Employee registered', {
-      tenantId: input.tenantId,
-      organizationId: input.organizationId,
-    })
-
-    return ok(employee)
   }
 
   async getDigitalEmployee(
     digitalEmployeeId: DigitalEmployeeId,
     organizationId: OrganizationId
   ): Promise<PlatformResult<DigitalEmployee>> {
-    const employee = this.digitalEmployees.get(digitalEmployeeId)
-    if (!employee) {
-      return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Digital Employee not found' })
+    try {
+      const employee = await this.repo.findDigitalEmployeeById(digitalEmployeeId)
+      if (!employee) {
+        return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Digital Employee not found' })
+      }
+      if (employee.organizationId !== organizationId) {
+        return err({
+          code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
+          message: 'Digital Employee does not belong to this organization',
+        })
+      }
+      return ok(employee)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-    if (employee.organizationId !== organizationId) {
-      return err({
-        code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
-        message: 'Digital Employee does not belong to this organization',
-      })
-    }
-    return ok(employee)
   }
 
   async listDigitalEmployees(
     workforceId: WorkforceId,
     organizationId: OrganizationId
   ): Promise<PlatformResult<DigitalEmployee[]>> {
-    const workforceResult = await this.getWorkforce(workforceId, organizationId)
-    if (!workforceResult.ok) return workforceResult
+    try {
+      const workforceResult = await this.getWorkforce(workforceId, organizationId)
+      if (!workforceResult.ok) return workforceResult
 
-    const ids = this.employeeIndex.get(workforceId) ?? new Set()
-    const results: DigitalEmployee[] = []
-    for (const id of ids) {
-      const e = this.digitalEmployees.get(id)
-      if (e) results.push(e)
+      const employees = await this.repo.listDigitalEmployeesByWorkforce(workforceId)
+      return ok(employees)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-    return ok(results)
   }
 
   async triggerEngagementRun(
     trigger: EngagementRunTrigger
   ): Promise<PlatformResult<EngagementRun>> {
-    const workforceResult = await this.getWorkforce(trigger.workforceId, trigger.organizationId)
-    if (!workforceResult.ok) return workforceResult
+    try {
+      const workforceResult = await this.getWorkforce(trigger.workforceId, trigger.organizationId)
+      if (!workforceResult.ok) return workforceResult
 
-    const run: EngagementRun = {
-      id: `run_${crypto.randomUUID()}` as EngagementRunId,
-      organizationId: trigger.organizationId,
-      workforceId: trigger.workforceId,
-      objective: trigger.objective,
-      status: 'pending',
-      participantIds: trigger.participantIds ?? [],
-      deliverableIds: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      const run: EngagementRun = {
+        id: `run_${crypto.randomUUID()}` as EngagementRunId,
+        organizationId: trigger.organizationId,
+        workforceId: trigger.workforceId,
+        objective: trigger.objective,
+        status: 'pending',
+        participantIds: trigger.participantIds ?? [],
+        deliverableIds: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      await this.repo.saveEngagementRun(run, trigger.tenantId)
+      logger.info('[WORKFORCE_ENGINE] Engagement Run triggered', {
+        organizationId: trigger.organizationId,
+      })
+      return ok(run)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-
-    this.engagementRuns.set(run.id, run)
-    const existing = this.runIndex.get(trigger.organizationId) ?? new Set<EngagementRunId>()
-    existing.add(run.id)
-    this.runIndex.set(trigger.organizationId, existing)
-
-    logger.info('[WORKFORCE_ENGINE] Engagement Run triggered', {
-      organizationId: trigger.organizationId,
-    })
-
-    return ok(run)
   }
 
   async getEngagementRun(
     engagementRunId: EngagementRunId,
     organizationId: OrganizationId
   ): Promise<PlatformResult<EngagementRun>> {
-    const run = this.engagementRuns.get(engagementRunId)
-    if (!run) return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Engagement Run not found' })
-    if (run.organizationId !== organizationId) {
-      return err({
-        code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
-        message: 'Engagement Run does not belong to this organization',
-      })
+    try {
+      const run = await this.repo.findEngagementRunById(engagementRunId)
+      if (!run)
+        return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Engagement Run not found' })
+      if (run.organizationId !== organizationId) {
+        return err({
+          code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
+          message: 'Engagement Run does not belong to this organization',
+        })
+      }
+      return ok(run)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-    return ok(run)
   }
 
   async updateEngagementRunStatus(
     update: EngagementRunStatusUpdate
   ): Promise<PlatformResult<EngagementRun>> {
-    const run = this.engagementRuns.get(update.id)
-    if (!run) return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Engagement Run not found' })
+    try {
+      const run = await this.repo.findEngagementRunById(update.id)
+      if (!run)
+        return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Engagement Run not found' })
 
-    const updated: EngagementRun = {
-      ...run,
-      status: update.status,
-      updatedAt: update.updatedAt,
-      ...(update.status === 'completed' || update.status === 'failed'
-        ? { completedAt: update.updatedAt }
-        : {}),
-      ...(update.status === 'running' ? { startedAt: update.updatedAt } : {}),
+      const updated: EngagementRun = {
+        ...run,
+        status: update.status,
+        updatedAt: update.updatedAt,
+        ...(update.status === 'completed' || update.status === 'failed'
+          ? { completedAt: update.updatedAt }
+          : {}),
+        ...(update.status === 'running' ? { startedAt: update.updatedAt } : {}),
+      }
+
+      await this.repo.saveEngagementRun(updated, update.tenantId)
+      return ok(updated)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-
-    this.engagementRuns.set(updated.id, updated)
-    return ok(updated)
-  }
-
-  private indexWorkforce(organizationId: OrganizationId, workforceId: WorkforceId): void {
-    const existing = this.workforceIndex.get(organizationId) ?? new Set<WorkforceId>()
-    existing.add(workforceId)
-    this.workforceIndex.set(organizationId, existing)
   }
 }
 
-export const workforceEngineService: IWorkforceEngineService = new WorkforceEngineService()
+// ---------------------------------------------------------------------------
+// Singleton — defaults to in-memory; bootstrap swaps in Supabase repo
+// ---------------------------------------------------------------------------
+
+export let workforceEngineService: IWorkforceEngineService = new WorkforceEngineService(
+  new InMemoryWorkforceEngineRepository()
+)
+
+export function _configureWorkforceEngineRepository(repo: IWorkforceEngineRepository): void {
+  workforceEngineService = new WorkforceEngineService(repo)
+}

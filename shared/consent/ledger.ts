@@ -1,14 +1,14 @@
 import { auditLogger } from '@/shared/audit'
 import type { ConsentId, ConsentRecord, OrganizationId } from '@/shared/types'
 import type { ConsentFilter, ConsentGrantInput, ConsentRevokeInput, IConsentLedger } from './types'
+import type { IConsentRepository } from './repository'
+import { InMemoryConsentRepository } from './in-memory-repository'
 
 /**
- * Consent Ledger — in-memory stub.
+ * Consent Ledger
  *
- * Satisfies the IConsentLedger interface with an in-memory store so that
- * all call sites are written against the permanent contract. The production
- * implementation will persist records to Supabase with Row-Level Security
- * enforcing tenant isolation.
+ * Satisfies the IConsentLedger interface backed by an IConsentRepository.
+ * Defaults to in-memory; bootstrap swaps in the Supabase repository.
  *
  * Append-only invariant: no record is ever removed from the store.
  * Revocation updates a record's status field — it does not delete the record.
@@ -17,11 +17,7 @@ import type { ConsentFilter, ConsentGrantInput, ConsentRevokeInput, IConsentLedg
  * See FOUNDATION_001_ARCHITECTURE.md §2.11 — Consent & Rights Ledger.
  */
 class ConsentLedger implements IConsentLedger {
-  /** Primary store. Key is ConsentId. */
-  private readonly records = new Map<ConsentId, ConsentRecord>()
-
-  /** Secondary index: organizationId → Set<ConsentId> for O(1) org lookups. */
-  private readonly byOrganization = new Map<OrganizationId, Set<ConsentId>>()
+  constructor(private readonly repo: IConsentRepository) {}
 
   async grant(input: ConsentGrantInput): Promise<ConsentRecord> {
     const record: ConsentRecord = {
@@ -34,8 +30,7 @@ class ConsentLedger implements IConsentLedger {
       grantedAt: new Date(),
     }
 
-    this.records.set(record.id, record)
-    this.indexByOrganization(record.organizationId, record.id)
+    await this.repo.saveRecord(record)
 
     await auditLogger.log({
       tenantId: input.tenantId,
@@ -52,7 +47,7 @@ class ConsentLedger implements IConsentLedger {
   }
 
   async revoke(input: ConsentRevokeInput): Promise<ConsentRecord> {
-    const existing = this.records.get(input.consentId)
+    const existing = await this.repo.findRecordById(input.consentId)
 
     if (!existing) {
       throw new Error(`[CONSENT_LEDGER] Consent record not found: ${input.consentId}`)
@@ -64,14 +59,13 @@ class ConsentLedger implements IConsentLedger {
       )
     }
 
-    // Update in place — the record is mutated to 'revoked', never deleted.
     const revoked: ConsentRecord = {
       ...existing,
       status: 'revoked',
       revokedAt: new Date(),
     }
 
-    this.records.set(revoked.id, revoked)
+    await this.repo.saveRecord(revoked)
 
     await auditLogger.log({
       tenantId: input.tenantId,
@@ -88,50 +82,20 @@ class ConsentLedger implements IConsentLedger {
   }
 
   async check(organizationId: OrganizationId, action: string): Promise<ConsentRecord | null> {
-    const ids = this.byOrganization.get(organizationId)
-    if (!ids) return null
-
-    const now = new Date()
-
-    for (const id of ids) {
-      const record = this.records.get(id)
-      if (!record) continue
-      if (record.action !== action) continue
-      if (record.status !== 'active') continue
-      if (record.expiresAt && record.expiresAt <= now) continue
-      return record
-    }
-
-    return null
+    return this.repo.findActiveConsent(organizationId, action)
   }
 
   async history(filter: ConsentFilter): Promise<ConsentRecord[]> {
-    const ids = this.byOrganization.get(filter.organizationId)
-    if (!ids) return []
-
-    const now = new Date()
-    const results: ConsentRecord[] = []
-
-    for (const id of ids) {
-      const record = this.records.get(id)
-      if (!record) continue
-      if (filter.scope && record.scope !== filter.scope) continue
-      if (filter.action && record.action !== filter.action) continue
-      if (filter.activeOnly) {
-        if (record.status !== 'active') continue
-        if (record.expiresAt && record.expiresAt <= now) continue
-      }
-      results.push(record)
-    }
-
-    return results
-  }
-
-  private indexByOrganization(organizationId: OrganizationId, consentId: ConsentId): void {
-    const existing = this.byOrganization.get(organizationId) ?? new Set<ConsentId>()
-    existing.add(consentId)
-    this.byOrganization.set(organizationId, existing)
+    return this.repo.listRecords(filter)
   }
 }
 
-export const consentLedger: IConsentLedger = new ConsentLedger()
+// ---------------------------------------------------------------------------
+// Singleton — defaults to in-memory; bootstrap swaps in Supabase repo
+// ---------------------------------------------------------------------------
+
+export let consentLedger: IConsentLedger = new ConsentLedger(new InMemoryConsentRepository())
+
+export function _configureConsentRepository(repo: IConsentRepository): void {
+  consentLedger = new ConsentLedger(repo)
+}

@@ -12,4 +12,4 @@
  */
 
 export * from './types'
-export { consentLedger } from './ledger'
+export { consentLedger, _configureConsentRepository } from './ledger'

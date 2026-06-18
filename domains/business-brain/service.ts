@@ -15,6 +15,8 @@ import type {
   BusinessBrainQuery,
   BusinessBrainQueryResult,
 } from './types'
+import type { IBusinessBrainRepository } from './repository'
+import { InMemoryBusinessBrainRepository } from './in-memory-repository'
 
 /**
  * Business Brain Domain Service Interface & Stub
@@ -29,11 +31,6 @@ import type {
  * - Business Memory is versioned — updates increment the version counter
  * - Contributions route through a defined interface; no domain writes to
  *   Business Memory directly
- * - The Brain never leaves the platform unless the customer explicitly exports it
- *
- * The stub manages state in memory. The production implementation will
- * persist to Supabase with full-text and vector search for memory retrieval
- * and RLS enforcing tenant isolation.
  *
  * See FOUNDATION_001_ARCHITECTURE.md §2.3, §2.4, §3 — Business Brain.
  */
@@ -86,159 +83,166 @@ export interface IBusinessBrainService {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory stub implementation
+// Service implementation
 // ---------------------------------------------------------------------------
 
 class BusinessBrainService implements IBusinessBrainService {
-  private readonly brains = new Map<OrganizationId, BusinessBrain>()
-  private readonly memories = new Map<BusinessMemoryId, BusinessMemory>()
-  /** organizationId → Set<BusinessMemoryId> for scoped queries. */
-  private readonly memoryIndex = new Map<OrganizationId, Set<BusinessMemoryId>>()
+  constructor(private readonly repo: IBusinessBrainRepository) {}
 
   async createBusinessBrain(
     input: CreateBusinessBrainInput
   ): Promise<PlatformResult<BusinessBrain>> {
-    if (this.brains.has(input.organizationId)) {
-      return err({
-        code: PlatformErrorCode.VALIDATION_ERROR,
-        message: 'An Organization may have only one Business Brain',
+    try {
+      const existing = await this.repo.findBrainByOrganizationId(input.organizationId)
+      if (existing) {
+        return err({
+          code: PlatformErrorCode.VALIDATION_ERROR,
+          message: 'An Organization may have only one Business Brain',
+        })
+      }
+
+      const brain: BusinessBrain = {
+        id: `brain_${crypto.randomUUID()}` as BusinessBrainId,
+        organizationId: input.organizationId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      await this.repo.saveBrain(brain, input.tenantId)
+      logger.info('[BUSINESS_BRAIN] Business Brain created', {
+        tenantId: input.tenantId,
+        organizationId: input.organizationId,
       })
+      return ok(brain)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-
-    const brain: BusinessBrain = {
-      id: `brain_${crypto.randomUUID()}` as BusinessBrainId,
-      organizationId: input.organizationId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-
-    this.brains.set(input.organizationId, brain)
-    this.memoryIndex.set(input.organizationId, new Set())
-    logger.info('[BUSINESS_BRAIN] Business Brain created', {
-      tenantId: input.tenantId,
-      organizationId: input.organizationId,
-    })
-
-    return ok(brain)
   }
 
   async getBusinessBrain(organizationId: OrganizationId): Promise<PlatformResult<BusinessBrain>> {
-    const brain = this.brains.get(organizationId)
-    if (!brain) {
-      return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Business Brain not found' })
+    try {
+      const brain = await this.repo.findBrainByOrganizationId(organizationId)
+      if (!brain) {
+        return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Business Brain not found' })
+      }
+      return ok(brain)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-    return ok(brain)
   }
 
   async storeMemory(input: StoreMemoryInput): Promise<PlatformResult<BusinessMemory>> {
-    const brainResult = await this.getBusinessBrain(input.organizationId)
-    if (!brainResult.ok) return brainResult
+    try {
+      const brainResult = await this.getBusinessBrain(input.organizationId)
+      if (!brainResult.ok) return brainResult
 
-    const memory: BusinessMemory = {
-      ...input.memory,
-      id: `memory_${crypto.randomUUID()}` as BusinessMemoryId,
-      businessBrainId: brainResult.value.id,
-      organizationId: input.organizationId,
-      version: 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      const memory: BusinessMemory = {
+        ...input.memory,
+        id: `memory_${crypto.randomUUID()}` as BusinessMemoryId,
+        businessBrainId: brainResult.value.id,
+        organizationId: input.organizationId,
+        version: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+
+      await this.repo.saveMemory(memory, input.tenantId)
+      await this.repo.saveBrain({ ...brainResult.value, updatedAt: new Date() }, input.tenantId)
+      return ok(memory)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-
-    this.memories.set(memory.id, memory)
-    this.indexMemory(input.organizationId, memory.id)
-
-    this.brains.set(input.organizationId, {
-      ...brainResult.value,
-      updatedAt: new Date(),
-    })
-
-    return ok(memory)
   }
 
   async getMemoryById(
     memoryId: BusinessMemoryId,
     organizationId: OrganizationId
   ): Promise<PlatformResult<BusinessMemory>> {
-    const memory = this.memories.get(memoryId)
-    if (!memory) return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Memory not found' })
-    if (memory.organizationId !== organizationId) {
-      return err({
-        code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
-        message: 'Memory does not belong to this organization',
-      })
+    try {
+      const memory = await this.repo.findMemoryById(memoryId)
+      if (!memory) return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Memory not found' })
+      if (memory.organizationId !== organizationId) {
+        return err({
+          code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
+          message: 'Memory does not belong to this organization',
+        })
+      }
+      return ok(memory)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-    return ok(memory)
   }
 
   async queryMemory(query: BusinessBrainQuery): Promise<PlatformResult<BusinessBrainQueryResult>> {
-    const brainResult = await this.getBusinessBrain(query.organizationId)
-    if (!brainResult.ok) return brainResult
+    try {
+      const brainResult = await this.getBusinessBrain(query.organizationId)
+      if (!brainResult.ok) return brainResult
 
-    const ids = this.memoryIndex.get(query.organizationId) ?? new Set()
-    let results: BusinessMemory[] = []
+      const memories = await this.repo.queryMemories(query.organizationId, {
+        types: query.types,
+        relevanceScope: query.relevanceScope,
+        limit: query.limit,
+      })
 
-    for (const id of ids) {
-      const memory = this.memories.get(id)
-      if (!memory) continue
-      if (query.types && query.types.length > 0 && !query.types.includes(memory.type)) continue
-      if (query.relevanceScope && query.relevanceScope.length > 0) {
-        const overlaps = query.relevanceScope.some((s) => memory.relevanceScope.includes(s))
-        if (!overlaps) continue
-      }
-      results.push(memory)
+      return ok({
+        businessBrainId: brainResult.value.id,
+        memories,
+        totalCount: memories.length,
+      })
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-
-    if (query.limit) results = results.slice(0, query.limit)
-
-    return ok({
-      businessBrainId: brainResult.value.id,
-      memories: results,
-      totalCount: results.length,
-    })
   }
 
   async contributeMemories(
     contribution: BusinessBrainContribution
   ): Promise<PlatformResult<BusinessMemory[]>> {
-    const brainResult = await this.getBusinessBrain(contribution.organizationId)
-    if (!brainResult.ok) return brainResult
+    try {
+      const brainResult = await this.getBusinessBrain(contribution.organizationId)
+      if (!brainResult.ok) return brainResult
 
-    const stored: BusinessMemory[] = []
+      const stored: BusinessMemory[] = []
 
-    for (const raw of contribution.memories) {
-      const memory: BusinessMemory = {
-        ...raw,
-        id: `memory_${crypto.randomUUID()}` as BusinessMemoryId,
-        businessBrainId: brainResult.value.id,
-        organizationId: contribution.organizationId,
-        source: contribution.source,
-        version: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+      for (const raw of contribution.memories) {
+        const memory: BusinessMemory = {
+          ...raw,
+          id: `memory_${crypto.randomUUID()}` as BusinessMemoryId,
+          businessBrainId: brainResult.value.id,
+          organizationId: contribution.organizationId,
+          source: contribution.source,
+          version: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }
+        await this.repo.saveMemory(memory, contribution.tenantId)
+        stored.push(memory)
       }
-      this.memories.set(memory.id, memory)
-      this.indexMemory(contribution.organizationId, memory.id)
-      stored.push(memory)
+
+      if (stored.length > 0) {
+        await this.repo.saveBrain(
+          { ...brainResult.value, updatedAt: new Date() },
+          contribution.tenantId
+        )
+        logger.info(`[BUSINESS_BRAIN] ${stored.length} memories contributed`, {
+          organizationId: contribution.organizationId,
+        })
+      }
+
+      return ok(stored)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
-
-    if (stored.length > 0) {
-      this.brains.set(contribution.organizationId, {
-        ...brainResult.value,
-        updatedAt: new Date(),
-      })
-      logger.info(`[BUSINESS_BRAIN] ${stored.length} memories contributed`, {
-        organizationId: contribution.organizationId,
-      })
-    }
-
-    return ok(stored)
-  }
-
-  private indexMemory(organizationId: OrganizationId, memoryId: BusinessMemoryId): void {
-    const existing = this.memoryIndex.get(organizationId) ?? new Set<BusinessMemoryId>()
-    existing.add(memoryId)
-    this.memoryIndex.set(organizationId, existing)
   }
 }
 
-export const businessBrainService: IBusinessBrainService = new BusinessBrainService()
+// ---------------------------------------------------------------------------
+// Singleton — defaults to in-memory; bootstrap swaps in Supabase repo
+// ---------------------------------------------------------------------------
+
+export let businessBrainService: IBusinessBrainService = new BusinessBrainService(
+  new InMemoryBusinessBrainRepository()
+)
+
+export function _configureBusinessBrainRepository(repo: IBusinessBrainRepository): void {
+  businessBrainService = new BusinessBrainService(repo)
+}

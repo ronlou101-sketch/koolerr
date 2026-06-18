@@ -3,6 +3,7 @@ import type {
   EngagementRunId,
   EngagementRunStatus,
   OrganizationId,
+  TenantId,
   WorkforceId,
 } from '@/shared/types'
 
@@ -12,6 +13,7 @@ import type {
  */
 
 export interface EngagementRunTrigger {
+  tenantId: TenantId
   workforceId: WorkforceId
   organizationId: OrganizationId
   objective: string
@@ -20,6 +22,7 @@ export interface EngagementRunTrigger {
 }
 
 export interface EngagementRunStatusUpdate {
+  tenantId: TenantId
   id: EngagementRunId
   status: EngagementRunStatus
   updatedAt: Date
