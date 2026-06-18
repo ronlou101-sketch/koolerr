@@ -14,6 +14,7 @@ import {
   _loadTrustRulesFromRepository,
   SupabaseTrustRuleRepository,
 } from '@/shared/trust'
+import { _configureApprovalRepository, SupabaseApprovalRepository } from '@/shared/approval'
 import {
   _configureOrchestrationRepository,
   SupabaseOrchestrationRepository,
@@ -150,6 +151,12 @@ export async function bootstrapPlatform(): Promise<PlatformBootstrapResult> {
   // ---------------------------------------------------------------------------
   _configureTrustRepository(new SupabaseTrustRuleRepository(supabase))
   await _loadTrustRulesFromRepository()
+
+  // ---------------------------------------------------------------------------
+  // 3d. Wire the Approval Workflow repository.
+  //     ApprovalRequests are persisted to approval_requests and survive restarts.
+  // ---------------------------------------------------------------------------
+  _configureApprovalRepository(new SupabaseApprovalRepository(supabase))
 
   // ---------------------------------------------------------------------------
   // 4. Wire the billing usage sink into the Model Gateway.

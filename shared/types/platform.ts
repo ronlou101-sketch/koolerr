@@ -42,6 +42,7 @@ export type ConsentId = Branded<string, 'ConsentId'>
 export type UsageEventId = Branded<string, 'UsageEventId'>
 export type WorkflowId = Branded<string, 'WorkflowId'>
 export type WorkflowStepId = Branded<string, 'WorkflowStepId'>
+export type ApprovalRequestId = Branded<string, 'ApprovalRequestId'>
 
 // ---------------------------------------------------------------------------
 // Tenant
