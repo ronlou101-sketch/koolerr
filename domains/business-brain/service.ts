@@ -5,18 +5,47 @@ import type {
   BusinessBrainId,
   BusinessMemory,
   BusinessMemoryId,
+  BusinessMemoryType,
   OrganizationId,
   PlatformResult,
   TenantId,
 } from '@/shared/types'
 import { logger } from '@/shared/lib/logger'
 import type {
+  BrainIntelligenceReport,
   BusinessBrainContribution,
   BusinessBrainQuery,
   BusinessBrainQueryResult,
+  BusinessInsight,
+  MemoryTrendSummary,
 } from './types'
 import type { IBusinessBrainRepository } from './repository'
 import { InMemoryBusinessBrainRepository } from './in-memory-repository'
+
+// ---------------------------------------------------------------------------
+// Intelligence Layer constants
+// ---------------------------------------------------------------------------
+
+/** Minimum memories of a single type required to surface a 'pattern' insight. */
+export const PATTERN_INSIGHT_THRESHOLD = 3
+
+/** Minimum distinct relevance scopes on a memory for it to be considered cross-cutting. */
+const CROSS_CUTTING_SCOPE_MIN = 3
+
+const ALL_MEMORY_TYPES: BusinessMemoryType[] = [
+  'company_identity',
+  'brand',
+  'product',
+  'service',
+  'pricing',
+  'policy',
+  'sop',
+  'customer',
+  'asset',
+  'knowledge',
+  'preference',
+  'decision',
+]
 
 /**
  * Business Brain Domain Service Interface & Stub
@@ -80,13 +109,33 @@ export interface IBusinessBrainService {
   contributeMemories(
     contribution: BusinessBrainContribution
   ): Promise<PlatformResult<BusinessMemory[]>>
+
+  /**
+   * Surface patterns, gaps, and trends across all accumulated Business Memory.
+   * Returns an ephemeral intelligence report — insights are computed on demand
+   * from current memory state and are not stored in the database.
+   * See FOUNDATION_001_ARCHITECTURE.md §2.5 — Business Intelligence.
+   */
+  synthesizeInsights(
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<BrainIntelligenceReport>>
+
+  /**
+   * Find memories related to a given memory by relevance scope overlap.
+   * Results are ranked by overlap score (most overlapping scopes first).
+   */
+  findRelatedMemories(
+    memoryId: BusinessMemoryId,
+    organizationId: OrganizationId,
+    limit?: number
+  ): Promise<PlatformResult<BusinessMemory[]>>
 }
 
 // ---------------------------------------------------------------------------
 // Service implementation
 // ---------------------------------------------------------------------------
 
-class BusinessBrainService implements IBusinessBrainService {
+export class BusinessBrainService implements IBusinessBrainService {
   constructor(private readonly repo: IBusinessBrainRepository) {}
 
   async createBusinessBrain(
@@ -229,6 +278,133 @@ class BusinessBrainService implements IBusinessBrainService {
       }
 
       return ok(stored)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async synthesizeInsights(
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<BrainIntelligenceReport>> {
+    try {
+      const brainResult = await this.getBusinessBrain(organizationId)
+      if (!brainResult.ok) return brainResult
+
+      const memories = await this.repo.listAllMemories(organizationId)
+      const insights: BusinessInsight[] = []
+
+      // Count memories by type
+      const countsByType: Partial<Record<BusinessMemoryType, number>> = {}
+      for (const m of memories) {
+        countsByType[m.type] = (countsByType[m.type] ?? 0) + 1
+      }
+
+      // No memories means no meaningful insights to surface
+      if (memories.length === 0) {
+        return ok({
+          organizationId,
+          businessBrainId: brainResult.value.id,
+          generatedAt: new Date(),
+          insights: [],
+          trends: {
+            totalMemories: 0,
+            countsByType: {},
+            mostDocumented: null,
+            undocumentedTypes: ALL_MEMORY_TYPES,
+          },
+        })
+      }
+
+      // Pattern insights — types with enough entries indicate strong coverage
+      for (const [rawType, count] of Object.entries(countsByType)) {
+        const type = rawType as BusinessMemoryType
+        if (count >= PATTERN_INSIGHT_THRESHOLD) {
+          insights.push({
+            type: 'pattern',
+            title: `Strong ${type.replace(/_/g, ' ')} coverage`,
+            finding: `Your Business Brain has ${count} documented ${type.replace(/_/g, ' ')} entries, indicating well-developed knowledge in this area.`,
+            supportingMemoryIds: memories.filter((m) => m.type === type).map((m) => m.id),
+          })
+        }
+      }
+
+      // Gap insights — types with no entries surface coverage blind spots
+      const undocumentedTypes = ALL_MEMORY_TYPES.filter((t) => !countsByType[t])
+      for (const type of undocumentedTypes) {
+        insights.push({
+          type: 'gap',
+          title: `No ${type.replace(/_/g, ' ')} documented`,
+          finding: `Your Business Brain has no ${type.replace(/_/g, ' ')} entries. Adding this knowledge will improve Digital Employee effectiveness.`,
+          supportingMemoryIds: [],
+        })
+      }
+
+      // Trend insight — memories that span many relevance scopes are cross-cutting themes
+      const crossCutting = memories.filter(
+        (m) => m.relevanceScope.length >= CROSS_CUTTING_SCOPE_MIN
+      )
+      if (crossCutting.length > 0) {
+        const scopeCounts: Record<string, number> = {}
+        for (const scope of crossCutting.flatMap((m) => m.relevanceScope)) {
+          scopeCounts[scope] = (scopeCounts[scope] ?? 0) + 1
+        }
+        const topScope = Object.entries(scopeCounts).sort(([, a], [, b]) => b - a)[0]?.[0]
+        if (topScope) {
+          insights.push({
+            type: 'trend',
+            title: `Cross-cutting theme: ${topScope}`,
+            finding: `The scope "${topScope}" appears across ${crossCutting.length} memories, suggesting it is a recurring theme in your business knowledge.`,
+            supportingMemoryIds: crossCutting.map((m) => m.id),
+          })
+        }
+      }
+
+      const sortedByCount = Object.entries(countsByType).sort(([, a], [, b]) => b - a)
+      const mostDocumented = (sortedByCount[0]?.[0] as BusinessMemoryType | undefined) ?? null
+
+      const trends: MemoryTrendSummary = {
+        totalMemories: memories.length,
+        countsByType,
+        mostDocumented,
+        undocumentedTypes,
+      }
+
+      return ok({
+        organizationId,
+        businessBrainId: brainResult.value.id,
+        generatedAt: new Date(),
+        insights,
+        trends,
+      })
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async findRelatedMemories(
+    memoryId: BusinessMemoryId,
+    organizationId: OrganizationId,
+    limit = 10
+  ): Promise<PlatformResult<BusinessMemory[]>> {
+    try {
+      const memResult = await this.getMemoryById(memoryId, organizationId)
+      if (!memResult.ok) return memResult
+
+      const target = memResult.value
+      const all = await this.repo.listAllMemories(organizationId)
+
+      const related = all
+        .filter((m) => m.id !== memoryId)
+        .map((m) => ({
+          memory: m,
+          overlap: m.relevanceScope.filter((s) => target.relevanceScope.includes(s)).length,
+        }))
+        .filter(({ overlap }) => overlap > 0)
+        .sort((a, b) => b.overlap - a.overlap)
+        .slice(0, limit)
+        .map(({ memory }) => memory)
+
+      return ok(related)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }

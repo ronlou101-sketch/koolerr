@@ -40,4 +40,6 @@ export interface IBusinessBrainRepository {
     organizationId: OrganizationId,
     options: MemoryQueryOptions
   ): Promise<BusinessMemory[]>
+  /** Return every memory for an organization — used by the Intelligence Layer for full analysis. */
+  listAllMemories(organizationId: OrganizationId): Promise<BusinessMemory[]>
 }

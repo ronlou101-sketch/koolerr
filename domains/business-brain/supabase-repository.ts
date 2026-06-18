@@ -163,4 +163,13 @@ export class SupabaseBusinessBrainRepository implements IBusinessBrainRepository
     if (error) throw new Error(`[BB_REPO] queryMemories failed: ${error.message}`)
     return (data ?? []).map((r) => mapMemory(r as BusinessMemoryRow))
   }
+
+  async listAllMemories(organizationId: OrganizationId): Promise<BusinessMemory[]> {
+    const { data, error } = await this.client
+      .from('business_memories')
+      .select('*')
+      .eq('organization_id', organizationId)
+    if (error) throw new Error(`[BB_REPO] listAllMemories failed: ${error.message}`)
+    return (data ?? []).map((r) => mapMemory(r as BusinessMemoryRow))
+  }
 }

@@ -56,4 +56,12 @@ export class InMemoryBusinessBrainRepository implements IBusinessBrainRepository
     if (options.limit) results = results.slice(0, options.limit)
     return results
   }
+
+  async listAllMemories(organizationId: OrganizationId): Promise<BusinessMemory[]> {
+    const ids = this.memoryIndex.get(organizationId)
+    if (!ids) return []
+    return Array.from(ids)
+      .map((id) => this.memories.get(id))
+      .filter((m): m is BusinessMemory => m !== undefined)
+  }
 }
