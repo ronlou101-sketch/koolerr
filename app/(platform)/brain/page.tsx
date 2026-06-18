@@ -5,13 +5,14 @@ import { businessBrainService } from '@/domains/business-brain'
 import type { BusinessMemoryType } from '@/shared/types'
 
 /**
- * Business Brain page.
+ * Business Brain page — updated for Phase 2.
  *
- * Shows all stored Business Memories organized by type. This is the
- * customer's view into what their workforce knows about the business.
- * Read-only in Phase 1 — editing and memory management are Phase 2 scope.
+ * Shows all stored Business Memories organized by type, plus a Business
+ * Intelligence summary (patterns, gaps, cross-cutting themes) derived
+ * from synthesizeInsights() — Phase 2 Milestone 3.
  *
- * See FOUNDATION_001_ARCHITECTURE.md §2.3, §2.4 — Business Brain.
+ * See FOUNDATION_001_ARCHITECTURE.md §2.3, §2.4, §2.5 — Business Brain.
+ * See docs/adr/ADR-015-business-brain-intelligence.md.
  */
 
 const TYPE_LABELS: Record<BusinessMemoryType, string> = {
@@ -48,10 +49,15 @@ export default async function BrainPage() {
   const ctx = await getRequestPlatformContext()
   if (!ctx) redirect('/login')
 
-  const result = await businessBrainService.queryMemory({
-    organizationId: ctx.organizationId,
-    limit: 200,
-  })
+  const [result, intelligenceResult] = await Promise.all([
+    businessBrainService.queryMemory({
+      organizationId: ctx.organizationId,
+      limit: 200,
+    }),
+    businessBrainService.synthesizeInsights(ctx.organizationId),
+  ])
+
+  const intelligence = intelligenceResult.ok ? intelligenceResult.value : null
 
   if (!result.ok) {
     return (
@@ -107,43 +113,105 @@ export default async function BrainPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
-          {presentTypes.map((type) => {
-            const typeMemories = grouped.get(type)!
-            return (
-              <section key={type}>
-                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {TYPE_LABELS[type]}
-                </h2>
-                <div className="space-y-3">
-                  {typeMemories.map((memory) => (
-                    <div key={memory.id} className="rounded-lg border border-border bg-card p-4">
-                      <div className="space-y-2">
-                        {Object.entries(memory.content).map(([key, value]) => (
-                          <div key={key}>
-                            <span className="text-xs font-medium capitalize text-muted-foreground">
-                              {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
-                            </span>
-                            <p className="mt-0.5 text-sm text-foreground">{String(value)}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 flex items-center gap-3 border-t border-border pt-2">
-                        <span className="text-xs text-muted-foreground">
-                          Source: {memory.source}
-                        </span>
-                        <span className="text-xs text-muted-foreground">v{memory.version}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {memory.updatedAt.toLocaleDateString()}
-                        </span>
-                      </div>
+        <>
+          {/* Business Intelligence summary — Phase 2 Milestone 3 */}
+          {intelligence && intelligence.insights.length > 0 && (
+            <section className="rounded-lg border border-border bg-muted/30 p-5">
+              <h2 className="mb-3 text-sm font-semibold text-foreground">Brain Intelligence</h2>
+              <div className="mb-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                <span>{intelligence.trends.totalMemories} memories total</span>
+                {intelligence.trends.mostDocumented && (
+                  <span>
+                    Strongest area:{' '}
+                    <strong className="text-foreground">
+                      {TYPE_LABELS[intelligence.trends.mostDocumented] ??
+                        intelligence.trends.mostDocumented}
+                    </strong>
+                  </span>
+                )}
+                {intelligence.trends.undocumentedTypes.length > 0 && (
+                  <span>
+                    {intelligence.trends.undocumentedTypes.length} types not yet documented
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
+                {intelligence.insights
+                  .filter((i) => i.type !== 'gap')
+                  .map((insight, idx) => (
+                    <div
+                      key={idx}
+                      className={`rounded-md px-3 py-2 text-xs ${
+                        insight.type === 'pattern'
+                          ? 'bg-green-50 text-green-800'
+                          : 'bg-blue-50 text-blue-800'
+                      }`}
+                    >
+                      <span className="font-medium">{insight.title}:</span> {insight.finding}
                     </div>
                   ))}
-                </div>
-              </section>
-            )
-          })}
-        </div>
+                {intelligence.insights.filter((i) => i.type === 'gap').length > 0 && (
+                  <details className="text-xs">
+                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                      {intelligence.insights.filter((i) => i.type === 'gap').length} coverage gaps
+                    </summary>
+                    <div className="mt-2 space-y-1">
+                      {intelligence.insights
+                        .filter((i) => i.type === 'gap')
+                        .map((gap, idx) => (
+                          <div
+                            key={idx}
+                            className="rounded-md bg-yellow-50 px-3 py-2 text-xs text-yellow-800"
+                          >
+                            {gap.finding}
+                          </div>
+                        ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Memory list by type */}
+          <div className="space-y-6">
+            {presentTypes.map((type) => {
+              const typeMemories = grouped.get(type)!
+              return (
+                <section key={type}>
+                  <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {TYPE_LABELS[type]}
+                  </h2>
+                  <div className="space-y-3">
+                    {typeMemories.map((memory) => (
+                      <div key={memory.id} className="rounded-lg border border-border bg-card p-4">
+                        <div className="space-y-2">
+                          {Object.entries(memory.content).map(([key, value]) => (
+                            <div key={key}>
+                              <span className="text-xs font-medium capitalize text-muted-foreground">
+                                {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                              </span>
+                              <p className="mt-0.5 text-sm text-foreground">{String(value)}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex items-center gap-3 border-t border-border pt-2">
+                          <span className="text-xs text-muted-foreground">
+                            Source: {memory.source}
+                          </span>
+                          <span className="text-xs text-muted-foreground">v{memory.version}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {memory.updatedAt.toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )

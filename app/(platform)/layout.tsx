@@ -14,8 +14,23 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
               <Link href="/runs" className="text-sm text-muted-foreground hover:text-foreground">
                 Runs
               </Link>
+              <Link
+                href="/workforces"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Workforces
+              </Link>
+              <Link
+                href="/approvals"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Approvals
+              </Link>
               <Link href="/brain" className="text-sm text-muted-foreground hover:text-foreground">
                 Brain
+              </Link>
+              <Link href="/consent" className="text-sm text-muted-foreground hover:text-foreground">
+                Consent
               </Link>
               <Link href="/audit" className="text-sm text-muted-foreground hover:text-foreground">
                 Audit

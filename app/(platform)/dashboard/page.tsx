@@ -5,19 +5,21 @@ import { identityService } from '@/domains/identity'
 import { businessBrainService } from '@/domains/business-brain'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
+import { approvalWorkflowService } from '@/shared/approval'
 
 /**
- * Dashboard — the primary authenticated landing page.
+ * Dashboard — the primary authenticated landing page. Updated for Phase 2.
  *
  * Shows a real-time snapshot of:
- * - Business Brain health (memory count)
- * - Recent Engagement Runs
+ * - Business Brain health and intelligence summary
+ * - Active Workforces
+ * - Pending Approval Requests (Phase 2 Milestone 2)
+ * - Recent Engagement Runs and their outcomes
  * - Deliverables pending customer review
  *
- * If the Business Brain has no memories, redirects to onboarding so the
- * customer can give their workforce the context it needs to produce great work.
+ * If the Business Brain has no memories, redirects to onboarding.
  *
- * See FOUNDATION_003_DEVELOPMENT_ROADMAP.md §Phase 1 — Success Criteria.
+ * See FOUNDATION_003_DEVELOPMENT_ROADMAP.md §Phase 2 — Customer Dashboard.
  */
 
 const STATUS_LABELS = {
@@ -45,20 +47,26 @@ export default async function DashboardPage() {
   if (!ctx) redirect('/signup?error=no_platform_account')
 
   // Fetch all dashboard data in parallel.
-  const [orgResult, brainResult, runsResult, pendingResult] = await Promise.all([
-    identityService.findOrganizationById(ctx.organizationId),
-    businessBrainService.queryMemory({ organizationId: ctx.organizationId, limit: 100 }),
-    workforceEngineService.listEngagementRuns(ctx.organizationId),
-    deliverablesService.listDeliverables({
-      organizationId: ctx.organizationId,
-      status: 'pending_review',
-    }),
-  ])
+  const [orgResult, brainResult, runsResult, pendingResult, workforcesResult, approvalsResult] =
+    await Promise.all([
+      identityService.findOrganizationById(ctx.organizationId),
+      businessBrainService.queryMemory({ organizationId: ctx.organizationId, limit: 100 }),
+      workforceEngineService.listEngagementRuns(ctx.organizationId),
+      deliverablesService.listDeliverables({
+        organizationId: ctx.organizationId,
+        status: 'pending_review',
+      }),
+      workforceEngineService.listWorkforces(ctx.organizationId),
+      approvalWorkflowService.listPending(ctx.organizationId, ctx.tenantId),
+    ])
 
   const orgName = orgResult.ok ? orgResult.value.name : 'Your Organization'
   const memoryCount = brainResult.ok ? brainResult.value.totalCount : 0
   const recentRuns = runsResult.ok ? runsResult.value.slice(0, 5) : []
   const pendingDeliverables = pendingResult.ok ? pendingResult.value : []
+  const workforces = workforcesResult.ok ? workforcesResult.value : []
+  const pendingApprovals = approvalsResult.ok ? approvalsResult.value : []
+  const activeWorkforceCount = workforces.filter((w) => w.status === 'active').length
 
   // Redirect to onboarding if the Brain has never been set up.
   if (memoryCount === 0) {
@@ -74,7 +82,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-border bg-card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Brain Memories
@@ -87,14 +95,32 @@ export default async function DashboardPage() {
 
         <div className="rounded-lg border border-border bg-card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Total Runs
+            Active Workforces
           </p>
-          <p className="mt-1 text-2xl font-semibold text-foreground">
-            {runsResult.ok ? runsResult.value.length : '—'}
-          </p>
-          <Link href="/runs" className="mt-1 block text-xs text-primary hover:underline">
-            Start a run →
+          <p className="mt-1 text-2xl font-semibold text-foreground">{activeWorkforceCount}</p>
+          <Link href="/workforces" className="mt-1 block text-xs text-primary hover:underline">
+            View team →
           </Link>
+        </div>
+
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Pending Approvals
+          </p>
+          <p
+            className={`mt-1 text-2xl font-semibold ${
+              pendingApprovals.length > 0 ? 'text-yellow-600' : 'text-foreground'
+            }`}
+          >
+            {pendingApprovals.length}
+          </p>
+          {pendingApprovals.length > 0 ? (
+            <Link href="/approvals" className="mt-1 block text-xs text-yellow-600 hover:underline">
+              Review now →
+            </Link>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">All clear</p>
+          )}
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4">
@@ -113,6 +139,30 @@ export default async function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Pending approvals alert */}
+      {pendingApprovals.length > 0 && (
+        <section className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-yellow-800">
+                {pendingApprovals.length} action{pendingApprovals.length === 1 ? '' : 's'} awaiting
+                your approval
+              </p>
+              <p className="mt-1 text-xs text-yellow-700">
+                {pendingApprovals[0].description}
+                {pendingApprovals.length > 1 && ` and ${pendingApprovals.length - 1} more.`}
+              </p>
+            </div>
+            <Link
+              href="/approvals"
+              className="shrink-0 rounded-md bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
+            >
+              Review
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Pending deliverables */}
       {pendingDeliverables.length > 0 && (
