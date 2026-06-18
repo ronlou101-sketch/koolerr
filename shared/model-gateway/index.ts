@@ -10,4 +10,4 @@
  */
 
 export * from './types'
-export { modelGateway, _registerProvider } from './gateway'
+export { modelGateway, _registerProvider, _registerUsageSink } from './gateway'

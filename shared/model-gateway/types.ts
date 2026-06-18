@@ -52,9 +52,9 @@ export interface NormalizedModelResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Gateway request
+// Gateway request / response
 // What a domain passes to the gateway. Includes full platform scope for
-// audit attribution and entitlement checks.
+// Trust Engine enforcement, audit attribution, and billing event emission.
 // ---------------------------------------------------------------------------
 
 export interface GatewayRequest {
@@ -63,6 +63,12 @@ export interface GatewayRequest {
   workforceId: WorkforceId
   digitalEmployeeId: DigitalEmployeeId
   engagementRunId: EngagementRunId
+  /**
+   * The business action being performed (e.g. 'write_blog_post', 'research_topic').
+   * Must match a registered TrustRule action for this Digital Employee.
+   * The Trust Engine evaluates this action before the invocation proceeds.
+   */
+  action: string
   prompt: string
   /** Preferred provider. Gateway selects default if omitted. */
   provider?: ModelProvider
@@ -79,6 +85,35 @@ export interface GatewayResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Usage event sink
+//
+// The Model Gateway emits a usage event after every successful invocation
+// (FOUNDATION_001 §4). The sink is registered at startup by the billing
+// domain so that shared/ does not import from domains/ directly.
+// ---------------------------------------------------------------------------
+
+export interface GatewayUsageData {
+  tenantId: TenantId
+  organizationId: OrganizationId
+  workforceId: WorkforceId
+  engagementRunId: EngagementRunId
+  action: string
+  provider: ModelProvider
+  model: string
+  tokensUsed: number
+  latencyMs: number
+}
+
+/**
+ * Implemented by the billing domain and registered at startup via
+ * _registerUsageSink(). The Model Gateway holds a reference to this
+ * interface only — never to billing's concrete implementation.
+ */
+export interface IUsageEventSink {
+  recordUsage(data: GatewayUsageData): Promise<void>
+}
+
+// ---------------------------------------------------------------------------
 // Gateway interface
 // ---------------------------------------------------------------------------
 
@@ -86,12 +121,14 @@ export interface IModelGateway {
   /**
    * Submit an AI invocation request.
    *
-   * The gateway is responsible for:
-   * - Provider selection and routing
-   * - Token accounting and usage event emission
-   * - Retry and fallback logic
-   * - Response validation
-   * - Audit logging of every invocation
+   * The gateway enforces in order:
+   * 1. Trust Engine check — rejects if denied or requires_approval
+   * 2. Provider dispatch
+   * 3. Usage event emission via registered IUsageEventSink
+   * 4. Audit logging of every outcome
+   *
+   * Throws if the Trust Engine denies the action, if no provider is
+   * available, or if the provider adapter throws.
    */
   invoke(request: GatewayRequest): Promise<GatewayResponse>
 
