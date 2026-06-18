@@ -14,3 +14,4 @@
 
 export * from './types'
 export * from './service'
+export { createBillingUsageSink } from './usage-sink'
