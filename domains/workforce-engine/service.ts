@@ -16,6 +16,8 @@ import type {
   DigitalEmployeeRegistration,
   EngagementRunStatusUpdate,
   EngagementRunTrigger,
+  UpdateDigitalEmployeeInput,
+  UpdateWorkforceInput,
   WorkforceRegistration,
 } from './types'
 import type { IWorkforceEngineRepository } from './repository'
@@ -88,13 +90,17 @@ export interface IWorkforceEngineService {
   updateEngagementRunStatus(
     update: EngagementRunStatusUpdate
   ): Promise<PlatformResult<EngagementRun>>
+
+  // Workforce Management (Phase 2 Milestone 5)
+  updateWorkforce(input: UpdateWorkforceInput): Promise<PlatformResult<Workforce>>
+  updateDigitalEmployee(input: UpdateDigitalEmployeeInput): Promise<PlatformResult<DigitalEmployee>>
 }
 
 // ---------------------------------------------------------------------------
 // Service implementation
 // ---------------------------------------------------------------------------
 
-class WorkforceEngineService implements IWorkforceEngineService {
+export class WorkforceEngineService implements IWorkforceEngineService {
   constructor(private readonly repo: IWorkforceEngineRepository) {}
 
   async registerWorkforce(input: RegisterWorkforceInput): Promise<PlatformResult<Workforce>> {
@@ -104,6 +110,7 @@ class WorkforceEngineService implements IWorkforceEngineService {
         organizationId: input.organizationId,
         name: input.name,
         businessFunction: input.businessFunction,
+        goals: [],
         status: 'active',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -305,6 +312,58 @@ class WorkforceEngineService implements IWorkforceEngineService {
       }
 
       await this.repo.saveEngagementRun(updated, update.tenantId)
+      return ok(updated)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async updateWorkforce(input: UpdateWorkforceInput): Promise<PlatformResult<Workforce>> {
+    try {
+      const existing = await this.repo.findWorkforceById(input.workforceId)
+      if (!existing)
+        return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Workforce not found' })
+      if (existing.organizationId !== input.organizationId) {
+        return err({
+          code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
+          message: 'Workforce does not belong to this organization',
+        })
+      }
+      const updated: Workforce = {
+        ...existing,
+        ...(input.goals !== undefined ? { goals: input.goals } : {}),
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        updatedAt: new Date(),
+      }
+      await this.repo.saveWorkforce(updated, input.tenantId)
+      return ok(updated)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async updateDigitalEmployee(
+    input: UpdateDigitalEmployeeInput
+  ): Promise<PlatformResult<DigitalEmployee>> {
+    try {
+      const existing = await this.repo.findDigitalEmployeeById(input.digitalEmployeeId)
+      if (!existing)
+        return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Digital Employee not found' })
+      if (existing.organizationId !== input.organizationId) {
+        return err({
+          code: PlatformErrorCode.TENANT_ISOLATION_VIOLATION,
+          message: 'Digital Employee does not belong to this organization',
+        })
+      }
+      const updated: DigitalEmployee = {
+        ...existing,
+        ...(input.responsibilities !== undefined
+          ? { responsibilities: input.responsibilities }
+          : {}),
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        updatedAt: new Date(),
+      }
+      await this.repo.saveDigitalEmployee(updated, input.tenantId)
       return ok(updated)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })

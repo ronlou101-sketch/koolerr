@@ -24,6 +24,7 @@ interface WorkforceRow {
   tenant_id: string
   name: string
   business_function: string
+  goals: string[]
   status: string
   created_at: string
   updated_at: string
@@ -68,6 +69,7 @@ function mapWorkforce(row: WorkforceRow): Workforce {
     organizationId: row.organization_id as OrganizationId,
     name: row.name,
     businessFunction: row.business_function,
+    goals: row.goals ?? [],
     status: row.status as WorkforceStatus,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
@@ -81,6 +83,7 @@ function workforceToRow(wf: Workforce, tenantId: TenantId): WorkforceRow {
     tenant_id: tenantId,
     name: wf.name,
     business_function: wf.businessFunction,
+    goals: wf.goals,
     status: wf.status,
     created_at: wf.createdAt.toISOString(),
     updated_at: wf.updatedAt.toISOString(),

@@ -1,10 +1,12 @@
 import type {
   DigitalEmployeeId,
+  DigitalEmployeeStatus,
   EngagementRunId,
   EngagementRunStatus,
   OrganizationId,
   TenantId,
   WorkforceId,
+  WorkforceStatus,
 } from '@/shared/types'
 
 /**
@@ -40,4 +42,26 @@ export interface DigitalEmployeeRegistration {
   role: string
   responsibilities: string[]
   permittedTools: string[]
+}
+
+// ---------------------------------------------------------------------------
+// Workforce Management — Phase 2 Milestone 5
+// ---------------------------------------------------------------------------
+
+export interface UpdateWorkforceInput {
+  tenantId: TenantId
+  workforceId: WorkforceId
+  organizationId: OrganizationId
+  /** New business goals. Replaces the existing goals array entirely. */
+  goals?: string[]
+  status?: WorkforceStatus
+}
+
+export interface UpdateDigitalEmployeeInput {
+  tenantId: TenantId
+  digitalEmployeeId: DigitalEmployeeId
+  organizationId: OrganizationId
+  /** New responsibilities. Replaces the existing responsibilities array entirely. */
+  responsibilities?: string[]
+  status?: DigitalEmployeeStatus
 }

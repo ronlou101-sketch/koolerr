@@ -134,6 +134,8 @@ export interface Workforce {
   organizationId: OrganizationId
   name: string
   businessFunction: string
+  /** Business goals the customer has defined for this Workforce. Set via Workforce Management (Phase 2). */
+  goals: string[]
   status: WorkforceStatus
   createdAt: Date
   updatedAt: Date
