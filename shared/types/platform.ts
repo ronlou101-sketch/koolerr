@@ -225,6 +225,7 @@ export interface ConsentRecord {
   action: string
   status: ConsentStatus
   grantedAt: Date
+  expiresAt?: Date
   revokedAt?: Date
 }
 
