@@ -1,4 +1,4 @@
-import type { OrganizationId, TenantId, UserId } from '@/shared/types'
+import type { OrganizationId, TenantId, UserId, UserRole } from '@/shared/types'
 
 /**
  * Platform Request Context
@@ -32,7 +32,10 @@ export type PlatformActorType = 'user' | 'api_key' | 'system'
 export interface PlatformActorUser {
   type: 'user'
   userId: UserId
+  /** The Supabase Auth user UUID, used as the session reference for audit attribution. */
   sessionId: string
+  /** The user's role in the current request's Organization. */
+  role: UserRole
 }
 
 export interface PlatformActorApiKey {

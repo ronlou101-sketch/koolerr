@@ -1,11 +1,13 @@
-import type { UserId, OrganizationId, TenantId } from '@/shared/types'
+import type { UserId, OrganizationId, TenantId, UserRole } from '@/shared/types'
 
 /**
  * Domain-specific types for the Identity domain.
  * See FOUNDATION_001_ARCHITECTURE.md §3 — Domain Boundaries.
  */
 
-export type UserRole = 'owner' | 'admin' | 'member' | 'viewer'
+// UserRole is a platform primitive defined in shared/types/platform.ts.
+// Re-exported here so existing identity domain consumers continue to work.
+export type { UserRole } from '@/shared/types'
 
 export interface User {
   id: UserId

@@ -2,30 +2,28 @@
  * Supabase Browser Client Factory
  *
  * Returns a singleton Supabase client for use in Client Components.
- * The client is not instantiated until first call — no connection is
- * made until NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
- * are set in .env.local.
- *
- * Usage:
- *   import { getSupabaseClient } from '@/shared/lib/supabase'
- *   const supabase = getSupabaseClient()
+ * Uses createBrowserClient from @supabase/ssr so that the client automatically
+ * manages auth session cookies — required for session continuity with the
+ * server-side session client introduced in Phase 11.
  *
  * Not for use in Server Components or Route Handlers.
- * A server-side client using @supabase/ssr will be added when Supabase
- * is connected to the project in a future phase.
+ * For server-side session-scoped access use createSessionServerClient()
+ * from @/shared/lib/supabase-session.
+ * For service-role server access use createServerSupabaseClient()
+ * from @/shared/lib/supabase-server.
  *
- * See FOUNDATION_001_ARCHITECTURE.md §2.1 — Tenant (on isolation requirements
- * that the server client must enforce via RLS).
+ * See FOUNDATION_001_ARCHITECTURE.md §2.15 — Identity & Access.
  */
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 import { env } from '@/shared/config/env'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 let _client: SupabaseClient | null = null
 
 export function getSupabaseClient(): SupabaseClient {
   if (!_client) {
-    _client = createClient(env.supabase.url(), env.supabase.anonKey())
+    _client = createBrowserClient(env.supabase.url(), env.supabase.anonKey())
   }
   return _client
 }

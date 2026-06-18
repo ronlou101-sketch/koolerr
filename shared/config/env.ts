@@ -46,4 +46,14 @@ export const env = {
       return required('SUPABASE_SERVICE_ROLE_KEY')
     },
   },
+  platform: {
+    /**
+     * The Tenant ID this deployment serves.
+     * Used in Phase 11+ to resolve a PlatformContext from an authenticated
+     * Supabase Auth session. In Phase 1, each deployment is single-tenant.
+     */
+    tenantId(): string {
+      return required('PLATFORM_TENANT_ID')
+    },
+  },
 }

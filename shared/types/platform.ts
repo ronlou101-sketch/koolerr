@@ -12,6 +12,17 @@
  */
 
 // ---------------------------------------------------------------------------
+// User Role
+// The four permission levels for Organization members.
+// Defined here (not in the identity domain) so that PlatformContext — which
+// lives in shared/context — can carry the authenticated user's role without
+// creating a shared → domain import dependency.
+// See FOUNDATION_001_ARCHITECTURE.md §2.15 — Identity & Access.
+// ---------------------------------------------------------------------------
+
+export type UserRole = 'owner' | 'admin' | 'member' | 'viewer'
+
+// ---------------------------------------------------------------------------
 // Branded ID types
 // Prevents accidentally passing an OrganizationId where a TenantId is expected.
 // ---------------------------------------------------------------------------
