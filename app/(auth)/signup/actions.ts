@@ -24,5 +24,5 @@ export async function provision(
     return { success: false, error: 'No authenticated session. Please sign in again.' }
   }
 
-  return provisionPlatformAccount(authUser.email, organizationName)
+  return provisionPlatformAccount(authUser.email, organizationName, authUser.id)
 }

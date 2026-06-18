@@ -13,6 +13,8 @@ export interface User {
   id: UserId
   tenantId: TenantId
   email: string
+  /** Supabase Auth UUID. Set at provisioning time to enable the JWT hook. */
+  authUserId?: string
   createdAt: Date
   updatedAt: Date
 }

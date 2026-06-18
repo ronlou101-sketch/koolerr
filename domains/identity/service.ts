@@ -29,6 +29,8 @@ export interface CreateOrganizationInput {
 export interface CreateUserInput {
   tenantId: TenantId
   email: string
+  /** Supabase Auth UUID — populates auth_user_id so the JWT hook can resolve tenant_id. */
+  authUserId?: string
 }
 
 export interface AddMemberInput {
@@ -130,6 +132,7 @@ class IdentityService implements IIdentityService {
         id: `user_${crypto.randomUUID()}` as UserId,
         tenantId: input.tenantId,
         email: input.email,
+        authUserId: input.authUserId,
         createdAt: new Date(),
         updatedAt: new Date(),
       }

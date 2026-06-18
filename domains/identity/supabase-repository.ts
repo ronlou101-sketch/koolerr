@@ -37,6 +37,7 @@ interface UserRow {
   id: string
   tenant_id: string
   email: string
+  auth_user_id: string | null
   created_at: string
   updated_at: string
 }
@@ -99,6 +100,7 @@ function mapUser(row: UserRow): User {
     id: row.id as UserId,
     tenantId: row.tenant_id as TenantId,
     email: row.email,
+    authUserId: row.auth_user_id ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   }
@@ -109,6 +111,7 @@ function userToRow(user: User): UserRow {
     id: user.id,
     tenant_id: user.tenantId,
     email: user.email,
+    auth_user_id: user.authUserId ?? null,
     created_at: user.createdAt.toISOString(),
     updated_at: user.updatedAt.toISOString(),
   }

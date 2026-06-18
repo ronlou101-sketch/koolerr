@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     // organizationName is not available here; fall back to the default.
     // Users who registered via email-confirmation will see "My Organization"
     // and can rename it later (Phase 2 dashboard).
-    const provision = await provisionPlatformAccount(authUser.email, '')
+    const provision = await provisionPlatformAccount(authUser.email, '', authUser.id)
     // Fresh accounts need to complete Brain onboarding; existing users go to the dashboard.
     if (provision.success && !provision.alreadyProvisioned) {
       return NextResponse.redirect(`${origin}/onboarding`)

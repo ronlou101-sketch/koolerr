@@ -46,10 +46,14 @@ export interface ProvisionError {
  * @param email - The Supabase Auth user's verified email address.
  * @param organizationName - Display name for the new Organization. Defaults to
  *   "My Organization" if blank.
+ * @param authUserId - The Supabase Auth UUID (auth.users.id). When provided, it
+ *   is stored on the platform User record so the JWT hook can resolve tenant_id
+ *   and activate DB-layer RLS enforcement for this user.
  */
 export async function provisionPlatformAccount(
   email: string,
-  organizationName: string
+  organizationName: string,
+  authUserId?: string
 ): Promise<ProvisionResult | ProvisionError> {
   const tenantId = env.platform.tenantId() as TenantId
   const name = organizationName.trim() || 'My Organization'
@@ -63,7 +67,7 @@ export async function provisionPlatformAccount(
   if (existingUser.ok) {
     userId = existingUser.value.id
   } else if (existingUser.error.code === PlatformErrorCode.NOT_FOUND) {
-    const createResult = await identityService.createUser({ tenantId, email })
+    const createResult = await identityService.createUser({ tenantId, email, authUserId })
     if (!createResult.ok) return { success: false, error: createResult.error.message }
     userId = createResult.value.id
   } else {
