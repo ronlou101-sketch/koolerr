@@ -29,6 +29,8 @@ export type EngagementRunId = Branded<string, 'EngagementRunId'>
 export type DeliverableId = Branded<string, 'DeliverableId'>
 export type ConsentId = Branded<string, 'ConsentId'>
 export type UsageEventId = Branded<string, 'UsageEventId'>
+export type WorkflowId = Branded<string, 'WorkflowId'>
+export type WorkflowStepId = Branded<string, 'WorkflowStepId'>
 
 // ---------------------------------------------------------------------------
 // Tenant
