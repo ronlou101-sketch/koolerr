@@ -1,8 +1,9 @@
-import type { OrganizationId, TenantId, UserId } from '@/shared/types'
+import type { Organization, OrganizationId, TenantId, UserId } from '@/shared/types'
 import type { User, UserOrganizationMembership } from './types'
 import type { IIdentityRepository, PersistedApiKey, PersistedSession } from './repository'
 
 export class InMemoryIdentityRepository implements IIdentityRepository {
+  private readonly organizations = new Map<OrganizationId, Organization>()
   private readonly users = new Map<UserId, User>()
   /** `${email}::${tenantId}` → UserId */
   private readonly emailIndex = new Map<string, UserId>()
@@ -11,6 +12,15 @@ export class InMemoryIdentityRepository implements IIdentityRepository {
   private readonly apiKeys = new Map<string, PersistedApiKey>()
   /** SHA-256 hex hash → keyId */
   private readonly apiKeyHashIndex = new Map<string, string>()
+
+  async saveOrganization(organization: Organization): Promise<Organization> {
+    this.organizations.set(organization.id, organization)
+    return organization
+  }
+
+  async findOrganizationById(id: OrganizationId): Promise<Organization | null> {
+    return this.organizations.get(id) ?? null
+  }
 
   async saveUser(user: User): Promise<User> {
     this.users.set(user.id, user)

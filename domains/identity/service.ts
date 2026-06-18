@@ -1,6 +1,6 @@
 import { err, ok } from '@/shared/types'
 import { PlatformErrorCode } from '@/shared/types'
-import type { OrganizationId, PlatformResult, TenantId, UserId } from '@/shared/types'
+import type { Organization, OrganizationId, PlatformResult, TenantId, UserId } from '@/shared/types'
 import { logger } from '@/shared/lib/logger'
 import type { ApiKey, Session, User, UserOrganizationMembership, UserRole } from './types'
 import type { IIdentityRepository, PersistedApiKey, PersistedSession } from './repository'
@@ -20,6 +20,11 @@ import { InMemoryIdentityRepository } from './in-memory-repository'
 // ---------------------------------------------------------------------------
 // Input types
 // ---------------------------------------------------------------------------
+
+export interface CreateOrganizationInput {
+  tenantId: TenantId
+  name: string
+}
 
 export interface CreateUserInput {
   tenantId: TenantId
@@ -44,6 +49,10 @@ export interface IssueApiKeyResult {
 // ---------------------------------------------------------------------------
 
 export interface IIdentityService {
+  // Organizations
+  createOrganization(input: CreateOrganizationInput): Promise<PlatformResult<Organization>>
+  findOrganizationById(organizationId: OrganizationId): Promise<PlatformResult<Organization>>
+
   // Users
   createUser(input: CreateUserInput): Promise<PlatformResult<User>>
   getUserById(userId: UserId, tenantId: TenantId): Promise<PlatformResult<User>>
@@ -76,6 +85,36 @@ const SESSION_TTL_MS = 24 * 60 * 60 * 1000
 
 class IdentityService implements IIdentityService {
   constructor(private readonly repo: IIdentityRepository) {}
+
+  async createOrganization(input: CreateOrganizationInput): Promise<PlatformResult<Organization>> {
+    try {
+      const organization: Organization = {
+        id: `org_${crypto.randomUUID()}` as OrganizationId,
+        tenantId: input.tenantId,
+        name: input.name,
+        status: 'active',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+      await this.repo.saveOrganization(organization)
+      logger.info('[IDENTITY] Organization created', { tenantId: input.tenantId })
+      return ok(organization)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async findOrganizationById(
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<Organization>> {
+    try {
+      const org = await this.repo.findOrganizationById(organizationId)
+      if (!org) return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Organization not found' })
+      return ok(org)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
 
   async createUser(input: CreateUserInput): Promise<PlatformResult<User>> {
     try {

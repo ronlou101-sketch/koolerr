@@ -1,5 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { OrganizationId, TenantId, UserId } from '@/shared/types'
+import type {
+  Organization,
+  OrganizationId,
+  OrganizationStatus,
+  TenantId,
+  UserId,
+} from '@/shared/types'
 import type { ApiKey, Session, User, UserOrganizationMembership, UserRole } from './types'
 import type { IIdentityRepository, PersistedApiKey, PersistedSession } from './repository'
 
@@ -17,6 +23,15 @@ import type { IIdentityRepository, PersistedApiKey, PersistedSession } from './r
 // ---------------------------------------------------------------------------
 // Database row types — mirror the schema in migration 002
 // ---------------------------------------------------------------------------
+
+interface OrganizationRow {
+  id: string
+  tenant_id: string
+  name: string
+  status: string
+  created_at: string
+  updated_at: string
+}
 
 interface UserRow {
   id: string
@@ -56,6 +71,28 @@ interface ApiKeyRow {
 // ---------------------------------------------------------------------------
 // Row ↔ entity mappers
 // ---------------------------------------------------------------------------
+
+function mapOrganization(row: OrganizationRow): Organization {
+  return {
+    id: row.id as OrganizationId,
+    tenantId: row.tenant_id as TenantId,
+    name: row.name,
+    status: row.status as OrganizationStatus,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+  }
+}
+
+function organizationToRow(org: Organization): OrganizationRow {
+  return {
+    id: org.id,
+    tenant_id: org.tenantId,
+    name: org.name,
+    status: org.status,
+    created_at: org.createdAt.toISOString(),
+    updated_at: org.updatedAt.toISOString(),
+  }
+}
 
 function mapUser(row: UserRow): User {
   return {
@@ -149,6 +186,27 @@ function apiKeyToRow(key: PersistedApiKey): ApiKeyRow {
 
 export class SupabaseIdentityRepository implements IIdentityRepository {
   constructor(private readonly client: SupabaseClient) {}
+
+  async saveOrganization(organization: Organization): Promise<Organization> {
+    const { data, error } = await this.client
+      .from('organizations')
+      .upsert(organizationToRow(organization))
+      .select()
+      .single()
+    if (error || !data)
+      throw new Error(`[IDENTITY_REPO] saveOrganization failed: ${error?.message}`)
+    return mapOrganization(data as OrganizationRow)
+  }
+
+  async findOrganizationById(id: OrganizationId): Promise<Organization | null> {
+    const { data, error } = await this.client
+      .from('organizations')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw new Error(`[IDENTITY_REPO] findOrganizationById failed: ${error.message}`)
+    return data ? mapOrganization(data as OrganizationRow) : null
+  }
 
   async saveUser(user: User): Promise<User> {
     const { data, error } = await this.client

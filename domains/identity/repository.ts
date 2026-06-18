@@ -1,4 +1,4 @@
-import type { OrganizationId, TenantId, UserId } from '@/shared/types'
+import type { Organization, OrganizationId, TenantId, UserId } from '@/shared/types'
 import type { ApiKey, Session, User, UserOrganizationMembership } from './types'
 
 /**
@@ -62,6 +62,10 @@ export async function hashApiKey(plaintext: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 export interface IIdentityRepository {
+  // Organizations
+  saveOrganization(organization: Organization): Promise<Organization>
+  findOrganizationById(id: OrganizationId): Promise<Organization | null>
+
   // Users
   saveUser(user: User): Promise<User>
   findUserById(id: UserId): Promise<User | null>
