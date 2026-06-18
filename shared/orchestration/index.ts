@@ -11,4 +11,7 @@
  */
 
 export * from './types'
-export { orchestrationEngine } from './engine'
+export { orchestrationEngine, _configureOrchestrationRepository } from './engine'
+export type { IOrchestrationRepository } from './repository'
+export { InMemoryOrchestrationRepository } from './in-memory-repository'
+export { SupabaseOrchestrationRepository } from './supabase-repository'

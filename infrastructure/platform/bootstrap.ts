@@ -8,8 +8,19 @@ import { _configureDeliverablesRepository } from '@/domains/deliverables'
 import { _configureIdentityRepository } from '@/domains/identity'
 import { _configureWorkforceEngineRepository } from '@/domains/workforce-engine'
 import { _configureConsentRepository } from '@/shared/consent'
+import { _configureAuditLogger, SupabaseAuditLogger } from '@/shared/audit'
+import {
+  _configureTrustRepository,
+  _loadTrustRulesFromRepository,
+  SupabaseTrustRuleRepository,
+} from '@/shared/trust'
+import {
+  _configureOrchestrationRepository,
+  SupabaseOrchestrationRepository,
+} from '@/shared/orchestration'
 import { createServerSupabaseClient } from '@/shared/lib/supabase-server'
-import { _registerUsageSink, modelGateway } from '@/shared/model-gateway'
+import { _registerProvider, _registerUsageSink, modelGateway } from '@/shared/model-gateway'
+import { AnthropicAdapter } from '@/shared/model-gateway/anthropic-adapter'
 import { logger } from '@/shared/lib/logger'
 
 import { SupabaseBillingRepository } from '@/domains/billing/supabase-repository'
@@ -65,7 +76,7 @@ export interface PlatformBootstrapResult {
   readonly repositoriesConfigured: boolean
 }
 
-export function bootstrapPlatform(): PlatformBootstrapResult {
+export async function bootstrapPlatform(): Promise<PlatformBootstrapResult> {
   if (bootstrapped) {
     logger.warn(
       '[PLATFORM] bootstrapPlatform() called more than once — skipping re-initialization.'
@@ -117,6 +128,30 @@ export function bootstrapPlatform(): PlatformBootstrapResult {
   _configureConsentRepository(new SupabaseConsentRepository(supabase, getTenantId))
 
   // ---------------------------------------------------------------------------
+  // 3b. Wire the Supabase Audit Logger.
+  //     Replaces the ConsoleAuditLogger stub. All audit events from this point
+  //     forward are persisted to the audit_events table.
+  // ---------------------------------------------------------------------------
+  _configureAuditLogger(new SupabaseAuditLogger(supabase))
+
+  // ---------------------------------------------------------------------------
+  // 3b-2. Wire the Orchestration Engine repository.
+  //       Workflow state is now durable across server restarts. The engine
+  //       uses write-through caching: in-memory for active execution speed,
+  //       Supabase as recovery source after process restart.
+  // ---------------------------------------------------------------------------
+  _configureOrchestrationRepository(new SupabaseOrchestrationRepository(supabase))
+
+  // ---------------------------------------------------------------------------
+  // 3c. Wire the Trust Rule repository and load all persisted rules into memory.
+  //     Rules registered at provisioning time are persisted to trust_rules.
+  //     Reloading here means rules survive server restarts without any per-run
+  //     re-registration workaround.
+  // ---------------------------------------------------------------------------
+  _configureTrustRepository(new SupabaseTrustRuleRepository(supabase))
+  await _loadTrustRulesFromRepository()
+
+  // ---------------------------------------------------------------------------
   // 4. Wire the billing usage sink into the Model Gateway.
   //    Called AFTER _configureBillingRepository() so that billingService
   //    (a live ESM export) already refers to the Supabase-backed instance.
@@ -125,6 +160,21 @@ export function bootstrapPlatform(): PlatformBootstrapResult {
   // ---------------------------------------------------------------------------
   const usageSink = createBillingUsageSink(billingService)
   _registerUsageSink(usageSink)
+
+  // ---------------------------------------------------------------------------
+  // 5. Register the Anthropic provider adapter.
+  //    Only registered when ANTHROPIC_API_KEY is present so that the server
+  //    starts cleanly in environments where the key is not yet configured.
+  // ---------------------------------------------------------------------------
+  if (process.env.ANTHROPIC_API_KEY) {
+    _registerProvider(new AnthropicAdapter(), true)
+    logger.info('[PLATFORM] Anthropic provider adapter registered')
+  } else {
+    logger.warn(
+      '[PLATFORM] ANTHROPIC_API_KEY not set — Model Gateway has no provider registered. ' +
+        'Set ANTHROPIC_API_KEY before triggering Engagement Runs.'
+    )
+  }
 
   bootstrapped = true
 

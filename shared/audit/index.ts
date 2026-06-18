@@ -8,4 +8,5 @@
  */
 
 export * from './types'
-export { auditLogger } from './audit-logger'
+export { auditLogger, _configureAuditLogger } from './audit-logger'
+export { SupabaseAuditLogger } from './supabase-logger'

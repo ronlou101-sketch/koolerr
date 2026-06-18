@@ -27,6 +27,8 @@ import { PlatformErrorCode } from '@/shared/types'
 import { env } from '@/shared/config/env'
 import { identityService } from '@/domains/identity'
 import { businessBrainService } from '@/domains/business-brain'
+import { billingService, PLAN_ENTITLEMENTS, PLAN_IDS } from '@/domains/billing'
+import { provisionContentWorkforce } from '@/infrastructure/content-workforce'
 
 export interface ProvisionResult {
   success: true
@@ -101,6 +103,41 @@ export async function provisionPlatformAccount(
     role: 'owner',
   })
   if (!memberResult.ok) return { success: false, error: memberResult.error.message }
+
+  // ------------------------------------------------------------------
+  // Step 6: Provision the Content Workforce (employees + trust rules
+  //         + consent grants on behalf of the new owner)
+  // ------------------------------------------------------------------
+  await provisionContentWorkforce(organization.id, tenantId, userId)
+
+  // ------------------------------------------------------------------
+  // Step 7: Create subscription + set default entitlements (free tier)
+  //         Every new Organization starts on the free plan.
+  // ------------------------------------------------------------------
+  const subResult = await billingService.createSubscription({
+    tenantId,
+    organizationId: organization.id,
+    planId: PLAN_IDS.free,
+  })
+  if (!subResult.ok) {
+    // Non-fatal: billing failure should not block account creation.
+    // The platform continues — the subscription can be corrected later.
+    const { logger } = await import('@/shared/lib/logger')
+    logger.warn('[PROVISION] Failed to create subscription — account provisioned without billing', {
+      organizationId: organization.id,
+      error: subResult.error.message,
+    })
+  } else {
+    // Set entitlement limits for the free plan.
+    const freeLimits = PLAN_ENTITLEMENTS[PLAN_IDS.free]
+    for (const [feature, limit] of Object.entries(freeLimits)) {
+      await billingService.setEntitlement({
+        organizationId: organization.id,
+        feature,
+        limit,
+      })
+    }
+  }
 
   return { success: true, alreadyProvisioned: false }
 }

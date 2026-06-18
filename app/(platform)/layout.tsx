@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { signOut } from './layout-actions'
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
@@ -5,7 +6,25 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <span className="text-sm font-semibold text-foreground">Koolerr</span>
+          <div className="flex items-center gap-6">
+            <Link href="/dashboard" className="text-sm font-semibold text-foreground">
+              Koolerr
+            </Link>
+            <nav className="flex items-center gap-4">
+              <Link href="/runs" className="text-sm text-muted-foreground hover:text-foreground">
+                Runs
+              </Link>
+              <Link href="/brain" className="text-sm text-muted-foreground hover:text-foreground">
+                Brain
+              </Link>
+              <Link href="/audit" className="text-sm text-muted-foreground hover:text-foreground">
+                Audit
+              </Link>
+              <Link href="/usage" className="text-sm text-muted-foreground hover:text-foreground">
+                Usage
+              </Link>
+            </nav>
+          </div>
           <form action={signOut}>
             <button type="submit" className="text-sm text-muted-foreground hover:text-foreground">
               Sign out

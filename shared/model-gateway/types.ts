@@ -70,6 +70,8 @@ export interface GatewayRequest {
    */
   action: string
   prompt: string
+  /** Optional system-level context injected before the user prompt. */
+  systemContext?: string
   /** Preferred provider. Gateway selects default if omitted. */
   provider?: ModelProvider
   model?: string

@@ -1,10 +1,12 @@
 import { auditLogger } from '@/shared/audit'
 import { consentLedger } from '@/shared/consent'
+import { logger } from '@/shared/lib/logger'
 import type { DigitalEmployeeId, TrustRule } from '@/shared/types'
+import type { ITrustRuleRepository } from './repository'
 import type { ITrustEngine, PermissionCheck, PermissionResult } from './types'
 
 /**
- * Trust Engine — stub implementation.
+ * Trust Engine
  *
  * Evaluates PermissionChecks against registered TrustRules.
  * If no matching rule is found, the default is 'requires_approval' —
@@ -20,8 +22,10 @@ import type { ITrustEngine, PermissionCheck, PermissionResult } from './types'
  * The engine always audits its decision. Whether the action is permitted,
  * denied, or requires approval, the Trust Engine's reasoning is on record.
  *
- * Rules are stored in memory in this stub. The production implementation
- * will load rules from Supabase scoped by Organization and Digital Employee.
+ * Rules are stored in an in-memory Map for O(1) lookups at check time.
+ * An optional ITrustRuleRepository provides durable storage so rules
+ * survive server restarts — bootstrap calls _loadRulesFromRepository()
+ * after wiring the Supabase repository via _configureTrustRepository().
  *
  * See FOUNDATION_001_ARCHITECTURE.md §2.10 — Trust Engine.
  * See docs/adr/ADR-002-trust-engine-consent-integration.md.
@@ -29,10 +33,62 @@ import type { ITrustEngine, PermissionCheck, PermissionResult } from './types'
 class TrustEngine implements ITrustEngine {
   /** Rules indexed by DigitalEmployeeId for O(1) lookup. */
   private readonly rules = new Map<DigitalEmployeeId, TrustRule[]>()
+  private repo: ITrustRuleRepository | null = null
+
+  /**
+   * Wire in the Supabase repository. Called once during bootstrap.
+   * Must be called before loadRulesFromRepository().
+   */
+  _configureRepository(repo: ITrustRuleRepository): void {
+    this.repo = repo
+  }
+
+  /**
+   * Load all persisted rules from the repository into memory.
+   * Idempotent — skips any rule whose (digitalEmployeeId, action) pair
+   * is already in memory so repeated calls are safe.
+   * Called during bootstrap after _configureRepository().
+   */
+  async _loadRulesFromRepository(): Promise<void> {
+    if (!this.repo) return
+
+    let allRules: TrustRule[]
+    try {
+      allRules = await this.repo.listAllRules()
+    } catch (err) {
+      logger.warn('[TRUST_ENGINE] Failed to load rules from repository — using in-memory only', {
+        error: String(err),
+      })
+      return
+    }
+
+    let loaded = 0
+    for (const rule of allRules) {
+      const existing = this.rules.get(rule.digitalEmployeeId) ?? []
+      if (!existing.some((r) => r.action === rule.action)) {
+        this.rules.set(rule.digitalEmployeeId, [...existing, rule])
+        loaded++
+      }
+    }
+
+    logger.info(`[TRUST_ENGINE] Loaded ${loaded} rules from repository (${allRules.length} total)`)
+  }
 
   registerRule(rule: TrustRule): void {
     const existing = this.rules.get(rule.digitalEmployeeId) ?? []
-    this.rules.set(rule.digitalEmployeeId, [...existing, rule])
+    // Deduplicate in memory — same (digitalEmployeeId, action) pair updates the rule.
+    const updated = existing.filter((r) => r.action !== rule.action)
+    this.rules.set(rule.digitalEmployeeId, [...updated, rule])
+
+    // Persist asynchronously — fire-and-forget so registerRule stays synchronous.
+    if (this.repo) {
+      this.repo.saveRule(rule).catch((err) =>
+        logger.warn('[TRUST_ENGINE] Failed to persist rule', {
+          action: rule.action,
+          error: String(err),
+        })
+      )
+    }
   }
 
   rulesFor(digitalEmployeeId: DigitalEmployeeId): TrustRule[] {
@@ -109,4 +165,16 @@ class TrustEngine implements ITrustEngine {
   }
 }
 
-export const trustEngine: ITrustEngine = new TrustEngine()
+const _engine = new TrustEngine()
+
+export const trustEngine: ITrustEngine = _engine
+
+/** Wire the Supabase repository. Must be called before _loadTrustRulesFromRepository(). */
+export function _configureTrustRepository(repo: ITrustRuleRepository): void {
+  _engine._configureRepository(repo)
+}
+
+/** Load all persisted rules into memory. Call after _configureTrustRepository(). */
+export async function _loadTrustRulesFromRepository(): Promise<void> {
+  return _engine._loadRulesFromRepository()
+}

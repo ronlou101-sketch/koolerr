@@ -162,6 +162,7 @@ class ModelGateway implements IModelGateway {
       prompt: request.prompt,
       model: request.model,
       maxTokens: request.maxTokens,
+      systemContext: request.systemContext,
     })
 
     const gatewayResponse: GatewayResponse = {

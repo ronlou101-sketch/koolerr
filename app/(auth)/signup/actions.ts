@@ -14,7 +14,7 @@ import { provisionPlatformAccount } from '@/infrastructure/auth'
  */
 export async function provision(
   organizationName: string
-): Promise<{ success: true } | { success: false; error: string }> {
+): Promise<{ success: true; alreadyProvisioned: boolean } | { success: false; error: string }> {
   const supabase = await createSessionServerClient()
   const {
     data: { user: authUser },

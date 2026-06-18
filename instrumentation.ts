@@ -18,7 +18,7 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { bootstrapPlatform } = await import('@/infrastructure/platform')
     try {
-      bootstrapPlatform()
+      await bootstrapPlatform()
     } catch (e) {
       // In environments where Supabase env vars are not set (e.g. CI build),
       // bootstrap is skipped and services fall back to in-memory repositories.

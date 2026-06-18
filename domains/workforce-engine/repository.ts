@@ -37,4 +37,5 @@ export interface IWorkforceEngineRepository {
   // Engagement Runs
   saveEngagementRun(run: EngagementRun, tenantId: TenantId): Promise<EngagementRun>
   findEngagementRunById(id: EngagementRunId): Promise<EngagementRun | null>
+  listEngagementRunsByOrganization(organizationId: OrganizationId): Promise<EngagementRun[]>
 }

@@ -60,4 +60,12 @@ export class InMemoryWorkforceEngineRepository implements IWorkforceEngineReposi
   async findEngagementRunById(id: EngagementRunId): Promise<EngagementRun | null> {
     return this.engagementRuns.get(id) ?? null
   }
+
+  async listEngagementRunsByOrganization(organizationId: OrganizationId): Promise<EngagementRun[]> {
+    const results: EngagementRun[] = []
+    for (const r of this.engagementRuns.values()) {
+      if (r.organizationId === organizationId) results.push(r)
+    }
+    return results
+  }
 }

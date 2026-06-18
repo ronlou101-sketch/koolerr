@@ -8,6 +8,7 @@ import type {
   WorkflowStep,
   WorkflowStepDefinition,
 } from './types'
+import type { IOrchestrationRepository } from './repository'
 
 /**
  * Orchestration Engine — stub implementation.
@@ -26,6 +27,29 @@ import type {
  */
 class OrchestrationEngine implements IOrchestrationEngine {
   private readonly workflows = new Map<WorkflowId, Workflow>()
+  private repo: IOrchestrationRepository | null = null
+
+  _configureRepository(repo: IOrchestrationRepository): void {
+    this.repo = repo
+  }
+
+  /**
+   * Write-through persistence: persist after every state mutation.
+   * Non-fatal — a repo failure logs a warning but does not crash the engine.
+   * The in-memory state remains the source of truth during active execution;
+   * the DB is the recovery source after process restart.
+   */
+  private async saveToRepo(workflow: Workflow): Promise<void> {
+    if (!this.repo) return
+    try {
+      await this.repo.saveWorkflow(workflow)
+    } catch (err) {
+      logger.warn('[ORCHESTRATION] Failed to persist workflow state — in-memory state is current', {
+        workflowId: workflow.id,
+        error: String(err),
+      })
+    }
+  }
 
   async createWorkflow(
     context: {
@@ -54,6 +78,7 @@ class OrchestrationEngine implements IOrchestrationEngine {
     }
 
     this.workflows.set(workflow.id, workflow)
+    await this.saveToRepo(workflow)
 
     logger.info('[ORCHESTRATION] Workflow created', {
       tenantId: context.tenantId,
@@ -68,6 +93,7 @@ class OrchestrationEngine implements IOrchestrationEngine {
     const workflow = this.getWorkflowOrThrow(workflowId)
 
     this.mutate(workflow, { status: 'running' })
+    await this.saveToRepo(workflow)
 
     await auditLogger.log({
       tenantId: workflow.tenantId,
@@ -108,6 +134,7 @@ class OrchestrationEngine implements IOrchestrationEngine {
 
     if (report.outcome === 'failed') {
       this.mutate(workflow, { status: 'failed', completedAt: new Date() })
+      await this.saveToRepo(workflow)
 
       await auditLogger.log({
         tenantId: workflow.tenantId,
@@ -126,6 +153,7 @@ class OrchestrationEngine implements IOrchestrationEngine {
 
     if (allDone) {
       this.mutate(workflow, { status: 'completed', completedAt: new Date() })
+      await this.saveToRepo(workflow)
 
       await auditLogger.log({
         tenantId: workflow.tenantId,
@@ -138,6 +166,7 @@ class OrchestrationEngine implements IOrchestrationEngine {
         metadata: { workflowId: workflow.id },
       })
     } else {
+      await this.saveToRepo(workflow)
       const nextReady = this.readySteps(workflow)
       logger.info(`[ORCHESTRATION] Step completed — ${nextReady.length} step(s) now ready`, {
         tenantId: workflow.tenantId,
@@ -149,6 +178,7 @@ class OrchestrationEngine implements IOrchestrationEngine {
   async cancelWorkflow(workflowId: WorkflowId): Promise<void> {
     const workflow = this.getWorkflowOrThrow(workflowId)
     this.mutate(workflow, { status: 'cancelled', completedAt: new Date() })
+    await this.saveToRepo(workflow)
 
     await auditLogger.log({
       tenantId: workflow.tenantId,
@@ -163,7 +193,21 @@ class OrchestrationEngine implements IOrchestrationEngine {
   }
 
   async getWorkflow(workflowId: WorkflowId): Promise<Workflow> {
-    return this.getWorkflowOrThrow(workflowId)
+    // Fast path: workflow is active in this process's memory.
+    const cached = this.workflows.get(workflowId)
+    if (cached) return cached
+
+    // Recovery path: workflow was created by a previous process instance.
+    // Load from the persistent store and cache it locally.
+    if (this.repo) {
+      const persisted = await this.repo.findWorkflow(workflowId)
+      if (persisted) {
+        this.workflows.set(workflowId, persisted)
+        return persisted
+      }
+    }
+
+    throw new Error(`[ORCHESTRATION] Workflow not found: "${workflowId}"`)
   }
 
   // ---------------------------------------------------------------------------
@@ -225,4 +269,11 @@ class OrchestrationEngine implements IOrchestrationEngine {
   }
 }
 
-export const orchestrationEngine: IOrchestrationEngine = new OrchestrationEngine()
+const _engine = new OrchestrationEngine()
+
+export const orchestrationEngine: IOrchestrationEngine = _engine
+
+/** Wire the Supabase repository. Must be called at bootstrap before the first workflow is created. */
+export function _configureOrchestrationRepository(repo: IOrchestrationRepository): void {
+  _engine._configureRepository(repo)
+}

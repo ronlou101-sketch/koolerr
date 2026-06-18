@@ -94,7 +94,7 @@ export interface IBillingService {
 // Service implementation
 // ---------------------------------------------------------------------------
 
-class BillingService implements IBillingService {
+export class BillingService implements IBillingService {
   constructor(private readonly repo: IBillingRepository) {}
 
   async createSubscription(input: CreateSubscriptionInput): Promise<PlatformResult<Subscription>> {

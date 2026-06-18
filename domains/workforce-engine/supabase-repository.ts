@@ -238,4 +238,15 @@ export class SupabaseWorkforceEngineRepository implements IWorkforceEngineReposi
     if (error) throw new Error(`[WE_REPO] findEngagementRunById failed: ${error.message}`)
     return data ? mapRun(data as EngagementRunRow) : null
   }
+
+  async listEngagementRunsByOrganization(organizationId: OrganizationId): Promise<EngagementRun[]> {
+    const { data, error } = await this.client
+      .from('engagement_runs')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false })
+    if (error)
+      throw new Error(`[WE_REPO] listEngagementRunsByOrganization failed: ${error.message}`)
+    return (data ?? []).map((r) => mapRun(r as EngagementRunRow))
+  }
 }

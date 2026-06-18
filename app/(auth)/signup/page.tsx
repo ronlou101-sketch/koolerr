@@ -40,7 +40,7 @@ export default function SignupPage() {
     }
 
     // If Supabase returned a session immediately (email confirmation disabled),
-    // provision the platform account now and redirect to the dashboard.
+    // provision the platform account now and redirect.
     if (data.session) {
       const result = await provision(organizationName)
       if (!result.success) {
@@ -48,7 +48,8 @@ export default function SignupPage() {
         setLoading(false)
         return
       }
-      router.push('/dashboard')
+      // Fresh accounts go through onboarding; returning users go straight to the dashboard.
+      router.push(result.alreadyProvisioned ? '/dashboard' : '/onboarding')
       router.refresh()
       return
     }

@@ -84,6 +84,7 @@ export interface IWorkforceEngineService {
     engagementRunId: EngagementRunId,
     organizationId: OrganizationId
   ): Promise<PlatformResult<EngagementRun>>
+  listEngagementRuns(organizationId: OrganizationId): Promise<PlatformResult<EngagementRun[]>>
   updateEngagementRunStatus(
     update: EngagementRunStatusUpdate
   ): Promise<PlatformResult<EngagementRun>>
@@ -269,6 +270,17 @@ class WorkforceEngineService implements IWorkforceEngineService {
         })
       }
       return ok(run)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listEngagementRuns(
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<EngagementRun[]>> {
+    try {
+      const runs = await this.repo.listEngagementRunsByOrganization(organizationId)
+      return ok(runs)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }

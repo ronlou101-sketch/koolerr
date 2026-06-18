@@ -2,18 +2,14 @@ import { logger } from '@/shared/lib/logger'
 import type { AuditEvent, AuditEventInput, AuditFilter, IAuditLogger } from './types'
 
 /**
- * Console Audit Logger — development / pre-database stub.
+ * Console Audit Logger — development fallback.
  *
- * Writes structured audit events to the platform logger.
- * Query is not supported until the Supabase-backed implementation
- * is added in Phase 1 of the development roadmap.
+ * Active before bootstrap calls _configureAuditLogger(). Writes structured
+ * events to the platform logger so the audit contract is visible during
+ * local development without Supabase. The Supabase-backed implementation
+ * is wired in at bootstrap and takes over from that point forward.
  *
- * This implementation satisfies the IAuditLogger interface so that
- * all callers are written against the permanent contract. Replacing
- * this with the Supabase implementation requires no changes at call sites.
- *
- * See FOUNDATION_003_DEVELOPMENT_ROADMAP.md — Phase 1 exit criteria:
- * all AI actions must be logged, attributed, and auditable.
+ * See FOUNDATION_003_DEVELOPMENT_ROADMAP.md — Phase 1 exit criteria.
  */
 class ConsoleAuditLogger implements IAuditLogger {
   async log(input: AuditEventInput): Promise<void> {
@@ -36,13 +32,25 @@ class ConsoleAuditLogger implements IAuditLogger {
   }
 
   async query(_filter: AuditFilter): Promise<AuditEvent[]> {
-    logger.warn(
-      '[AUDIT] query() is not available on the console stub — returns empty. ' +
-        'Connect Supabase to enable audit queries.',
-      { tenantId: _filter.tenantId }
-    )
+    logger.warn('[AUDIT] query() not available on console fallback — connect Supabase.', {
+      tenantId: _filter.tenantId,
+    })
     return []
   }
 }
 
-export const auditLogger: IAuditLogger = new ConsoleAuditLogger()
+let _impl: IAuditLogger = new ConsoleAuditLogger()
+
+/**
+ * Replace the active audit logger implementation.
+ * Called once during bootstrap to swap in the Supabase-backed logger.
+ * All in-flight and future calls automatically use the new implementation.
+ */
+export function _configureAuditLogger(impl: IAuditLogger): void {
+  _impl = impl
+}
+
+export const auditLogger: IAuditLogger = {
+  log: (input) => _impl.log(input),
+  query: (filter) => _impl.query(filter),
+}
