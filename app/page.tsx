@@ -1,7 +1,15 @@
-export default function Home() {
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-2xl font-semibold">Koolerr</h1>
-    </main>
-  )
+import { redirect } from 'next/navigation'
+import { createSessionServerClient } from '@/shared/lib/supabase-session'
+
+export default async function Home() {
+  const supabase = await createSessionServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    redirect('/dashboard')
+  } else {
+    redirect('/login')
+  }
 }
