@@ -38,6 +38,12 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
               <Link href="/usage" className="text-sm text-muted-foreground hover:text-foreground">
                 Usage
               </Link>
+              <Link
+                href="/analytics"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Analytics
+              </Link>
             </nav>
           </div>
           <form action={signOut}>

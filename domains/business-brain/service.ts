@@ -129,6 +129,13 @@ export interface IBusinessBrainService {
     organizationId: OrganizationId,
     limit?: number
   ): Promise<PlatformResult<BusinessMemory[]>>
+
+  /**
+   * Return every memory belonging to an organization.
+   * Used by Analytics (Phase 2) and any other cross-cutting read that needs
+   * the full corpus rather than a filtered page.
+   */
+  listAllMemories(organizationId: OrganizationId): Promise<PlatformResult<BusinessMemory[]>>
 }
 
 // ---------------------------------------------------------------------------
@@ -405,6 +412,14 @@ export class BusinessBrainService implements IBusinessBrainService {
         .map(({ memory }) => memory)
 
       return ok(related)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+  async listAllMemories(organizationId: OrganizationId): Promise<PlatformResult<BusinessMemory[]>> {
+    try {
+      const memories = await this.repo.listAllMemories(organizationId)
+      return ok(memories)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
