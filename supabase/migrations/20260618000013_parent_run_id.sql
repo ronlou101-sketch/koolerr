@@ -4,7 +4,7 @@
 -- See docs/adr/ADR-019-cross-workforce-engagement-runs.md
 
 ALTER TABLE engagement_runs
-  ADD COLUMN IF NOT EXISTS parent_run_id uuid REFERENCES engagement_runs(id);
+  ADD COLUMN IF NOT EXISTS parent_run_id text REFERENCES engagement_runs(id);
 
 CREATE INDEX IF NOT EXISTS idx_engagement_runs_parent_run_id
   ON engagement_runs(parent_run_id)
