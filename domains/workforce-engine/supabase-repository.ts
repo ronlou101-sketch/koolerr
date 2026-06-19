@@ -49,6 +49,7 @@ interface EngagementRunRow {
   organization_id: string
   workforce_id: string
   tenant_id: string
+  parent_run_id: string | null
   objective: string
   status: string
   participant_ids: string[]
@@ -126,6 +127,7 @@ function mapRun(row: EngagementRunRow): EngagementRun {
     id: row.id as EngagementRunId,
     organizationId: row.organization_id as OrganizationId,
     workforceId: row.workforce_id as WorkforceId,
+    parentRunId: row.parent_run_id ? (row.parent_run_id as EngagementRunId) : undefined,
     objective: row.objective,
     status: row.status as EngagementRunStatus,
     participantIds: row.participant_ids as DigitalEmployeeId[],
@@ -143,6 +145,7 @@ function runToRow(run: EngagementRun, tenantId: TenantId): EngagementRunRow {
     organization_id: run.organizationId,
     workforce_id: run.workforceId,
     tenant_id: tenantId,
+    parent_run_id: run.parentRunId ?? null,
     objective: run.objective,
     status: run.status,
     participant_ids: run.participantIds,

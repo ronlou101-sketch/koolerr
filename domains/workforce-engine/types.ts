@@ -21,6 +21,8 @@ export interface EngagementRunTrigger {
   objective: string
   participantIds?: DigitalEmployeeId[]
   context?: Record<string, unknown>
+  /** Links this run as a child of a coordinating parent run (e.g. CTO Workforce). */
+  parentRunId?: EngagementRunId
 }
 
 export interface EngagementRunStatusUpdate {

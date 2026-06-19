@@ -244,6 +244,7 @@ export class WorkforceEngineService implements IWorkforceEngineService {
         id: `run_${crypto.randomUUID()}` as EngagementRunId,
         organizationId: trigger.organizationId,
         workforceId: trigger.workforceId,
+        parentRunId: trigger.parentRunId,
         objective: trigger.objective,
         status: 'pending',
         participantIds: trigger.participantIds ?? [],

@@ -43,6 +43,7 @@ export const CTO_WORKFORCE_ACTIONS = {
   review: 'cto:review_code_and_architecture',
   milestone: 'cto:generate_milestone_report',
   blockers: 'cto:identify_launch_blockers',
+  coordinate: 'cto:generate_coordination_brief',
 } as const
 
 export const CTO_BUSINESS_FUNCTION = 'Engineering Intelligence'

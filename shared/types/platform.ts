@@ -181,6 +181,8 @@ export interface EngagementRun {
   id: EngagementRunId
   organizationId: OrganizationId
   workforceId: WorkforceId
+  /** Set on child runs triggered by a coordinating parent (e.g. CTO Workforce). */
+  parentRunId?: EngagementRunId
   objective: string
   status: EngagementRunStatus
   participantIds: DigitalEmployeeId[]
@@ -212,6 +214,8 @@ export type DeliverableType =
   | 'code_review'
   | 'milestone_report'
   | 'blocker_report'
+  | 'coordination_brief'
+  | 'github_issue_draft'
 
 export type DeliverableStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published'
 

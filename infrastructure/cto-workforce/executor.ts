@@ -11,6 +11,7 @@ import type { PlatformContext } from '@/shared/context'
 import type { WorkflowStepId } from '@/shared/types'
 import type { Workflow } from '@/shared/orchestration/types'
 import { CTO_WORKFORCE_ACTIONS, CTO_WORKFORCE_ROLES } from './provision'
+import { createGitHubIssue } from '@/shared/integrations/github'
 
 /**
  * CTO Engagement Run Executor
@@ -47,6 +48,20 @@ function detectRunType(objective: string): {
   stepName: string
 } {
   const lower = objective.toLowerCase()
+  if (
+    lower.includes('coordinate') ||
+    lower.includes('coordination') ||
+    lower.includes('orchestrate') ||
+    lower.includes('brief') ||
+    lower.includes('across platforms') ||
+    lower.includes('github issue')
+  ) {
+    return {
+      action: CTO_WORKFORCE_ACTIONS.coordinate,
+      deliverableType: 'coordination_brief',
+      stepName: 'Platform Coordination Brief',
+    }
+  }
   if (
     lower.includes('review') ||
     lower.includes('audit') ||
@@ -149,7 +164,13 @@ When generating MILESTONE REPORTS:
 When identifying LAUNCH BLOCKERS:
 - Rank by severity: CRITICAL / MAJOR / MINOR
 - For each blocker: what it is, why it blocks V1, proposed resolution, estimated effort
-- Conclude with a critical path recommendation`
+- Conclude with a critical path recommendation
+
+When generating COORDINATION BRIEFS:
+- Structure output with one section per platform: ## Claude Code, ## Lovable, ## Supabase, ## GitHub, ## HeyGen, ## ElevenLabs (only include platforms relevant to this objective)
+- For each platform: specific task description, exact inputs/outputs, estimated effort
+- The ## GitHub section will be automatically created as a real GitHub issue — write it as a complete, self-contained issue body
+- End with a CRITICAL PATH recommendation: which platform must move first and why`
 }
 
 function buildPrompt(action: string, objective: string, contextSummary: string): string {
@@ -158,11 +179,17 @@ function buildPrompt(action: string, objective: string, contextSummary: string):
     [CTO_WORKFORCE_ACTIONS.review]: `Perform a thorough code and architecture review for:\n\n"${objective}"\n\n${contextSummary}\n\nCheck Foundation compliance, ADR adherence, security, test coverage, and technical debt. Provide a clear verdict.`,
     [CTO_WORKFORCE_ACTIONS.milestone]: `Generate a milestone status report for:\n\n"${objective}"\n\n${contextSummary}\n\nState completion status for every Phase 3 milestone, compute a V1 Readiness Score, and identify the single highest-priority next action.`,
     [CTO_WORKFORCE_ACTIONS.blockers]: `Identify all launch blockers relevant to:\n\n"${objective}"\n\n${contextSummary}\n\nRank by severity (CRITICAL / MAJOR / MINOR). For each: what it is, why it blocks V1, proposed resolution, estimated effort. End with a critical path recommendation.`,
+    [CTO_WORKFORCE_ACTIONS.coordinate]: `Generate a platform coordination brief for the following objective:\n\n"${objective}"\n\n${contextSummary}\n\nStructure output with one ## section per relevant platform. The ## GitHub section will become a real GitHub issue — write a complete, self-contained issue body. End with the CRITICAL PATH recommendation.`,
   }
   return (
     prompts[action] ??
     `Complete the following CTO Agent task:\n\n"${objective}"\n\n${contextSummary}`
   )
+}
+
+function extractGitHubSection(output: string): string | null {
+  const match = output.match(/##\s+GitHub\s*\n([\s\S]*?)(?=\n##\s|\s*$)/)
+  return match ? match[1].trim() : null
 }
 
 export async function executeCTOEngagementRun(
@@ -357,6 +384,33 @@ export async function executeCTOEngagementRun(
   const atlasOutput =
     (currentWorkflow.steps.find((s) => s.id === ATLAS_STEP)?.output?.content as string) ?? ''
 
+  // -------------------------------------------------------------------------
+  // Step 7a: For coordination briefs, extract the GitHub section and create
+  // a real GitHub issue. Non-fatal — the deliverable is stored regardless.
+  // -------------------------------------------------------------------------
+  let githubIssueUrl: string | undefined
+  let githubIssueNumber: number | undefined
+
+  if (deliverableType === 'coordination_brief' && atlasOutput) {
+    const githubSection = extractGitHubSection(atlasOutput)
+    if (githubSection) {
+      const issueResult = await createGitHubIssue({
+        title: `[Atlas] ${objective.slice(0, 80)}`,
+        body: githubSection,
+        labels: ['atlas', 'cto-agent', 'coordination'],
+      })
+      if (issueResult) {
+        githubIssueUrl = issueResult.url
+        githubIssueNumber = issueResult.number
+        logger.info('[CTO_EXECUTOR] GitHub issue created from coordination brief', {
+          url: githubIssueUrl,
+          number: githubIssueNumber,
+          organizationId,
+        })
+      }
+    }
+  }
+
   const deliverableResult = await deliverablesService.storeDeliverable({
     tenantId,
     organizationId,
@@ -368,6 +422,7 @@ export async function executeCTOEngagementRun(
       output: atlasOutput,
       action,
       contextMemoriesLoaded: ctoMemories.length,
+      ...(githubIssueUrl && { githubIssueUrl, githubIssueNumber }),
     },
     attributedTo: [atlas.id],
   })
