@@ -44,3 +44,32 @@ export interface OrganizationAnalyticsReport {
   deliverables: DeliverableAnalytics
   businessBrain: BusinessBrainAnalytics
 }
+
+// ---------------------------------------------------------------------------
+// Phase 3 M4 — Time-series and Revenue types
+// Used by Revenue Dashboard and Mission Control.
+// ---------------------------------------------------------------------------
+
+/** A single day's activity count. date is 'YYYY-MM-DD'. */
+export interface DayBucket {
+  date: string
+  count: number
+}
+
+/** Per-day activity for the last N days — used to render bar charts. */
+export interface PlatformTimeSeries {
+  runsPerDay: DayBucket[]
+  deliverablesPerDay: DayBucket[]
+  memoriesPerDay: DayBucket[]
+  days: number
+}
+
+/** Revenue snapshot computed from current subscription + plan price. */
+export interface RevenueMetrics {
+  mrrCents: number
+  planId: string
+  planLabel: string
+  subscriptionStatus: string
+  stripeConfigured: boolean
+  currentPeriodEnd: Date | null
+}

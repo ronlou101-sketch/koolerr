@@ -53,6 +53,16 @@ export interface SetEntitlementInput {
   resetAt?: Date
 }
 
+export interface UpdateSubscriptionStripeInput {
+  tenantId: TenantId
+  stripeCustomerId: string
+  stripeSubscriptionId: string
+  stripePriceId?: string
+  planId?: string
+  status?: BillingStatus
+  currentPeriodEnd?: Date
+}
+
 // ---------------------------------------------------------------------------
 // Billing service interface
 // ---------------------------------------------------------------------------
@@ -82,6 +92,14 @@ export interface IBillingService {
    * Returns the current Entitlement state. Callers must enforce the limit themselves.
    */
   checkEntitlement(check: EntitlementCheck): Promise<PlatformResult<Entitlement>>
+
+  /**
+   * Update Stripe payment identifiers on a subscription after Checkout or webhook.
+   * Called by the Stripe webhook handler — never by other domains.
+   */
+  updateSubscriptionStripeData(
+    input: UpdateSubscriptionStripeInput
+  ): Promise<PlatformResult<Subscription>>
 
   /** Set or update an entitlement limit for an Organization. */
   setEntitlement(input: SetEntitlementInput): Promise<PlatformResult<Entitlement>>
@@ -210,6 +228,31 @@ export class BillingService implements IBillingService {
         })
       }
       return ok(entitlement)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async updateSubscriptionStripeData(
+    input: UpdateSubscriptionStripeInput
+  ): Promise<PlatformResult<Subscription>> {
+    try {
+      const result = await this.getSubscription(input.tenantId)
+      if (!result.ok) return result
+
+      const updated: Subscription = {
+        ...result.value,
+        stripeCustomerId: input.stripeCustomerId,
+        stripeSubscriptionId: input.stripeSubscriptionId,
+        ...(input.stripePriceId && { stripePriceId: input.stripePriceId }),
+        ...(input.planId && { planId: input.planId }),
+        ...(input.status && { status: input.status }),
+        ...(input.currentPeriodEnd && { currentPeriodEnd: input.currentPeriodEnd }),
+        updatedAt: new Date(),
+      }
+      await this.repo.saveSubscription(updated)
+      logger.info('[BILLING] Stripe subscription data updated', { tenantId: input.tenantId })
+      return ok(updated)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }

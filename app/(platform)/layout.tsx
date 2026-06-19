@@ -50,6 +50,18 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
               >
                 Analytics
               </Link>
+              <Link href="/revenue" className="text-sm text-muted-foreground hover:text-foreground">
+                Revenue
+              </Link>
+              <Link
+                href="/mission-control"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Mission Control
+              </Link>
+              <Link href="/billing" className="text-sm text-muted-foreground hover:text-foreground">
+                Billing
+              </Link>
             </nav>
           </div>
           <form action={signOut}>

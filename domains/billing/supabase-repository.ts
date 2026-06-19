@@ -22,6 +22,9 @@ interface SubscriptionRow {
   status: string
   current_period_start: string
   current_period_end: string
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  stripe_price_id: string | null
   created_at: string
   updated_at: string
 }
@@ -56,6 +59,9 @@ function mapSubscription(row: SubscriptionRow): Subscription {
     status: row.status as BillingStatus,
     currentPeriodStart: new Date(row.current_period_start),
     currentPeriodEnd: new Date(row.current_period_end),
+    stripeCustomerId: row.stripe_customer_id ?? undefined,
+    stripeSubscriptionId: row.stripe_subscription_id ?? undefined,
+    stripePriceId: row.stripe_price_id ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   }
@@ -70,6 +76,9 @@ function subscriptionToRow(sub: Subscription): SubscriptionRow {
     status: sub.status,
     current_period_start: sub.currentPeriodStart.toISOString(),
     current_period_end: sub.currentPeriodEnd.toISOString(),
+    stripe_customer_id: sub.stripeCustomerId ?? null,
+    stripe_subscription_id: sub.stripeSubscriptionId ?? null,
+    stripe_price_id: sub.stripePriceId ?? null,
     created_at: sub.createdAt.toISOString(),
     updated_at: sub.updatedAt.toISOString(),
   }

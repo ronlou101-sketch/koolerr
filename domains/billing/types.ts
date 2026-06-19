@@ -15,6 +15,10 @@ export interface Subscription {
   status: BillingStatus
   currentPeriodStart: Date
   currentPeriodEnd: Date
+  /** Set after Stripe Checkout completion. Null for free-tier or pre-Stripe subscriptions. */
+  stripeCustomerId?: string
+  stripeSubscriptionId?: string
+  stripePriceId?: string
   createdAt: Date
   updatedAt: Date
 }
