@@ -63,6 +63,19 @@ function detectRunType(objective: string): {
     }
   }
   if (
+    lower.includes('readiness report') ||
+    lower.includes('v1 readiness') ||
+    lower.includes('launch readiness') ||
+    lower.includes('assess readiness') ||
+    lower.includes('overall readiness')
+  ) {
+    return {
+      action: CTO_WORKFORCE_ACTIONS.readiness,
+      deliverableType: 'v1_readiness_report',
+      stepName: 'V1 Launch Readiness Assessment',
+    }
+  }
+  if (
     lower.includes('review') ||
     lower.includes('audit') ||
     lower.includes('assess') ||
@@ -166,6 +179,17 @@ When identifying LAUNCH BLOCKERS:
 - For each blocker: what it is, why it blocks V1, proposed resolution, estimated effort
 - Conclude with a critical path recommendation
 
+When generating V1 READINESS REPORTS:
+- Open with "## V1 Launch Readiness Report" and an **Overall Launch Readiness: XX%** score with explicit methodology
+- Phase Status section: COMPLETE / IN PROGRESS / NOT STARTED for every Phase 3 milestone
+- Critical Blockers (CRITICAL): anything that prevents launch. For each: what it is, why it blocks V1, proposed resolution, effort estimate
+- Major Blockers (MAJOR): items that would degrade the V1 experience significantly
+- Recommended Execution Order: ordered list of next actions, each with assigned platform (Claude Code / Lovable / Supabase / GitHub / HeyGen / ElevenLabs)
+- Platform Integration Priorities: which external platform should be integrated first, second, third — and why
+- Estimated Timeline: calendar estimate to V1 launch given the recommended execution order
+- Cross-Workforce Intelligence: what each Workforce has learned that informs V1 strategy
+- Close with a single sentence: "The highest-leverage action to advance V1 launch is: [ACTION]."
+
 When generating COORDINATION BRIEFS:
 - Structure output with one section per platform: ## Claude Code, ## Lovable, ## Supabase, ## GitHub, ## HeyGen, ## ElevenLabs (only include platforms relevant to this objective)
 - For each platform: specific task description, exact inputs/outputs, estimated effort
@@ -180,6 +204,7 @@ function buildPrompt(action: string, objective: string, contextSummary: string):
     [CTO_WORKFORCE_ACTIONS.milestone]: `Generate a milestone status report for:\n\n"${objective}"\n\n${contextSummary}\n\nState completion status for every Phase 3 milestone, compute a V1 Readiness Score, and identify the single highest-priority next action.`,
     [CTO_WORKFORCE_ACTIONS.blockers]: `Identify all launch blockers relevant to:\n\n"${objective}"\n\n${contextSummary}\n\nRank by severity (CRITICAL / MAJOR / MINOR). For each: what it is, why it blocks V1, proposed resolution, estimated effort. End with a critical path recommendation.`,
     [CTO_WORKFORCE_ACTIONS.coordinate]: `Generate a platform coordination brief for the following objective:\n\n"${objective}"\n\n${contextSummary}\n\nStructure output with one ## section per relevant platform. The ## GitHub section will become a real GitHub issue — write a complete, self-contained issue body. End with the CRITICAL PATH recommendation.`,
+    [CTO_WORKFORCE_ACTIONS.readiness]: `Generate a comprehensive V1 Launch Readiness Report.\n\n${contextSummary}\n\nThis report will be used to drive all Koolerr V1 execution decisions. Be precise about the readiness percentage, honest about blockers, and specific about which platform integrations (GitHub, Lovable, Supabase, HeyGen, ElevenLabs) should begin immediately. Every recommendation must reference a concrete next action.`,
   }
   return (
     prompts[action] ??
@@ -262,6 +287,28 @@ export async function executeCTOEngagementRun(
       : `\n\nWarning: No CTO context is loaded. Base your analysis on the objective alone.`
 
   // -------------------------------------------------------------------------
+  // Step 3b: For V1 readiness runs, add cross-Workforce intelligence.
+  // Load per-Workforce memory counts so Atlas can reason across all Workforces.
+  // -------------------------------------------------------------------------
+  let workforceIntelligence = ''
+  if (deliverableType === 'v1_readiness_report') {
+    const allWorkforcesResult = await workforceEngineService.listWorkforces(organizationId)
+    if (allWorkforcesResult.ok && allWorkforcesResult.value.length > 0) {
+      const wfLines = await Promise.all(
+        allWorkforcesResult.value.map(async (wf) => {
+          const wfMemoriesResult = await businessBrainService.listMemoriesByWorkforce(
+            wf.id,
+            organizationId
+          )
+          const count = wfMemoriesResult.ok ? wfMemoriesResult.value.length : 0
+          return `- **${wf.name}** (${wf.businessFunction}): ${count} attributed Brain memories, status: ${wf.status}`
+        })
+      )
+      workforceIntelligence = `\n\n## Cross-Workforce Intelligence\n${wfLines.join('\n')}\n`
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Step 4: Trigger Engagement Run record.
   // -------------------------------------------------------------------------
   const runResult = await workforceEngineService.triggerEngagementRun({
@@ -313,7 +360,7 @@ export async function executeCTOEngagementRun(
     if (ready.length === 0) break
 
     for (const step of ready) {
-      const systemContext = buildSystemPrompt(contextText)
+      const systemContext = buildSystemPrompt(contextText + workforceIntelligence)
       const prompt = buildPrompt(action, objective, contextSummary)
 
       logger.info(`[CTO_EXECUTOR] Atlas invoking model for "${stepName}"`, {
@@ -462,6 +509,7 @@ export async function executeCTOEngagementRun(
     memories: [
       {
         organizationId,
+        workforceId,
         type: 'decision',
         source: `engagement_run:${engagementRun.id}`,
         content: {

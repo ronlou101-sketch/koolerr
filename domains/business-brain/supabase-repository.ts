@@ -7,6 +7,7 @@ import type {
   BusinessMemoryType,
   OrganizationId,
   TenantId,
+  WorkforceId,
 } from '@/shared/types'
 import type { IBusinessBrainRepository, MemoryQueryOptions } from './repository'
 
@@ -27,6 +28,7 @@ interface BusinessMemoryRow {
   business_brain_id: string
   organization_id: string
   tenant_id: string
+  workforce_id: string | null
   type: string
   content: Record<string, unknown>
   source: string
@@ -64,6 +66,7 @@ function mapMemory(row: BusinessMemoryRow): BusinessMemory {
     id: row.id as BusinessMemoryId,
     businessBrainId: row.business_brain_id as BusinessBrainId,
     organizationId: row.organization_id as OrganizationId,
+    workforceId: row.workforce_id ? (row.workforce_id as WorkforceId) : undefined,
     type: row.type as BusinessMemoryType,
     content: row.content,
     source: row.source,
@@ -80,6 +83,7 @@ function memoryToRow(memory: BusinessMemory, tenantId: TenantId): BusinessMemory
     business_brain_id: memory.businessBrainId,
     organization_id: memory.organizationId,
     tenant_id: tenantId,
+    workforce_id: memory.workforceId ?? null,
     type: memory.type,
     content: memory.content,
     source: memory.source,
@@ -170,6 +174,19 @@ export class SupabaseBusinessBrainRepository implements IBusinessBrainRepository
       .select('*')
       .eq('organization_id', organizationId)
     if (error) throw new Error(`[BB_REPO] listAllMemories failed: ${error.message}`)
+    return (data ?? []).map((r) => mapMemory(r as BusinessMemoryRow))
+  }
+
+  async listMemoriesByWorkforce(
+    workforceId: WorkforceId,
+    organizationId: OrganizationId
+  ): Promise<BusinessMemory[]> {
+    const { data, error } = await this.client
+      .from('business_memories')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .eq('workforce_id', workforceId)
+    if (error) throw new Error(`[BB_REPO] listMemoriesByWorkforce failed: ${error.message}`)
     return (data ?? []).map((r) => mapMemory(r as BusinessMemoryRow))
   }
 }

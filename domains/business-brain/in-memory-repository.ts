@@ -5,6 +5,7 @@ import type {
   BusinessMemoryId,
   OrganizationId,
   TenantId,
+  WorkforceId,
 } from '@/shared/types'
 import type { IBusinessBrainRepository, MemoryQueryOptions } from './repository'
 
@@ -63,5 +64,16 @@ export class InMemoryBusinessBrainRepository implements IBusinessBrainRepository
     return Array.from(ids)
       .map((id) => this.memories.get(id))
       .filter((m): m is BusinessMemory => m !== undefined)
+  }
+
+  async listMemoriesByWorkforce(
+    workforceId: WorkforceId,
+    organizationId: OrganizationId
+  ): Promise<BusinessMemory[]> {
+    const ids = this.memoryIndex.get(organizationId)
+    if (!ids) return []
+    return Array.from(ids)
+      .map((id) => this.memories.get(id))
+      .filter((m): m is BusinessMemory => m !== undefined && m.workforceId === workforceId)
   }
 }

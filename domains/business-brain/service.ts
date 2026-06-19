@@ -9,6 +9,7 @@ import type {
   OrganizationId,
   PlatformResult,
   TenantId,
+  WorkforceId,
 } from '@/shared/types'
 import { logger } from '@/shared/lib/logger'
 import type {
@@ -136,6 +137,15 @@ export interface IBusinessBrainService {
    * the full corpus rather than a filtered page.
    */
   listAllMemories(organizationId: OrganizationId): Promise<PlatformResult<BusinessMemory[]>>
+
+  /**
+   * Return memories attributed to a specific Workforce.
+   * Used by Atlas for cross-Workforce intelligence synthesis and V1 Readiness Reports.
+   */
+  listMemoriesByWorkforce(
+    workforceId: WorkforceId,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<BusinessMemory[]>>
 }
 
 // ---------------------------------------------------------------------------
@@ -419,6 +429,18 @@ export class BusinessBrainService implements IBusinessBrainService {
   async listAllMemories(organizationId: OrganizationId): Promise<PlatformResult<BusinessMemory[]>> {
     try {
       const memories = await this.repo.listAllMemories(organizationId)
+      return ok(memories)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listMemoriesByWorkforce(
+    workforceId: WorkforceId,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<BusinessMemory[]>> {
+    try {
+      const memories = await this.repo.listMemoriesByWorkforce(workforceId, organizationId)
       return ok(memories)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })

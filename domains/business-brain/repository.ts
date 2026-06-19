@@ -6,6 +6,7 @@ import type {
   BusinessMemoryType,
   OrganizationId,
   TenantId,
+  WorkforceId,
 } from '@/shared/types'
 
 /**
@@ -42,4 +43,9 @@ export interface IBusinessBrainRepository {
   ): Promise<BusinessMemory[]>
   /** Return every memory for an organization — used by the Intelligence Layer for full analysis. */
   listAllMemories(organizationId: OrganizationId): Promise<BusinessMemory[]>
+  /** Return memories attributed to a specific Workforce — used by Atlas for cross-Workforce synthesis. */
+  listMemoriesByWorkforce(
+    workforceId: WorkforceId,
+    organizationId: OrganizationId
+  ): Promise<BusinessMemory[]>
 }

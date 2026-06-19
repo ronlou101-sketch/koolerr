@@ -112,6 +112,8 @@ export interface BusinessMemory {
   id: BusinessMemoryId
   businessBrainId: BusinessBrainId
   organizationId: OrganizationId
+  /** Set when a memory originates from a specific Workforce Engagement Run. Null for global/seeded memories. */
+  workforceId?: WorkforceId
   type: BusinessMemoryType
   content: Record<string, unknown>
   source: string
@@ -216,6 +218,7 @@ export type DeliverableType =
   | 'blocker_report'
   | 'coordination_brief'
   | 'github_issue_draft'
+  | 'v1_readiness_report'
 
 export type DeliverableStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published'
 

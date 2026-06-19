@@ -12,13 +12,25 @@ const DELIVERABLE_TYPE_LABELS: Record<string, string> = {
   code_review: 'Code Review',
   milestone_report: 'Milestone Report',
   blocker_report: 'Blocker Report',
+  coordination_brief: 'Coordination Brief',
+  v1_readiness_report: 'V1 Readiness Report',
 }
 
+const CTO_DELIVERABLE_TYPES = [
+  'implementation_plan',
+  'code_review',
+  'milestone_report',
+  'blocker_report',
+  'coordination_brief',
+  'v1_readiness_report',
+]
+
 const OBJECTIVE_PRESETS = [
-  'Generate implementation plan for Phase 3 Milestone 2 (Cross-Workforce Runs)',
-  'Review the CTO Workforce architecture and identify Foundation compliance issues',
-  'Generate a V1 launch readiness milestone report',
+  'Generate a V1 launch readiness report',
+  'Generate implementation plan for Phase 3 Milestone 3 (Brain Multi-Workforce Intelligence)',
   'Identify all critical blockers to Koolerr V1 launch',
+  'Review the CTO Workforce architecture and identify Foundation compliance issues',
+  'Generate a platform coordination brief for GitHub and Lovable integration',
 ]
 
 export default async function CTOPage() {
@@ -39,16 +51,14 @@ export default async function CTOPage() {
     ? memoriesResult.value.filter((m) => m.relevanceScope.includes('cto_agent')).length
     : 0
 
-  const ctoDeliverables = deliverablesResult.ok
+  const allCtoDeliverables = deliverablesResult.ok
     ? deliverablesResult.value
-        .filter((d) =>
-          ['implementation_plan', 'code_review', 'milestone_report', 'blocker_report'].includes(
-            d.type
-          )
-        )
+        .filter((d) => CTO_DELIVERABLE_TYPES.includes(d.type))
         .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-        .slice(0, 10)
     : []
+
+  const latestReadinessReport = allCtoDeliverables.find((d) => d.type === 'v1_readiness_report')
+  const ctoDeliverables = allCtoDeliverables.slice(0, 10)
 
   const isOnline = !!ctoWorkforce && ctoContextMemoryCount > 0
 
@@ -102,6 +112,35 @@ export default async function CTOPage() {
           </p>
         </div>
       </div>
+
+      {/* V1 Readiness Report — shown when at least one report exists */}
+      {latestReadinessReport && (
+        <Link
+          href={`/deliverables/${latestReadinessReport.id}`}
+          className="block rounded-lg border-2 border-foreground/10 bg-card p-5 hover:border-foreground/20"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Latest V1 Readiness Report
+              </p>
+              <p className="mt-1 text-sm font-medium text-foreground">
+                {latestReadinessReport.title}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Generated {latestReadinessReport.createdAt.toLocaleDateString()} at{' '}
+                {latestReadinessReport.createdAt.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-foreground px-3 py-1 text-xs font-medium text-background">
+              View Report →
+            </span>
+          </div>
+        </Link>
+      )}
 
       {/* Run form */}
       {ctoWorkforce ? (

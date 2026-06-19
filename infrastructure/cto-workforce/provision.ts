@@ -44,6 +44,7 @@ export const CTO_WORKFORCE_ACTIONS = {
   milestone: 'cto:generate_milestone_report',
   blockers: 'cto:identify_launch_blockers',
   coordinate: 'cto:generate_coordination_brief',
+  readiness: 'cto:assess_v1_readiness',
 } as const
 
 export const CTO_BUSINESS_FUNCTION = 'Engineering Intelligence'
