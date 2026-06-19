@@ -9,7 +9,7 @@
 -- See docs/adr/ADR-020-business-brain-workforce-intelligence.md
 
 ALTER TABLE business_memories
-  ADD COLUMN IF NOT EXISTS workforce_id uuid REFERENCES workforces(id);
+  ADD COLUMN IF NOT EXISTS workforce_id text REFERENCES workforces(id);
 
 CREATE INDEX IF NOT EXISTS idx_business_memories_workforce_id
   ON business_memories(workforce_id)
