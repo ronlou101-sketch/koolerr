@@ -11,6 +11,12 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
               Koolerr
             </Link>
             <nav className="flex items-center gap-4">
+              <Link
+                href="/cto"
+                className="text-sm font-medium text-foreground hover:text-foreground"
+              >
+                CTO Agent
+              </Link>
               <Link href="/runs" className="text-sm text-muted-foreground hover:text-foreground">
                 Runs
               </Link>

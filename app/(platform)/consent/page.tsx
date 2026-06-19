@@ -29,6 +29,7 @@ const SCOPE_LABELS: Record<ConsentScope, string> = {
   external_api_access: 'External API Access',
   autonomous_action: 'Autonomous Action',
   business_brain_write: 'Business Brain Write',
+  engineering_intelligence: 'Engineering Intelligence',
 }
 
 function formatDate(date: Date | undefined): string {

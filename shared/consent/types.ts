@@ -30,6 +30,7 @@ export type ConsentScope =
   | 'external_api_access'
   | 'autonomous_action'
   | 'business_brain_write'
+  | 'engineering_intelligence'
 
 // ---------------------------------------------------------------------------
 // Ledger operations

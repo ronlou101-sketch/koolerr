@@ -208,6 +208,10 @@ export type DeliverableType =
   | 'video'
   | 'hiring_packet'
   | 'customer_response'
+  | 'implementation_plan'
+  | 'code_review'
+  | 'milestone_report'
+  | 'blocker_report'
 
 export type DeliverableStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published'
 

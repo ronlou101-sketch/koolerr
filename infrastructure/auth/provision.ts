@@ -28,7 +28,9 @@ import { env } from '@/shared/config/env'
 import { identityService } from '@/domains/identity'
 import { businessBrainService } from '@/domains/business-brain'
 import { billingService, PLAN_ENTITLEMENTS, PLAN_IDS } from '@/domains/billing'
+import { logger } from '@/shared/lib/logger'
 import { provisionContentWorkforce } from '@/infrastructure/content-workforce'
+import { provisionCTOWorkforce, seedCTOContext } from '@/infrastructure/cto-workforce'
 
 export interface ProvisionResult {
   success: true
@@ -113,6 +115,19 @@ export async function provisionPlatformAccount(
   //         + consent grants on behalf of the new owner)
   // ------------------------------------------------------------------
   await provisionContentWorkforce(organization.id, tenantId, userId)
+
+  // ------------------------------------------------------------------
+  // Step 6b: Provision the CTO Workforce (Atlas Digital Employee +
+  //          trust rules + consent grants + Business Brain context seed)
+  // ------------------------------------------------------------------
+  await provisionCTOWorkforce(organization.id, tenantId, userId)
+  // Seed CTO context asynchronously — non-fatal if it fails at sign-up time
+  seedCTOContext(organization.id, tenantId).catch((err) => {
+    logger.warn('[PROVISION] CTO context seeding failed (non-fatal)', {
+      organizationId: organization.id,
+      error: String(err),
+    })
+  })
 
   // ------------------------------------------------------------------
   // Step 7: Create subscription + set default entitlements (free tier)
