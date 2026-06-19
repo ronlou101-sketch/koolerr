@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
-import { billingService, ENTITLEMENT_FEATURES, PLAN_IDS, PLAN_LABELS } from '@/domains/billing'
+import { billingService, ENTITLEMENT_FEATURES, PLAN_LABELS } from '@/domains/billing'
 
 /**
  * Usage page — shows the customer their current plan, entitlement limits,

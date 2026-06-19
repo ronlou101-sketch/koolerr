@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { bootstrapPlatform } from '@/infrastructure/platform'
 import { billingService } from '@/domains/billing'
 import { verifyStripeWebhook } from '@/shared/integrations/stripe'
 import { logger } from '@/shared/lib/logger'
@@ -22,10 +21,13 @@ import type { BillingStatus } from '@/domains/billing/types'
  * Authentication: Stripe-Signature header verified via HMAC-SHA-256.
  * STRIPE_WEBHOOK_SECRET must be set in environment.
  *
+ * Bootstrap is handled by instrumentation.ts at server startup.
+ * Do not call bootstrapPlatform() here — top-level await in route modules
+ * runs during Next.js build's page-data collection phase, which fails when
+ * server-only env vars (SUPABASE_SERVICE_ROLE_KEY) are not set at build time.
+ *
  * See docs/adr/ADR-021-stripe-billing-integration.md
  */
-
-await bootstrapPlatform()
 
 // Stripe event shapes (subset of fields we use)
 interface StripeCheckoutSession {

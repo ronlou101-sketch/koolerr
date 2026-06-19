@@ -3,7 +3,6 @@
 import { redirect } from 'next/navigation'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
-import { businessBrainService } from '@/domains/business-brain'
 import { executeCTOEngagementRun, seedCTOContext } from '@/infrastructure/cto-workforce'
 import { CTO_BUSINESS_FUNCTION } from '@/infrastructure/cto-workforce'
 import type { WorkforceId } from '@/shared/types'
