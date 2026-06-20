@@ -31,10 +31,28 @@ export const env = {
   },
   supabase: {
     url(): string {
-      return required('NEXT_PUBLIC_SUPABASE_URL')
+      // Must use literal dotted access — Next.js's webpack DefinePlugin only
+      // replaces process.env.NEXT_PUBLIC_* when the key is a compile-time
+      // string literal. Dynamic bracket access (process.env[key]) is not
+      // replaced and evaluates to undefined in browser bundles.
+      const value = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (!value) {
+        throw new Error(
+          'Required environment variable "NEXT_PUBLIC_SUPABASE_URL" is not set.\n' +
+            'Copy .env.example to .env.local and fill in the required values.'
+        )
+      }
+      return value
     },
     anonKey(): string {
-      return required('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+      const value = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (!value) {
+        throw new Error(
+          'Required environment variable "NEXT_PUBLIC_SUPABASE_ANON_KEY" is not set.\n' +
+            'Copy .env.example to .env.local and fill in the required values.'
+        )
+      }
+      return value
     },
     /**
      * Service role key for server-side repository operations.
