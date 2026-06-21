@@ -376,7 +376,10 @@ export const identityService: IIdentityService = new Proxy<IIdentityService>(
   {
     get(_target, prop) {
       const g = _globalStore()
-      if (!(g[_IDENTITY_SVC_KEY] instanceof IdentityService)) {
+      // Do NOT use instanceof here — different webpack bundles hold different
+      // class objects for IdentityService, so instanceof fails cross-bundle
+      // and would overwrite the Supabase-configured service with InMemory.
+      if (g[_IDENTITY_SVC_KEY] == null) {
         g[_IDENTITY_SVC_KEY] = new IdentityService(new InMemoryIdentityRepository())
       }
       const svc = g[_IDENTITY_SVC_KEY] as IdentityService
