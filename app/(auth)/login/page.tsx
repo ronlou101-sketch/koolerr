@@ -18,29 +18,44 @@ export default function LoginPage() {
     setLoading(true)
     setError(null)
 
-    const supabase = getSupabaseClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+    try {
+      const supabase = getSupabaseClient()
+      console.log('[LOGIN] step 1 — calling signInWithPassword')
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      console.log(
+        '[LOGIN] step 1 result —',
+        authError ? `FAIL: ${authError.message}` : `OK user=${authData.user?.id}`
+      )
 
-    if (authError) {
-      setError(authError.message)
+      if (authError) {
+        setError(authError.message)
+        setLoading(false)
+        return
+      }
+
+      console.log('[LOGIN] step 2 — calling provision()')
+      const accountResult = await provision('')
+      console.log('[LOGIN] step 2 result —', JSON.stringify(accountResult))
+
+      if (!accountResult.success) {
+        setError(`Account setup failed: ${accountResult.error}`)
+        setLoading(false)
+        return
+      }
+
+      const destination = accountResult.alreadyProvisioned ? '/dashboard' : '/onboarding'
+      console.log('[LOGIN] step 3 — routing to', destination)
+      router.push(destination)
+      router.refresh()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[LOGIN] uncaught exception —', msg)
+      setError(`Login error: ${msg}`)
       setLoading(false)
-      return
     }
-
-    // Ensure the platform account exists before routing.
-    // Provisioning normally runs in /auth/callback after email confirmation.
-    // Calling it here (idempotent) recovers from any case where that step
-    // failed or was incomplete, so login is never permanently broken.
-    const accountResult = await provision('')
-    if (!accountResult.success) {
-      setError('Account setup failed. Please try again or contact support.')
-      setLoading(false)
-      return
-    }
-
-    // New accounts go through onboarding; returning users go to the dashboard.
-    router.push(accountResult.alreadyProvisioned ? '/dashboard' : '/onboarding')
-    router.refresh()
   }
 
   return (

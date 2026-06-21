@@ -64,12 +64,21 @@ export async function middleware(request: NextRequest) {
   // spoofed by a tampered cookie. getUser() validates against the Auth server.
   const {
     data: { user },
+    error: getUserError,
   } = await supabase.auth.getUser()
 
-  if (!user && !isPublicPath(request.nextUrl.pathname)) {
+  const path = request.nextUrl.pathname
+  if (!user && !isPublicPath(path)) {
+    console.log(
+      `[MW] unauthenticated request to ${path} (${getUserError?.message ?? 'no user'}) → redirect /login`
+    )
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     return NextResponse.redirect(loginUrl)
+  }
+
+  if (user) {
+    console.log(`[MW] authenticated request — user=${user.id} path=${path}`)
   }
 
   return supabaseResponse
