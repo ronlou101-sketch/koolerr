@@ -57,23 +57,40 @@ export async function getRequestPlatformContext(
   // Never use getSession() here — it reads from storage without server validation.
   const {
     data: { user: authUser },
+    error: getUserError,
   } = await supabase.auth.getUser()
 
-  if (!authUser?.email) return null
+  if (!authUser?.email) {
+    console.log('[RESOLVE] null: no auth session', getUserError?.message ?? '(no error)')
+    return null
+  }
 
   const tenantId = env.platform.tenantId() as TenantId
 
   const userResult = await identityService.getUserByEmail(authUser.email, tenantId)
-  if (!userResult.ok) return null
+  if (!userResult.ok) {
+    console.log(
+      `[RESOLVE] null: platform user not found — email=${authUser.email} tenantId=${tenantId} reason=${userResult.error.message}`
+    )
+    return null
+  }
   const user = userResult.value
 
   const membershipsResult = await identityService.getMemberships(user.id)
-  if (!membershipsResult.ok || membershipsResult.value.length === 0) return null
+  if (!membershipsResult.ok || membershipsResult.value.length === 0) {
+    console.log(
+      `[RESOLVE] null: no memberships — userId=${user.id} ok=${membershipsResult.ok} count=${membershipsResult.ok ? membershipsResult.value.length : 'error'}`
+    )
+    return null
+  }
   const memberships = membershipsResult.value
 
   const resolvedOrgId = organizationId ?? memberships[0].organizationId
   const membership = memberships.find((m) => m.organizationId === resolvedOrgId)
-  if (!membership) return null
+  if (!membership) {
+    console.log(`[RESOLVE] null: membership not found for org=${resolvedOrgId}`)
+    return null
+  }
 
   return createPlatformContext({
     tenantId,
