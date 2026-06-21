@@ -44,7 +44,7 @@ const STATUS_COLORS = {
 
 export default async function DashboardPage() {
   const ctx = await getRequestPlatformContext()
-  if (!ctx) redirect('/signup?error=no_platform_account')
+  if (!ctx) redirect('/login?error=account_error')
 
   // Fetch all dashboard data in parallel.
   const [orgResult, brainResult, runsResult, pendingResult, workforcesResult, approvalsResult] =

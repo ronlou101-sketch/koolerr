@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabaseClient } from '@/shared/lib/supabase'
+import { provision } from '@/app/(auth)/signup/actions'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -26,7 +27,19 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/dashboard')
+    // Ensure the platform account exists before routing.
+    // Provisioning normally runs in /auth/callback after email confirmation.
+    // Calling it here (idempotent) recovers from any case where that step
+    // failed or was incomplete, so login is never permanently broken.
+    const accountResult = await provision('')
+    if (!accountResult.success) {
+      setError('Account setup failed. Please try again or contact support.')
+      setLoading(false)
+      return
+    }
+
+    // New accounts go through onboarding; returning users go to the dashboard.
+    router.push(accountResult.alreadyProvisioned ? '/dashboard' : '/onboarding')
     router.refresh()
   }
 
