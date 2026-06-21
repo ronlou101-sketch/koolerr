@@ -358,37 +358,14 @@ export class IdentityService implements IIdentityService {
 // ---------------------------------------------------------------------------
 // Singleton — defaults to in-memory; bootstrap swaps in Supabase repo
 //
-// Uses globalThis as the backing store so the configured service is shared
-// across all webpack module instances in the same Node.js process. Without
-// this, Next.js route bundles each hold a separate module scope — bootstrap
-// (in the server startup bundle) would configure a different identityService
-// than the one route handlers import, leaving consumers on InMemory forever.
+// Callers that depend on the Supabase-backed service (resolve.ts, provision.ts)
+// must call bootstrapPlatform() before using this singleton. Doing so ensures
+// _configureIdentityRepository() runs inside the same webpack module registry
+// as the caller, so both references point to the same module instance.
 // ---------------------------------------------------------------------------
 
-const _IDENTITY_SVC_KEY = '__koolerr_identity_svc__'
-
-function _globalStore(): Record<string, unknown> {
-  return globalThis as unknown as Record<string, unknown>
-}
-
-export const identityService: IIdentityService = new Proxy<IIdentityService>(
-  {} as IIdentityService,
-  {
-    get(_target, prop) {
-      const g = _globalStore()
-      // Do NOT use instanceof here — different webpack bundles hold different
-      // class objects for IdentityService, so instanceof fails cross-bundle
-      // and would overwrite the Supabase-configured service with InMemory.
-      if (g[_IDENTITY_SVC_KEY] == null) {
-        g[_IDENTITY_SVC_KEY] = new IdentityService(new InMemoryIdentityRepository())
-      }
-      const svc = g[_IDENTITY_SVC_KEY] as IdentityService
-      const val = (svc as unknown as Record<string | symbol, unknown>)[prop]
-      return typeof val === 'function' ? (val as (...a: unknown[]) => unknown).bind(svc) : val
-    },
-  }
-)
+export let identityService: IIdentityService = new IdentityService(new InMemoryIdentityRepository())
 
 export function _configureIdentityRepository(repo: IIdentityRepository): void {
-  _globalStore()[_IDENTITY_SVC_KEY] = new IdentityService(repo)
+  identityService = new IdentityService(repo)
 }

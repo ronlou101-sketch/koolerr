@@ -31,6 +31,7 @@ import { billingService, PLAN_ENTITLEMENTS, PLAN_IDS } from '@/domains/billing'
 import { logger } from '@/shared/lib/logger'
 import { provisionContentWorkforce } from '@/infrastructure/content-workforce'
 import { provisionCTOWorkforce, seedCTOContext } from '@/infrastructure/cto-workforce'
+import { bootstrapPlatform, isPlatformBootstrapped } from '@/infrastructure/platform'
 
 export interface ProvisionResult {
   success: true
@@ -57,6 +58,11 @@ export async function provisionPlatformAccount(
   organizationName: string,
   authUserId?: string
 ): Promise<ProvisionResult | ProvisionError> {
+  // Same reason as resolve.ts — bootstrap from within this bundle so that
+  // identityService, businessBrainService, and billingService are all wired
+  // to their Supabase implementations before any domain calls are made.
+  if (!isPlatformBootstrapped()) await bootstrapPlatform()
+
   const tenantId = env.platform.tenantId() as TenantId
   const name = organizationName.trim() || 'My Organization'
 

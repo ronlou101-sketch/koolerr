@@ -36,6 +36,7 @@ import type { PlatformContext } from '@/shared/context'
 import { env } from '@/shared/config/env'
 import { createSessionServerClient } from '@/shared/lib/supabase-session'
 import { identityService } from '@/domains/identity'
+import { bootstrapPlatform, isPlatformBootstrapped } from '@/infrastructure/platform'
 
 /**
  * Resolve a PlatformContext from the current request's Supabase Auth session.
@@ -51,6 +52,12 @@ export async function getRequestPlatformContext(
   organizationId?: OrganizationId,
   requestId?: string
 ): Promise<PlatformContext | null> {
+  // Ensure the platform is bootstrapped within this module's webpack bundle.
+  // instrumentation.ts bootstraps a separate bundle at startup; calling this
+  // here guarantees _configureIdentityRepository() updates the identityService
+  // import that this file and its callers actually use.
+  if (!isPlatformBootstrapped()) await bootstrapPlatform()
+
   const supabase = await createSessionServerClient()
 
   // getUser() validates the session against the Supabase Auth server.
