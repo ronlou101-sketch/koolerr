@@ -357,10 +357,35 @@ export class IdentityService implements IIdentityService {
 
 // ---------------------------------------------------------------------------
 // Singleton — defaults to in-memory; bootstrap swaps in Supabase repo
+//
+// Uses globalThis as the backing store so the configured service is shared
+// across all webpack module instances in the same Node.js process. Without
+// this, Next.js route bundles each hold a separate module scope — bootstrap
+// (in the server startup bundle) would configure a different identityService
+// than the one route handlers import, leaving consumers on InMemory forever.
 // ---------------------------------------------------------------------------
 
-export let identityService: IIdentityService = new IdentityService(new InMemoryIdentityRepository())
+const _IDENTITY_SVC_KEY = '__koolerr_identity_svc__'
+
+function _globalStore(): Record<string, unknown> {
+  return globalThis as unknown as Record<string, unknown>
+}
+
+export const identityService: IIdentityService = new Proxy<IIdentityService>(
+  {} as IIdentityService,
+  {
+    get(_target, prop) {
+      const g = _globalStore()
+      if (!(g[_IDENTITY_SVC_KEY] instanceof IdentityService)) {
+        g[_IDENTITY_SVC_KEY] = new IdentityService(new InMemoryIdentityRepository())
+      }
+      const svc = g[_IDENTITY_SVC_KEY] as IdentityService
+      const val = (svc as unknown as Record<string | symbol, unknown>)[prop]
+      return typeof val === 'function' ? (val as (...a: unknown[]) => unknown).bind(svc) : val
+    },
+  }
+)
 
 export function _configureIdentityRepository(repo: IIdentityRepository): void {
-  identityService = new IdentityService(repo)
+  _globalStore()[_IDENTITY_SVC_KEY] = new IdentityService(repo)
 }

@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { signOut } from './layout-actions'
 
+export const runtime = 'nodejs'
+
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
