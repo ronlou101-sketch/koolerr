@@ -228,12 +228,23 @@ export class SupabaseIdentityRepository implements IIdentityRepository {
   }
 
   async findUserByEmail(email: string, tenantId: TenantId): Promise<User | null> {
+    // Diagnostic: count total rows to distinguish empty-table from no-match.
+    const { count, error: countError } = await this.client
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+    console.log(
+      `[IDENTITY_REPO] findUserByEmail — querying email=${email} tenantId=${tenantId} totalUsersInTable=${count ?? `ERR:${countError?.message}`}`
+    )
+
     const { data, error } = await this.client
       .from('users')
       .select('*')
       .eq('email', email)
       .eq('tenant_id', tenantId)
       .maybeSingle()
+    console.log(
+      `[IDENTITY_REPO] findUserByEmail — result: ${data ? `FOUND id=${(data as UserRow).id}` : `NULL`}${error ? ` error=${error.message}` : ''}`
+    )
     if (error) throw new Error(`[IDENTITY_REPO] findUserByEmail failed: ${error.message}`)
     return data ? mapUser(data as UserRow) : null
   }
