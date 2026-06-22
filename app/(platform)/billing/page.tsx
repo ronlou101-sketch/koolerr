@@ -2,52 +2,230 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { billingService } from '@/domains/billing'
-import { PLAN_LABELS, PLAN_PRICES_CENTS } from '@/domains/billing/plans'
 import type { PlanId } from '@/domains/billing/plans'
 
 /**
- * Billing Management page.
+ * Billing page — AI Workforce Packages.
  *
- * Shows current plan, subscription status, and upgrade/manage actions.
- * Upgrades redirect to Stripe Checkout via /api/billing/checkout.
- * Existing subscribers with a Stripe Customer ID are redirected to the
- * Stripe Customer Portal via /api/billing/portal.
+ * UI/marketing update: repositions Koolerr as an AI workforce platform.
+ * Backend plan IDs (starter, growth) are unchanged. SCALE is display-only
+ * with a contact-sales CTA until a third Stripe tier is configured.
  *
  * See docs/adr/ADR-021-stripe-billing-integration.md
  */
 
-const PLAN_FEATURES: Record<PlanId, string[]> = {
-  free: [
-    '10 Engagement Runs / month',
-    '50,000 model tokens / month',
-    'All Workforces',
-    'Business Brain',
-  ],
-  starter: [
-    '250 Engagement Runs / month',
-    '500,000 model tokens / month',
-    'All Workforces',
-    'Business Brain',
-    'CTO Agent (Atlas)',
-    'GitHub integration',
-    'Priority support',
-  ],
-  growth: [
-    'Unlimited Engagement Runs',
-    '5,000,000 model tokens / month',
-    'All Workforces',
-    'Business Brain',
-    'CTO Agent (Atlas)',
-    'All platform integrations',
-    'Mission Control',
-    'Dedicated support',
-  ],
+// ── Package display data ──────────────────────────────────────────────────────
+// Maps to backend plan IDs: 'starter' = BUILD, 'growth' = GROW.
+// SCALE is display-only (no backend planId) — contact sales CTA only.
+
+interface FeatureGroup {
+  group: string
+  items: string[]
 }
 
-function formatPrice(cents: number): string {
-  if (cents === 0) return 'Free'
-  return `$${cents / 100}/mo`
+interface Package {
+  planId: PlanId | null // null = contact sales, no Stripe checkout
+  tier: string
+  price: string
+  headline: string
+  bestFor: string
+  outcome: string
+  badge?: string
+  featureGroups: FeatureGroup[]
+  cta: string
 }
+
+const PACKAGES: Package[] = [
+  {
+    planId: 'starter',
+    tier: 'BUILD',
+    price: '$99',
+    headline: 'Build Your AI Marketing Team',
+    bestFor: 'Small businesses ready to market consistently with AI.',
+    outcome: 'Replace hours of weekly marketing work with your own AI workforce.',
+    featureGroups: [
+      {
+        group: 'Your AI Workforce',
+        items: [
+          'Business Brain',
+          'Marketing Director',
+          'Content Strategist',
+          'Copywriter',
+          'Social Media Manager',
+          'Up to 10 AI Workforce Employees',
+        ],
+      },
+      {
+        group: 'Monthly Output',
+        items: [
+          '20 AI Marketing Assets per month',
+          'Up to 5 AI Spokesperson Videos per month',
+          'AI Image Generation',
+          'Social Media Captions',
+        ],
+      },
+      {
+        group: 'Platform',
+        items: ['Mission Control', 'Email Support'],
+      },
+    ],
+    cta: 'Start Hiring AI',
+  },
+  {
+    planId: 'growth',
+    tier: 'GROW',
+    price: '$499',
+    headline: 'Replace Your Marketing Department',
+    bestFor: 'Businesses ready to scale growth with AI.',
+    outcome: 'Operate a complete AI-powered marketing department every month.',
+    badge: 'MOST POPULAR',
+    featureGroups: [
+      {
+        group: 'Everything in BUILD, plus',
+        items: [
+          'Up to 50 AI Workforce Employees',
+          '100 AI Marketing Assets per month',
+          'Up to 30 AI Spokesperson Videos per month',
+        ],
+      },
+      {
+        group: 'Advanced Capabilities',
+        items: [
+          'Advanced Business Research',
+          'AI Creative Asset Generation',
+          'AI Marketing Campaign Generation',
+        ],
+      },
+      {
+        group: 'Content Production',
+        items: ['Landing Pages', 'Blog Articles', 'Email Campaigns'],
+      },
+      {
+        group: 'Support',
+        items: ['Priority Support'],
+      },
+    ],
+    cta: 'Start Hiring AI',
+  },
+  {
+    planId: null,
+    tier: 'SCALE',
+    price: '$1,499',
+    headline: 'Operate an AI-Powered Business',
+    bestFor: 'Organizations deploying AI across multiple departments.',
+    outcome: 'Run an AI workforce across your entire business from a single platform.',
+    featureGroups: [
+      {
+        group: 'Everything in GROW, plus',
+        items: [
+          'Unlimited AI Workforce Employees (Fair Use)',
+          'Fair Use AI Marketing Assets',
+          'Up to 100 AI Spokesperson Videos per month',
+          'Multiple Organizations',
+        ],
+      },
+      {
+        group: 'Enterprise Capabilities',
+        items: [
+          'Dedicated CTO Agent',
+          'Developer Workflow Integration',
+          'API Access',
+          'Custom Workflows',
+          'White Label Ready',
+        ],
+      },
+      {
+        group: 'Enterprise Operations',
+        items: [
+          'Enterprise Security',
+          'Team Collaboration',
+          'Dedicated Onboarding',
+          'Quarterly AI Strategy Reviews',
+          'Premium Support',
+        ],
+      },
+    ],
+    cta: 'Contact Sales',
+  },
+]
+
+// ── Comparison table rows ─────────────────────────────────────────────────────
+
+interface ComparisonRow {
+  label: string
+  build: string
+  grow: string
+  scale: string
+}
+
+const COMPARISON_ROWS: ComparisonRow[] = [
+  {
+    label: 'AI Workforce Employees',
+    build: 'Up to 10',
+    grow: 'Up to 50',
+    scale: 'Unlimited',
+  },
+  {
+    label: 'AI Marketing Assets / Month',
+    build: '20',
+    grow: '100',
+    scale: 'Fair Use',
+  },
+  {
+    label: 'AI Spokesperson Videos / Month',
+    build: 'Up to 5',
+    grow: 'Up to 30',
+    scale: 'Up to 100',
+  },
+  {
+    label: 'AI Marketing Campaigns',
+    build: '—',
+    grow: '✓',
+    scale: '✓',
+  },
+  {
+    label: 'Business Brain',
+    build: '✓',
+    grow: '✓',
+    scale: '✓',
+  },
+  {
+    label: 'Mission Control',
+    build: '✓',
+    grow: '✓',
+    scale: '✓',
+  },
+  {
+    label: 'Dedicated CTO Agent',
+    build: '—',
+    grow: '—',
+    scale: '✓',
+  },
+  {
+    label: 'Priority Support',
+    build: '—',
+    grow: '✓',
+    scale: '✓',
+  },
+]
+
+// ── Display names for active subscription widget ──────────────────────────────
+
+const PACKAGE_DISPLAY_NAMES: Record<string, string> = {
+  free: 'Legacy Free Plan',
+  starter: 'BUILD — AI Workforce Package',
+  growth: 'GROW — AI Workforce Package',
+}
+
+// ── Plan order for upgrade logic (free is legacy, never shown as a card) ─────
+
+const PLAN_ORDER: Record<string, number> = {
+  free: 0,
+  starter: 1,
+  growth: 2,
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function BillingPage({
   searchParams,
@@ -62,127 +240,336 @@ export default async function BillingPage({
   const subscription = subscriptionResult.ok ? subscriptionResult.value : null
   const currentPlanId = (subscription?.planId ?? 'free') as PlanId
   const stripeEnabled = !!process.env.STRIPE_SECRET_KEY
-
-  const plans: PlanId[] = ['free', 'starter', 'growth']
+  const currentOrder = PLAN_ORDER[currentPlanId] ?? 0
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">Billing</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your Koolerr subscription and payment method.
+    <div className="space-y-12">
+      {/* ── Page header ── */}
+      <div className="border-b border-border pb-8">
+        <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          Koolerr
+        </p>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+          AI Workforce Packages
+        </h1>
+        <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
+          Stop buying software. Start hiring AI. Every package gives you a fully-equipped team of AI
+          employees — built for your brand, powered by your Business Brain, and working for your
+          business around the clock.
         </p>
       </div>
 
+      {/* ── Upgrade confirmation ── */}
       {upgraded && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-          Subscription updated. Your new plan will be active shortly.
+        <div className="rounded-lg border border-green-200 bg-green-50 px-5 py-4 text-sm font-medium text-green-800">
+          ✓ Your AI Workforce Package has been updated. Your new team is ready.
         </div>
       )}
 
+      {/* ── Stripe not configured (internal ops notice) ── */}
       {!stripeEnabled && (
-        <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
-          Stripe is not configured. Set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
-          STRIPE_STARTER_PRICE_ID, and STRIPE_GROWTH_PRICE_ID to enable payment collection.
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+          <strong>Payments not yet active.</strong> Set{' '}
+          <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_SECRET_KEY</code>,{' '}
+          <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_WEBHOOK_SECRET</code>
+          ,{' '}
+          <code className="rounded bg-amber-100 px-1 font-mono text-xs">
+            STRIPE_STARTER_PRICE_ID
+          </code>
+          , and{' '}
+          <code className="rounded bg-amber-100 px-1 font-mono text-xs">
+            STRIPE_GROWTH_PRICE_ID
+          </code>{' '}
+          to enable billing.
         </div>
       )}
 
-      {/* Current plan summary */}
+      {/* ── Active package summary ── */}
       {subscription && (
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h2 className="mb-3 text-sm font-medium text-foreground">Current Plan</h2>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-lg font-semibold text-foreground">
-                {PLAN_LABELS[currentPlanId] ?? currentPlanId}
-              </p>
-              <p className="text-sm capitalize text-muted-foreground">{subscription.status}</p>
+        <div className="flex items-start justify-between gap-6 rounded-xl border border-border bg-card p-5">
+          <div className="space-y-0.5">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Active Package
+            </p>
+            <p className="text-xl font-bold text-foreground">
+              {PACKAGE_DISPLAY_NAMES[currentPlanId] ?? currentPlanId}
+            </p>
+            <p className="text-sm capitalize text-muted-foreground">
+              {subscription.status}
               {subscription.currentPeriodEnd && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Period ends {subscription.currentPeriodEnd.toLocaleDateString()}
-                </p>
+                <> · Renews {subscription.currentPeriodEnd.toLocaleDateString()}</>
               )}
-            </div>
-            {subscription.stripeCustomerId && (
-              <form action="/api/billing/portal" method="POST">
-                <button
-                  type="submit"
-                  className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
-                >
-                  Manage Billing →
-                </button>
-              </form>
-            )}
+            </p>
           </div>
+          {subscription.stripeCustomerId && (
+            <form action="/api/billing/portal" method="POST" className="flex-shrink-0">
+              <button
+                type="submit"
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              >
+                Manage Billing →
+              </button>
+            </form>
+          )}
         </div>
       )}
 
-      {/* Plan comparison */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {plans.map((planId) => {
-          const isCurrent = planId === currentPlanId
-          const isUpgrade = plans.indexOf(planId) > plans.indexOf(currentPlanId)
-          return (
-            <div
-              key={planId}
-              className={`rounded-lg border p-4 ${
-                isCurrent ? 'border-foreground bg-card' : 'border-border bg-card opacity-90'
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold text-foreground">{PLAN_LABELS[planId]}</p>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {formatPrice(PLAN_PRICES_CENTS[planId])}
-                  </p>
-                </div>
+      {/* ── Package cards ── */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {PACKAGES.map((pkg) => {
+          const pkgOrder = PLAN_ORDER[pkg.planId ?? ''] ?? 99
+          const isCurrent = pkg.planId !== null && pkg.planId === currentPlanId
+          const isUpgrade = pkgOrder > currentOrder
+          const isGrow = pkg.tier === 'GROW'
+
+          if (isGrow) {
+            // ── GROW: inverted dark card (most popular) ──────────────────────
+            return (
+              <div
+                key={pkg.tier}
+                className="relative flex flex-col rounded-xl bg-foreground p-6 text-background"
+              >
+                {/* Most Popular badge */}
+                {pkg.badge && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                    <span className="whitespace-nowrap rounded-full bg-background px-4 py-1 text-xs font-extrabold uppercase tracking-widest text-foreground shadow-sm">
+                      {pkg.badge}
+                    </span>
+                  </div>
+                )}
+
+                {/* Current badge */}
                 {isCurrent && (
-                  <span className="rounded-full bg-foreground px-2 py-0.5 text-xs text-background">
+                  <span className="absolute right-4 top-4 rounded-full bg-background/20 px-3 py-0.5 text-xs font-bold text-background">
                     Current
                   </span>
                 )}
+
+                {/* Tier + price */}
+                <div className="mb-5">
+                  <p className="text-xs font-extrabold uppercase tracking-widest opacity-50">
+                    {pkg.tier}
+                  </p>
+                  <div className="mt-1 flex items-baseline gap-1.5">
+                    <span className="text-4xl font-extrabold tracking-tight">{pkg.price}</span>
+                    <span className="text-sm opacity-50">/ month</span>
+                  </div>
+                  <p className="mt-3 text-lg font-semibold leading-snug">{pkg.headline}</p>
+                  <p className="mt-1.5 text-sm opacity-60">{pkg.bestFor}</p>
+                </div>
+
+                {/* Outcome */}
+                <div className="mb-5 rounded-lg bg-white/10 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider opacity-50">
+                    What you get
+                  </p>
+                  <p className="mt-1 text-sm font-medium leading-relaxed">{pkg.outcome}</p>
+                </div>
+
+                {/* Feature groups */}
+                <div className="flex-1 space-y-5">
+                  {pkg.featureGroups.map((group) => (
+                    <div key={group.group}>
+                      <p className="mb-2 text-xs font-bold uppercase tracking-wider opacity-40">
+                        {group.group}
+                      </p>
+                      <ul className="space-y-1.5">
+                        {group.items.map((item) => (
+                          <li key={item} className="flex items-start gap-2 text-sm">
+                            <span className="mt-0.5 flex-shrink-0 text-emerald-400">✓</span>
+                            <span className="opacity-90">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <div className="mt-8">
+                  {isCurrent ? (
+                    <div className="rounded-md bg-white/10 py-2.5 text-center text-sm font-bold">
+                      Your Current Package
+                    </div>
+                  ) : isUpgrade && stripeEnabled ? (
+                    <form action="/api/billing/checkout" method="POST">
+                      <input type="hidden" name="planId" value={pkg.planId ?? ''} />
+                      <button
+                        type="submit"
+                        className="w-full rounded-md bg-background py-2.5 text-sm font-extrabold text-foreground transition-opacity hover:opacity-90"
+                      >
+                        {pkg.cta}
+                      </button>
+                    </form>
+                  ) : isUpgrade && !stripeEnabled ? (
+                    <div className="rounded-md bg-white/10 py-2.5 text-center text-xs opacity-50">
+                      Payments not yet active
+                    </div>
+                  ) : null}
+                </div>
               </div>
-              <ul className="mt-4 space-y-1.5">
-                {PLAN_FEATURES[planId].map((feature) => (
-                  <li
-                    key={feature}
-                    className="flex items-start gap-1.5 text-xs text-muted-foreground"
-                  >
-                    <span className="mt-0.5 text-green-500">✓</span>
-                    {feature}
-                  </li>
+            )
+          }
+
+          // ── BUILD and SCALE: light cards ────────────────────────────────────
+          return (
+            <div
+              key={pkg.tier}
+              className={`relative flex flex-col rounded-xl border bg-card p-6 ${
+                pkg.tier === 'SCALE' ? 'border-foreground/20' : 'border-border'
+              }`}
+            >
+              {/* Current badge */}
+              {isCurrent && (
+                <span className="absolute right-4 top-4 rounded-full bg-foreground px-3 py-0.5 text-xs font-bold text-background">
+                  Current
+                </span>
+              )}
+
+              {/* Tier + price */}
+              <div className="mb-5">
+                <p className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
+                  {pkg.tier}
+                </p>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-4xl font-extrabold tracking-tight text-foreground">
+                    {pkg.price}
+                  </span>
+                  <span className="text-sm text-muted-foreground">/ month</span>
+                </div>
+                <p className="mt-3 text-lg font-semibold leading-snug text-foreground">
+                  {pkg.headline}
+                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">{pkg.bestFor}</p>
+              </div>
+
+              {/* Outcome */}
+              <div className="mb-5 rounded-lg bg-muted px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  What you get
+                </p>
+                <p className="mt-1 text-sm font-medium leading-relaxed text-foreground">
+                  {pkg.outcome}
+                </p>
+              </div>
+
+              {/* Feature groups */}
+              <div className="flex-1 space-y-5">
+                {pkg.featureGroups.map((group) => (
+                  <div key={group.group}>
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      {group.group}
+                    </p>
+                    <ul className="space-y-1.5">
+                      {group.items.map((item) => (
+                        <li
+                          key={item}
+                          className="flex items-start gap-2 text-sm text-muted-foreground"
+                        >
+                          <span className="mt-0.5 flex-shrink-0 text-emerald-500">✓</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
-              {isUpgrade && stripeEnabled && !isCurrent && (
-                <form
-                  action="/api/billing/checkout"
-                  method="POST"
-                  className="mt-4"
-                  onSubmit={undefined}
-                >
-                  <input type="hidden" name="planId" value={planId} />
-                  <button
-                    type="submit"
-                    className="w-full rounded-md bg-foreground py-2 text-sm font-medium text-background hover:opacity-90"
+              </div>
+
+              {/* CTA */}
+              <div className="mt-8">
+                {isCurrent ? (
+                  <div className="rounded-md border border-border py-2.5 text-center text-sm font-semibold text-muted-foreground">
+                    Your Current Package
+                  </div>
+                ) : pkg.planId === null ? (
+                  // SCALE — contact sales (no Stripe tier configured yet)
+                  <a
+                    href="mailto:team@koolerr.com"
+                    className="block w-full rounded-md border border-foreground py-2.5 text-center text-sm font-extrabold text-foreground transition-colors hover:bg-foreground hover:text-background"
                   >
-                    Upgrade to {PLAN_LABELS[planId]}
-                  </button>
-                </form>
-              )}
-              {isUpgrade && !stripeEnabled && (
-                <p className="mt-4 text-xs text-muted-foreground">Stripe not configured</p>
-              )}
+                    {pkg.cta}
+                  </a>
+                ) : isUpgrade && stripeEnabled ? (
+                  <form action="/api/billing/checkout" method="POST">
+                    <input type="hidden" name="planId" value={pkg.planId} />
+                    <button
+                      type="submit"
+                      className="w-full rounded-md bg-foreground py-2.5 text-sm font-extrabold text-background transition-opacity hover:opacity-90"
+                    >
+                      {pkg.cta}
+                    </button>
+                  </form>
+                ) : isUpgrade && !stripeEnabled ? (
+                  <p className="text-center text-xs text-muted-foreground">
+                    Payments not yet active
+                  </p>
+                ) : null}
+              </div>
             </div>
           )
         })}
       </div>
 
-      <div className="text-center text-xs text-muted-foreground">
-        Questions?{' '}
-        <Link href="/cto" className="underline hover:text-foreground">
-          Ask Atlas
-        </Link>{' '}
-        for billing strategy advice.
+      {/* ── Comparison table ── */}
+      <div>
+        <h2 className="mb-5 text-lg font-bold text-foreground">Package Comparison</h2>
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="w-1/2 px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Feature
+                </th>
+                <th className="px-4 py-3.5 text-center text-xs font-extrabold uppercase tracking-wider text-foreground">
+                  BUILD
+                  <span className="block text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
+                    $99 / mo
+                  </span>
+                </th>
+                <th className="bg-foreground/5 px-4 py-3.5 text-center text-xs font-extrabold uppercase tracking-wider text-foreground">
+                  GROW ★
+                  <span className="block text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
+                    $499 / mo
+                  </span>
+                </th>
+                <th className="px-4 py-3.5 text-center text-xs font-extrabold uppercase tracking-wider text-foreground">
+                  SCALE
+                  <span className="block text-[10px] font-normal normal-case tracking-normal text-muted-foreground">
+                    $1,499 / mo
+                  </span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {COMPARISON_ROWS.map((row, i) => (
+                <tr key={row.label} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                  <td className="px-5 py-3.5 font-medium text-foreground">{row.label}</td>
+                  <td className="px-4 py-3.5 text-center text-muted-foreground">{row.build}</td>
+                  <td className="bg-foreground/5 px-4 py-3.5 text-center font-medium text-foreground">
+                    {row.grow}
+                  </td>
+                  <td className="px-4 py-3.5 text-center text-muted-foreground">{row.scale}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── Footer ── */}
+      <div className="space-y-3 border-t border-border pt-8 text-center">
+        <p className="mx-auto max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          <strong className="font-semibold text-foreground">Launch Pricing</strong> — As Koolerr
+          grows, pricing may increase for future customers. Existing subscribers keep their pricing
+          for as long as their subscription remains active.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Questions?{' '}
+          <Link href="/cto" className="underline underline-offset-2 hover:text-foreground">
+            Ask your CTO Agent
+          </Link>{' '}
+          for workforce strategy advice.
+        </p>
       </div>
     </div>
   )
