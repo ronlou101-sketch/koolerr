@@ -243,7 +243,7 @@ export default async function BillingPage({
   const currentOrder = PLAN_ORDER[currentPlanId] ?? 0
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 overflow-x-hidden">
       {/* ── Page header ── */}
       <div className="border-b border-border pb-8">
         <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -268,7 +268,7 @@ export default async function BillingPage({
 
       {/* ── Stripe not configured (internal ops notice) ── */}
       {!stripeEnabled && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 [overflow-wrap:anywhere]">
           <strong>Payments not yet active.</strong> Set{' '}
           <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_SECRET_KEY</code>,{' '}
           <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_WEBHOOK_SECRET</code>
