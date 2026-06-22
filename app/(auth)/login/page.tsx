@@ -20,15 +20,10 @@ export default function LoginPage() {
 
     try {
       const supabase = getSupabaseClient()
-      console.log('[LOGIN] step 1 — calling signInWithPassword')
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      const { error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      console.log(
-        '[LOGIN] step 1 result —',
-        authError ? `FAIL: ${authError.message}` : `OK user=${authData.user?.id}`
-      )
 
       if (authError) {
         setError(authError.message)
@@ -36,9 +31,7 @@ export default function LoginPage() {
         return
       }
 
-      console.log('[LOGIN] step 2 — calling provision()')
       const accountResult = await provision('')
-      console.log('[LOGIN] step 2 result —', JSON.stringify(accountResult))
 
       if (!accountResult.success) {
         setError(`Account setup failed: ${accountResult.error}`)
@@ -47,12 +40,10 @@ export default function LoginPage() {
       }
 
       const destination = accountResult.alreadyProvisioned ? '/dashboard' : '/onboarding'
-      console.log('[LOGIN] step 3 — routing to', destination)
       router.push(destination)
       router.refresh()
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.error('[LOGIN] uncaught exception —', msg)
       setError(`Login error: ${msg}`)
       setLoading(false)
     }

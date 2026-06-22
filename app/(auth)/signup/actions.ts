@@ -18,25 +18,16 @@ export async function provision(
   organizationName: string
 ): Promise<{ success: true; alreadyProvisioned: boolean } | { success: false; error: string }> {
   try {
-    console.log('[PROVISION] action invoked')
     const supabase = await createSessionServerClient()
     const {
       data: { user: authUser },
-      error: getUserError,
     } = await supabase.auth.getUser()
-
-    console.log(
-      '[PROVISION] getUser —',
-      authUser?.email ?? `no session (${getUserError?.message ?? 'null user'})`
-    )
 
     if (!authUser?.email) {
       return { success: false, error: 'No authenticated session. Please sign in again.' }
     }
 
-    const result = await provisionPlatformAccount(authUser.email, organizationName, authUser.id)
-    console.log('[PROVISION] provisionPlatformAccount —', JSON.stringify(result))
-    return result
+    return await provisionPlatformAccount(authUser.email, organizationName, authUser.id)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[PROVISION] uncaught exception —', msg)
