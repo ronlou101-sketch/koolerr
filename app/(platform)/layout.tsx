@@ -12,7 +12,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
             <Link href="/dashboard" className="text-sm font-semibold text-foreground">
               Koolerr
             </Link>
-            <nav className="flex items-center gap-4">
+            <nav className="hidden items-center gap-4 sm:flex">
               <Link
                 href="/cto"
                 className="text-sm font-medium text-foreground hover:text-foreground"
