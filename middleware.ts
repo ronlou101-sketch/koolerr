@@ -30,7 +30,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '@/shared/config/env'
 
 /** Paths that do not require an authenticated session. */
-const PUBLIC_PATHS: string[] = ['/', '/login', '/signup']
+const PUBLIC_PATHS: string[] = ['/', '/login', '/signup', '/auth/callback']
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -72,8 +72,7 @@ export async function middleware(request: NextRequest) {
     console.log(
       `[MW] unauthenticated request to ${path} (${getUserError?.message ?? 'no user'}) → redirect /login`
     )
-    const loginUrl = request.nextUrl.clone()
-    loginUrl.pathname = '/login'
+    const loginUrl = new URL('/login', request.nextUrl.origin)
     return NextResponse.redirect(loginUrl)
   }
 
