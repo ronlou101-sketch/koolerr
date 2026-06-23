@@ -31,6 +31,7 @@ interface Package {
   bestFor: string
   outcome: string
   badge?: string
+  badgeSubtitle?: string
   featureGroups: FeatureGroup[]
   cta: string
 }
@@ -66,7 +67,7 @@ const PACKAGES: Package[] = [
       },
       {
         group: 'Platform',
-        items: ['Mission Control', 'Email Support'],
+        items: ['Mission Control', 'Email Support (48-hr response)'],
       },
     ],
     cta: 'Start Hiring AI',
@@ -79,6 +80,7 @@ const PACKAGES: Package[] = [
     bestFor: 'Businesses ready to scale growth with AI.',
     outcome: 'Operate a complete AI-powered marketing department every month.',
     badge: 'MOST POPULAR',
+    badgeSubtitle: 'Recommended for most businesses',
     featureGroups: [
       {
         group: 'Everything in BUILD, plus',
@@ -102,10 +104,10 @@ const PACKAGES: Package[] = [
       },
       {
         group: 'Support',
-        items: ['Priority Support'],
+        items: ['Priority Support (8-hr response)'],
       },
     ],
-    cta: 'Start Hiring AI',
+    cta: 'Scale My AI Team',
   },
   {
     planId: null,
@@ -118,8 +120,8 @@ const PACKAGES: Package[] = [
       {
         group: 'Everything in GROW, plus',
         items: [
-          'Unlimited AI Workforce Employees (Fair Use)',
-          'Fair Use AI Marketing Assets',
+          '200 AI Workforce Employees',
+          '500 AI Marketing Assets per month',
           'Up to 100 AI Spokesperson Videos per month',
           'Multiple Organizations',
         ],
@@ -141,11 +143,11 @@ const PACKAGES: Package[] = [
           'Team Collaboration',
           'Dedicated Onboarding',
           'Quarterly AI Strategy Reviews',
-          'Premium Support',
+          'Dedicated Support (4-hr SLA, 24/7)',
         ],
       },
     ],
-    cta: 'Contact Sales',
+    cta: 'Talk to Our Team',
   },
 ]
 
@@ -163,13 +165,13 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     label: 'AI Workforce Employees',
     build: 'Up to 10',
     grow: 'Up to 50',
-    scale: 'Unlimited',
+    scale: 'Up to 200',
   },
   {
     label: 'AI Marketing Assets / Month',
     build: '20',
     grow: '100',
-    scale: 'Fair Use',
+    scale: '500',
   },
   {
     label: 'AI Spokesperson Videos / Month',
@@ -179,6 +181,12 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   },
   {
     label: 'AI Marketing Campaigns',
+    build: '—',
+    grow: '✓',
+    scale: '✓',
+  },
+  {
+    label: 'Landing Pages & Blog Articles',
     build: '—',
     grow: '✓',
     scale: '✓',
@@ -202,10 +210,16 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     scale: '✓',
   },
   {
-    label: 'Priority Support',
+    label: 'API Access',
     build: '—',
-    grow: '✓',
+    grow: '—',
     scale: '✓',
+  },
+  {
+    label: 'Support',
+    build: 'Email (48-hr)',
+    grow: 'Priority (8-hr)',
+    scale: 'Dedicated (24/7)',
   },
 ]
 
@@ -350,6 +364,9 @@ export default async function BillingPage({
                   <p className="text-xs font-extrabold uppercase tracking-widest opacity-50">
                     {pkg.tier}
                   </p>
+                  {pkg.badgeSubtitle && (
+                    <p className="mt-1 text-[11px] font-medium opacity-60">{pkg.badgeSubtitle}</p>
+                  )}
                   <div className="mt-1 flex items-baseline gap-1.5">
                     <span className="text-4xl font-extrabold tracking-tight">{pkg.price}</span>
                     <span className="text-sm opacity-50">/ month</span>
@@ -554,6 +571,11 @@ export default async function BillingPage({
             </tbody>
           </table>
         </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          <strong className="font-medium text-foreground">AI Marketing Asset:</strong> One piece of
+          AI-produced content — a social media post, blog article, email, landing page, or ad
+          creative. Spokesperson videos count separately against the video limit.
+        </p>
       </div>
 
       {/* ── Footer ── */}
