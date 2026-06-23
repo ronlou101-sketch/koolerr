@@ -79,7 +79,7 @@ const PACKAGES: Package[] = [
     headline: 'Replace Your Marketing Department',
     bestFor: 'Businesses ready to scale growth with AI.',
     outcome: 'Operate a complete AI-powered marketing department every month.',
-    badge: 'MOST POPULAR',
+    badge: 'Best Value',
     badgeSubtitle: 'Recommended for most businesses',
     featureGroups: [
       {
@@ -337,7 +337,7 @@ export default async function BillingPage({
           const isGrow = pkg.tier === 'GROW'
 
           if (isGrow) {
-            // ── GROW: inverted dark card (most popular) ──────────────────────
+            // ── GROW: inverted dark card (best value, recommended) ───────────
             return (
               <div
                 key={pkg.tier}
