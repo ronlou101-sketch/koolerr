@@ -136,13 +136,13 @@ export async function provisionPlatformAccount(
   })
 
   // ------------------------------------------------------------------
-  // Step 7: Create subscription + set default entitlements (free tier)
-  //         Every new Organization starts on the free plan.
+  // Step 7: Create subscription + set default entitlements (unpaid tier)
+  //         Every new Organization starts unpaid until a Stripe subscription is created.
   // ------------------------------------------------------------------
   const subResult = await billingService.createSubscription({
     tenantId,
     organizationId: organization.id,
-    planId: PLAN_IDS.free,
+    planId: PLAN_IDS.unpaid,
   })
   if (!subResult.ok) {
     // Non-fatal: billing failure should not block account creation.
@@ -153,8 +153,7 @@ export async function provisionPlatformAccount(
       error: subResult.error.message,
     })
   } else {
-    // Set entitlement limits for the free plan.
-    const freeLimits = PLAN_ENTITLEMENTS[PLAN_IDS.free]
+    const freeLimits = PLAN_ENTITLEMENTS[PLAN_IDS.unpaid]
     for (const [feature, limit] of Object.entries(freeLimits)) {
       await billingService.setEntitlement({
         organizationId: organization.id,

@@ -60,7 +60,7 @@ export default async function UsagePage() {
 
   const planLabel = subscription
     ? (PLAN_LABELS[subscription.planId as keyof typeof PLAN_LABELS] ?? subscription.planId)
-    : 'Free'
+    : 'Not subscribed'
 
   return (
     <div className="space-y-8">

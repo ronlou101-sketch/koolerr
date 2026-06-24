@@ -2,7 +2,7 @@
  * Billing Plan Definitions
  *
  * Defines the plan IDs and default entitlements for each plan tier.
- * Phase 1 ships with a single free tier that is automatically assigned
+ * Phase 1 ships with an 'unpaid' tier that is automatically assigned
  * to every new Organization during account provisioning.
  *
  * Entitlement limits are defined here so they are a single source of
@@ -12,7 +12,7 @@
  */
 
 export const PLAN_IDS = {
-  free: 'free',
+  unpaid: 'unpaid',
   starter: 'starter',
   growth: 'growth',
 } as const
@@ -20,16 +20,16 @@ export const PLAN_IDS = {
 export type PlanId = (typeof PLAN_IDS)[keyof typeof PLAN_IDS]
 
 export const PLAN_LABELS: Record<PlanId, string> = {
-  free: 'Free',
+  unpaid: 'Not subscribed',
   starter: 'Starter',
   growth: 'Growth',
 }
 
 /** Monthly price in cents. Display only — Stripe is authoritative for billing. */
 export const PLAN_PRICES_CENTS: Record<PlanId, number> = {
-  free: 0,
-  starter: 4900,
-  growth: 14900,
+  unpaid: 0,
+  starter: 9900,
+  growth: 49900,
 }
 
 /** Resolve the Stripe Price ID for a plan from environment variables. */
@@ -53,7 +53,7 @@ export const ENTITLEMENT_FEATURES = {
 
 /** Default entitlement limits for each plan tier. */
 export const PLAN_ENTITLEMENTS: Record<PlanId, Record<string, number>> = {
-  free: {
+  unpaid: {
     [ENTITLEMENT_FEATURES.engagementRun]: 10,
     [ENTITLEMENT_FEATURES.modelInvocation]: 50_000,
   },

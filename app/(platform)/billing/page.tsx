@@ -226,15 +226,15 @@ const COMPARISON_ROWS: ComparisonRow[] = [
 // ── Display names for active subscription widget ──────────────────────────────
 
 const PACKAGE_DISPLAY_NAMES: Record<string, string> = {
-  free: 'Legacy Free Plan',
+  unpaid: 'No active package',
   starter: 'BUILD — AI Workforce Package',
   growth: 'GROW — AI Workforce Package',
 }
 
-// ── Plan order for upgrade logic (free is legacy, never shown as a card) ─────
+// ── Plan order for upgrade logic (unpaid is the initial state, never shown as a card) ─────
 
 const PLAN_ORDER: Record<string, number> = {
-  free: 0,
+  unpaid: 0,
   starter: 1,
   growth: 2,
 }
@@ -252,7 +252,7 @@ export default async function BillingPage({
   const { upgraded } = await searchParams
   const subscriptionResult = await billingService.getSubscription(ctx.tenantId)
   const subscription = subscriptionResult.ok ? subscriptionResult.value : null
-  const currentPlanId = (subscription?.planId ?? 'free') as PlanId
+  const currentPlanId = (subscription?.planId ?? 'unpaid') as PlanId
   const stripeEnabled = !!process.env.STRIPE_SECRET_KEY
   const currentOrder = PLAN_ORDER[currentPlanId] ?? 0
 

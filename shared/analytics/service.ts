@@ -138,8 +138,8 @@ export function computeRevenueMetrics(subscription: Subscription | null): Revenu
   if (!subscription) {
     return {
       mrrCents: 0,
-      planId: 'free',
-      planLabel: 'Free',
+      planId: 'unpaid',
+      planLabel: 'Not subscribed',
       subscriptionStatus: 'active',
       stripeConfigured: false,
       currentPeriodEnd: null,

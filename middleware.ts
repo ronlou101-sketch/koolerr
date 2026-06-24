@@ -41,6 +41,8 @@ const PUBLIC_PATHS: string[] = [
   '/terms',
   '/contact',
   '/support',
+  // Stripe webhook: self-secured via HMAC signature — no session cookie
+  '/api/webhooks/stripe',
 ]
 
 function isPublicPath(pathname: string): boolean {

@@ -159,12 +159,12 @@ describe('BillingService — entitlement enforcement', () => {
       const result = await service.createSubscription({
         tenantId: TENANT_ID,
         organizationId: ORG_ID,
-        planId: 'free',
+        planId: 'unpaid',
       })
       expect(result.ok).toBe(true)
       if (result.ok) {
         expect(result.value.status).toBe('active')
-        expect(result.value.planId).toBe('free')
+        expect(result.value.planId).toBe('unpaid')
       }
     })
 
@@ -177,12 +177,12 @@ describe('BillingService — entitlement enforcement', () => {
       await service.createSubscription({
         tenantId: TENANT_ID,
         organizationId: ORG_ID,
-        planId: 'free',
+        planId: 'unpaid',
       })
       const second = await service.createSubscription({
         tenantId: TENANT_ID,
         organizationId: ORG_ID,
-        planId: 'free',
+        planId: 'unpaid',
       })
       expect(second.ok).toBe(false)
     })

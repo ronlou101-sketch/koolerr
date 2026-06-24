@@ -24,13 +24,14 @@ export async function POST(request: Request) {
 
   let planId: PlanId
   try {
-    const body = (await request.json()) as { planId?: string }
-    if (body.planId !== 'starter' && body.planId !== 'growth') {
+    const formData = await request.formData()
+    const raw = formData.get('planId')
+    if (raw !== 'starter' && raw !== 'growth') {
       return NextResponse.json({ error: 'Invalid planId' }, { status: 400 })
     }
-    planId = body.planId
+    planId = raw
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
   const priceId = stripePriceId(planId)
