@@ -9,18 +9,18 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="inline-flex items-center">
+          <div className="flex items-center gap-8">
+            <Link href="/dashboard" className="ml-1 inline-flex items-center">
               <Image
-                src="/Koolerr_Logo_Transparent.png"
+                src="/Koolerr_Logo_Trimmed.png"
                 alt="Koolerr"
-                width={4096}
-                height={2730}
-                className="h-7 w-auto"
+                width={3840}
+                height={1441}
+                className="h-10 w-auto"
                 priority
               />
             </Link>
-            <nav className="hidden items-center gap-4 sm:flex">
+            <nav className="hidden items-center gap-6 sm:flex">
               <Link
                 href="/cto"
                 className="text-sm font-medium text-foreground hover:text-foreground"

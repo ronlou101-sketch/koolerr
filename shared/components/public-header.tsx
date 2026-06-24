@@ -12,16 +12,16 @@ export default function PublicHeader() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="inline-flex items-center">
           <Image
-            src="/Koolerr_Logo_Transparent.png"
+            src="/Koolerr_Logo_Trimmed.png"
             alt="Koolerr"
-            width={4096}
-            height={2730}
+            width={3840}
+            height={1441}
             className="h-9 w-auto"
             priority
           />
         </Link>
 
-        <nav className="hidden items-center gap-6 sm:flex">
+        <nav className="hidden items-center gap-8 sm:flex">
           <Link
             href="/features"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"

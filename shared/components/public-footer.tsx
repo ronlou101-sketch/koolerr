@@ -11,10 +11,10 @@ export default function PublicFooter() {
           <div className="col-span-2 sm:col-span-1">
             <Link href="/" className="inline-flex">
               <Image
-                src="/Koolerr_Logo_Transparent.png"
+                src="/Koolerr_Logo_Trimmed.png"
                 alt="Koolerr"
-                width={4096}
-                height={2730}
+                width={3840}
+                height={1441}
                 className="h-8 w-auto"
               />
             </Link>
