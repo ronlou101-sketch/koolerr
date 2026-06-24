@@ -30,7 +30,18 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '@/shared/config/env'
 
 /** Paths that do not require an authenticated session. */
-const PUBLIC_PATHS: string[] = ['/', '/login', '/signup', '/auth/callback']
+const PUBLIC_PATHS: string[] = [
+  '/',
+  '/login',
+  '/signup',
+  '/auth/callback',
+  '/features',
+  '/pricing',
+  '/privacy',
+  '/terms',
+  '/contact',
+  '/support',
+]
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
