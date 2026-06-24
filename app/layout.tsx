@@ -5,8 +5,17 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Koolerr',
-  description: 'AI Workforce Platform',
+  title: {
+    default: 'Koolerr — Your AI Marketing Team',
+    template: '%s — Koolerr',
+  },
+  description:
+    'Stop buying software. Start hiring AI. Koolerr gives your business a complete AI Marketing Team — trained on your brand, working around the clock.',
+  metadataBase: new URL('https://koolerr.vercel.app'),
+  keywords: ['AI marketing team', 'AI workforce', 'marketing automation', 'AI employees'],
+  authors: [{ name: 'Koolerr' }],
+  creator: 'Koolerr',
+  publisher: 'Koolerr',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

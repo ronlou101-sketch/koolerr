@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 export default function PublicFooter() {
@@ -8,10 +9,16 @@ export default function PublicFooter() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
           <div className="col-span-2 sm:col-span-1">
-            <Link href="/" className="text-base font-extrabold text-foreground">
-              Koolerr
+            <Link href="/" className="inline-flex">
+              <Image
+                src="/Koolerr_Logo_Transparent.png"
+                alt="Koolerr"
+                width={4096}
+                height={2730}
+                className="h-8 w-auto"
+              />
             </Link>
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
               AI Workforce Platform.
               <br />
               Built for businesses that want results, not more tools.

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { signOut } from './layout-actions'
 
@@ -9,8 +10,15 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-sm font-semibold text-foreground">
-              Koolerr
+            <Link href="/dashboard" className="inline-flex items-center">
+              <Image
+                src="/Koolerr_Logo_Transparent.png"
+                alt="Koolerr"
+                width={4096}
+                height={2730}
+                className="h-7 w-auto"
+                priority
+              />
             </Link>
             <nav className="hidden items-center gap-4 sm:flex">
               <Link
