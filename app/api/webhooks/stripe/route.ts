@@ -22,10 +22,10 @@ import type { BillingStatus } from '@/domains/billing/types'
  * Authentication: Stripe-Signature header verified via HMAC-SHA-256.
  * STRIPE_WEBHOOK_SECRET must be set in environment.
  *
- * Bootstrap is handled by instrumentation.ts at server startup.
- * Do not call bootstrapPlatform() here — top-level await in route modules
- * runs during Next.js build's page-data collection phase, which fails when
- * server-only env vars (SUPABASE_SERVICE_ROLE_KEY) are not set at build time.
+ * Bootstrap: called inside the POST handler (not at module top-level) so that
+ * the Supabase repository is wired in this bundle before any billing writes.
+ * Top-level await is intentionally avoided — it runs during Next.js build's
+ * page-data collection phase where SUPABASE_SERVICE_ROLE_KEY is unavailable.
  *
  * See docs/adr/ADR-021-stripe-billing-integration.md
  */
@@ -35,7 +35,7 @@ interface StripeCheckoutSession {
   object: 'checkout.session'
   customer: string
   subscription: string
-  metadata: { tenant_id?: string; organization_id?: string }
+  metadata: { tenant_id?: string; organization_id?: string; plan_id?: string }
 }
 
 interface StripeSubscription {
@@ -80,7 +80,14 @@ export async function POST(request: Request) {
   // uses. Without this guard, billingService stays as InMemoryBillingRepository
   // and all DB writes are silently discarded. See infrastructure/auth/resolve.ts
   // for the same pattern used by authenticated routes.
-  if (!isPlatformBootstrapped()) await bootstrapPlatform()
+  const wasBootstrapped = isPlatformBootstrapped()
+  if (!wasBootstrapped) await bootstrapPlatform()
+  logger.info('[STRIPE_WEBHOOK] Bootstrap status', {
+    bootstrappedThisRequest: !wasBootstrapped,
+    repository: isPlatformBootstrapped()
+      ? 'SupabaseBillingRepository'
+      : 'InMemoryBillingRepository',
+  })
 
   const sigHeader = request.headers.get('stripe-signature')
   if (!sigHeader) {
@@ -112,11 +119,19 @@ export async function POST(request: Request) {
           logger.warn('[STRIPE_WEBHOOK] checkout.session.completed missing tenant_id in metadata')
           break
         }
+        const planId = session.metadata?.plan_id
+        logger.info('[STRIPE_WEBHOOK] Persisting Stripe data', {
+          tenantId,
+          stripeCustomerId: session.customer,
+          stripeSubscriptionId: session.subscription,
+          planId: planId ?? '(not in metadata)',
+        })
         const updateResult = await billingService.updateSubscriptionStripeData({
           tenantId,
           stripeCustomerId: session.customer,
           stripeSubscriptionId: session.subscription,
           status: 'active',
+          ...(planId && { planId }),
         })
         if (!updateResult.ok) {
           logger.error('[STRIPE_WEBHOOK] Failed to persist Stripe subscription data', {
@@ -126,7 +141,11 @@ export async function POST(request: Request) {
           })
           return NextResponse.json({ error: 'Internal error' }, { status: 500 })
         }
-        logger.info('[STRIPE_WEBHOOK] Subscription activated via checkout', { tenantId })
+        logger.info('[STRIPE_WEBHOOK] Subscription activated via checkout', {
+          tenantId,
+          planId: updateResult.value.planId,
+          rowsUpdated: 1,
+        })
         break
       }
 

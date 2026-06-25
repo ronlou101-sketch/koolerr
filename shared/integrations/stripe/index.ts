@@ -48,6 +48,7 @@ export interface PortalSessionResult {
  */
 export async function createCheckoutSession(params: {
   priceId: string
+  planId: string
   customerId?: string
   organizationId: string
   tenantId: string
@@ -69,6 +70,7 @@ export async function createCheckoutSession(params: {
       customer: params.customerId,
       'metadata[organization_id]': params.organizationId,
       'metadata[tenant_id]': params.tenantId,
+      'metadata[plan_id]': params.planId,
       'subscription_data[metadata][organization_id]': params.organizationId,
       'subscription_data[metadata][tenant_id]': params.tenantId,
     })

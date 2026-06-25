@@ -48,6 +48,7 @@ export async function POST(request: Request) {
   const origin = request.headers.get('origin') ?? process.env.NEXT_PUBLIC_APP_URL ?? ''
   const session = await createCheckoutSession({
     priceId,
+    planId,
     customerId: existingCustomerId,
     organizationId: ctx.organizationId,
     tenantId: ctx.tenantId,
