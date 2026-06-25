@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { billingService } from '@/domains/billing'
 import { verifyStripeWebhook } from '@/shared/integrations/stripe'
+import { bootstrapPlatform, isPlatformBootstrapped } from '@/infrastructure/platform'
 import { logger } from '@/shared/lib/logger'
 import type { TenantId } from '@/shared/types'
 import type { BillingStatus } from '@/domains/billing/types'
@@ -74,6 +75,13 @@ function statusFromStripe(stripeStatus: string): BillingStatus {
 }
 
 export async function POST(request: Request) {
+  // Each Next.js webpack bundle is isolated. instrumentation.ts bootstraps its
+  // own bundle — it does not configure the billingService reference this route
+  // uses. Without this guard, billingService stays as InMemoryBillingRepository
+  // and all DB writes are silently discarded. See infrastructure/auth/resolve.ts
+  // for the same pattern used by authenticated routes.
+  if (!isPlatformBootstrapped()) await bootstrapPlatform()
+
   const sigHeader = request.headers.get('stripe-signature')
   if (!sigHeader) {
     return NextResponse.json({ error: 'Missing Stripe-Signature' }, { status: 400 })
@@ -104,12 +112,20 @@ export async function POST(request: Request) {
           logger.warn('[STRIPE_WEBHOOK] checkout.session.completed missing tenant_id in metadata')
           break
         }
-        await billingService.updateSubscriptionStripeData({
+        const updateResult = await billingService.updateSubscriptionStripeData({
           tenantId,
           stripeCustomerId: session.customer,
           stripeSubscriptionId: session.subscription,
           status: 'active',
         })
+        if (!updateResult.ok) {
+          logger.error('[STRIPE_WEBHOOK] Failed to persist Stripe subscription data', {
+            tenantId,
+            error: updateResult.error.message,
+            code: updateResult.error.code,
+          })
+          return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+        }
         logger.info('[STRIPE_WEBHOOK] Subscription activated via checkout', { tenantId })
         break
       }
