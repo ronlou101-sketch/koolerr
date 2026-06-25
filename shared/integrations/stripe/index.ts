@@ -145,16 +145,43 @@ export async function createPortalSession(params: {
  */
 export async function verifyStripeWebhook(payload: string, sigHeader: string): Promise<boolean> {
   const secret = process.env.STRIPE_WEBHOOK_SECRET
-  if (!secret) return false
+  if (!secret) {
+    logger.warn('[STRIPE_VERIFY] STRIPE_WEBHOOK_SECRET is not set — rejecting webhook')
+    return false
+  }
+
+  logger.info('[STRIPE_VERIFY] Secret loaded', {
+    secretLength: secret.length,
+    secretPrefix: secret.startsWith('whsec_') ? 'whsec_' : secret.slice(0, 4) + '…',
+  })
 
   const parts = sigHeader.split(',')
   const timestamp = parts.find((p) => p.startsWith('t='))?.slice(2)
   const v1 = parts.find((p) => p.startsWith('v1='))?.slice(3)
-  if (!timestamp || !v1) return false
+
+  logger.info('[STRIPE_VERIFY] Header parsed', {
+    partCount: parts.length,
+    hasTimestamp: !!timestamp,
+    hasV1Signature: !!v1,
+    v1Length: v1?.length ?? 0,
+  })
+
+  if (!timestamp || !v1) {
+    logger.warn('[STRIPE_VERIFY] Missing timestamp or v1 signature in Stripe-Signature header', {
+      rawHeader: sigHeader.slice(0, 80),
+    })
+    return false
+  }
 
   // Reject webhooks older than 5 minutes to prevent replay attacks
   const age = Math.abs(Date.now() / 1000 - parseInt(timestamp, 10))
-  if (age > 300) return false
+  logger.info('[STRIPE_VERIFY] Timestamp age', { ageSeconds: Math.round(age), valid: age <= 300 })
+  if (age > 300) {
+    logger.warn('[STRIPE_VERIFY] Webhook timestamp too old — replay attack protection triggered', {
+      ageSeconds: Math.round(age),
+    })
+    return false
+  }
 
   try {
     const key = await crypto.subtle.importKey(
@@ -170,14 +197,25 @@ export async function verifyStripeWebhook(payload: string, sigHeader: string): P
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('')
 
-    // Constant-time comparison
-    if (computed.length !== v1.length) return false
-    let diff = 0
-    for (let i = 0; i < computed.length; i++) {
-      diff |= computed.charCodeAt(i) ^ v1.charCodeAt(i)
+    const match = computed === v1
+    logger.info('[STRIPE_VERIFY] HMAC comparison', {
+      computedPrefix: computed.slice(0, 8),
+      expectedPrefix: v1.slice(0, 8),
+      computedLength: computed.length,
+      expectedLength: v1.length,
+      match,
+    })
+
+    if (!match) {
+      logger.warn('[STRIPE_VERIFY] HMAC mismatch — wrong secret or payload mutation')
+      return false
     }
-    return diff === 0
-  } catch {
+
+    return true
+  } catch (error) {
+    logger.warn('[STRIPE_VERIFY] Exception during HMAC computation', {
+      error: String(error),
+    })
     return false
   }
 }
