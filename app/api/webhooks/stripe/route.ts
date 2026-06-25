@@ -3,7 +3,7 @@ import { billingService } from '@/domains/billing'
 import { verifyStripeWebhook } from '@/shared/integrations/stripe'
 import { bootstrapPlatform, isPlatformBootstrapped } from '@/infrastructure/platform'
 import { logger } from '@/shared/lib/logger'
-import type { TenantId } from '@/shared/types'
+import type { OrganizationId } from '@/shared/types'
 import type { BillingStatus } from '@/domains/billing/types'
 
 /**
@@ -45,14 +45,14 @@ interface StripeSubscription {
   status: string
   current_period_end: number
   items: { data: Array<{ price: { id: string; product: string } }> }
-  metadata: { tenant_id?: string }
+  metadata: { tenant_id?: string; organization_id?: string }
 }
 
 interface StripeInvoice {
   object: 'invoice'
   subscription: string
   customer: string
-  metadata: { tenant_id?: string }
+  metadata: { tenant_id?: string; organization_id?: string }
 }
 
 interface StripeEvent {
@@ -114,20 +114,22 @@ export async function POST(request: Request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as StripeCheckoutSession
-        const tenantId = session.metadata?.tenant_id as TenantId | undefined
-        if (!tenantId) {
-          logger.warn('[STRIPE_WEBHOOK] checkout.session.completed missing tenant_id in metadata')
+        const organizationId = session.metadata?.organization_id as OrganizationId | undefined
+        if (!organizationId) {
+          logger.warn(
+            '[STRIPE_WEBHOOK] checkout.session.completed missing organization_id in metadata'
+          )
           break
         }
         const planId = session.metadata?.plan_id
         logger.info('[STRIPE_WEBHOOK] Persisting Stripe data', {
-          tenantId,
+          organizationId,
           stripeCustomerId: session.customer,
           stripeSubscriptionId: session.subscription,
           planId: planId ?? '(not in metadata)',
         })
         const updateResult = await billingService.updateSubscriptionStripeData({
-          tenantId,
+          organizationId,
           stripeCustomerId: session.customer,
           stripeSubscriptionId: session.subscription,
           status: 'active',
@@ -135,14 +137,14 @@ export async function POST(request: Request) {
         })
         if (!updateResult.ok) {
           logger.error('[STRIPE_WEBHOOK] Failed to persist Stripe subscription data', {
-            tenantId,
+            organizationId,
             error: updateResult.error.message,
             code: updateResult.error.code,
           })
           return NextResponse.json({ error: 'Internal error' }, { status: 500 })
         }
         logger.info('[STRIPE_WEBHOOK] Subscription activated via checkout', {
-          tenantId,
+          organizationId,
           planId: updateResult.value.planId,
           rowsUpdated: 1,
         })
@@ -151,14 +153,14 @@ export async function POST(request: Request) {
 
       case 'customer.subscription.updated': {
         const sub = event.data.object as StripeSubscription
-        const tenantId = sub.metadata?.tenant_id as TenantId | undefined
-        if (!tenantId) {
-          logger.warn('[STRIPE_WEBHOOK] subscription.updated missing tenant_id in metadata')
+        const organizationId = sub.metadata?.organization_id as OrganizationId | undefined
+        if (!organizationId) {
+          logger.warn('[STRIPE_WEBHOOK] subscription.updated missing organization_id in metadata')
           break
         }
         const priceId = sub.items.data[0]?.price?.id
         await billingService.updateSubscriptionStripeData({
-          tenantId,
+          organizationId,
           stripeCustomerId: sub.customer,
           stripeSubscriptionId: sub.id,
           stripePriceId: priceId,
@@ -170,24 +172,24 @@ export async function POST(request: Request) {
 
       case 'customer.subscription.deleted': {
         const sub = event.data.object as StripeSubscription
-        const tenantId = sub.metadata?.tenant_id as TenantId | undefined
-        if (!tenantId) break
+        const organizationId = sub.metadata?.organization_id as OrganizationId | undefined
+        if (!organizationId) break
         await billingService.updateSubscriptionStripeData({
-          tenantId,
+          organizationId,
           stripeCustomerId: sub.customer,
           stripeSubscriptionId: sub.id,
           status: 'canceled',
         })
-        logger.info('[STRIPE_WEBHOOK] Subscription canceled', { tenantId })
+        logger.info('[STRIPE_WEBHOOK] Subscription canceled', { organizationId })
         break
       }
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as StripeInvoice
-        const tenantId = invoice.metadata?.tenant_id as TenantId | undefined
-        if (!tenantId) break
-        await billingService.updateSubscriptionStatus(tenantId, 'past_due')
-        logger.warn('[STRIPE_WEBHOOK] Payment failed — subscription past_due', { tenantId })
+        const organizationId = invoice.metadata?.organization_id as OrganizationId | undefined
+        if (!organizationId) break
+        await billingService.updateSubscriptionStatus(organizationId, 'past_due')
+        logger.warn('[STRIPE_WEBHOOK] Payment failed — subscription past_due', { organizationId })
         break
       }
 

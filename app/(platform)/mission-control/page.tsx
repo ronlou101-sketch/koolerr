@@ -39,7 +39,7 @@ export default async function MissionControlPage() {
       workforceEngineService.listEngagementRuns(ctx.organizationId),
       deliverablesService.listDeliverables({ organizationId: ctx.organizationId }),
       businessBrainService.listAllMemories(ctx.organizationId),
-      billingService.getSubscription(ctx.tenantId),
+      billingService.getSubscription(ctx.organizationId),
       workforceEngineService.listWorkforces(ctx.organizationId),
     ])
 

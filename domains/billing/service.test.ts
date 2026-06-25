@@ -169,11 +169,11 @@ describe('BillingService — entitlement enforcement', () => {
     })
 
     it('returns NOT_FOUND when no subscription exists', async () => {
-      const result = await service.getSubscription(TENANT_ID)
+      const result = await service.getSubscription(ORG_ID)
       expect(result.ok).toBe(false)
     })
 
-    it('rejects duplicate subscriptions for the same tenant', async () => {
+    it('rejects duplicate subscriptions for the same organization', async () => {
       await service.createSubscription({
         tenantId: TENANT_ID,
         organizationId: ORG_ID,

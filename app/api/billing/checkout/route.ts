@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const subscriptionResult = await billingService.getSubscription(ctx.tenantId)
+  const subscriptionResult = await billingService.getSubscription(ctx.organizationId)
   const existingCustomerId = subscriptionResult.ok
     ? subscriptionResult.value.stripeCustomerId
     : undefined

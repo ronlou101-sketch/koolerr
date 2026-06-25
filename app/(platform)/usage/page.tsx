@@ -46,7 +46,7 @@ export default async function UsagePage() {
   if (!ctx) redirect('/login')
 
   const [subscriptionResult, entitlementsResult] = await Promise.all([
-    billingService.getSubscription(ctx.tenantId),
+    billingService.getSubscription(ctx.organizationId),
     billingService.getEntitlements(ctx.organizationId),
   ])
 

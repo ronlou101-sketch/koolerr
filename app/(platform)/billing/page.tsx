@@ -251,7 +251,7 @@ export default async function BillingPage({
   if (!ctx) redirect('/login')
 
   const { upgraded } = await searchParams
-  const subscriptionResult = await billingService.getSubscription(ctx.tenantId)
+  const subscriptionResult = await billingService.getSubscription(ctx.organizationId)
   const subscription = subscriptionResult.ok ? subscriptionResult.value : null
   const currentPlanId = (subscription?.planId ?? 'unpaid') as PlanId
   const stripeEnabled = !!process.env.STRIPE_SECRET_KEY

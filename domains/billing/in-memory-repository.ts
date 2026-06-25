@@ -1,20 +1,22 @@
-import type { OrganizationId, TenantId, UsageEvent, UsageEventType } from '@/shared/types'
+import type { OrganizationId, UsageEvent, UsageEventType } from '@/shared/types'
 import type { Entitlement, Subscription } from './types'
 import type { IBillingRepository } from './repository'
 
 export class InMemoryBillingRepository implements IBillingRepository {
-  private readonly subscriptions = new Map<TenantId, Subscription>()
+  private readonly subscriptions = new Map<OrganizationId, Subscription>()
   private readonly usageEvents = new Map<OrganizationId, UsageEvent[]>()
   /** `${organizationId}::${feature}` → Entitlement */
   private readonly entitlements = new Map<string, Entitlement>()
 
   async saveSubscription(subscription: Subscription): Promise<Subscription> {
-    this.subscriptions.set(subscription.tenantId, subscription)
+    this.subscriptions.set(subscription.organizationId, subscription)
     return subscription
   }
 
-  async findSubscriptionByTenantId(tenantId: TenantId): Promise<Subscription | null> {
-    return this.subscriptions.get(tenantId) ?? null
+  async findSubscriptionByOrganizationId(
+    organizationId: OrganizationId
+  ): Promise<Subscription | null> {
+    return this.subscriptions.get(organizationId) ?? null
   }
 
   async saveUsageEvent(event: UsageEvent): Promise<UsageEvent> {

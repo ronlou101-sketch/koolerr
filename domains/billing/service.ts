@@ -54,7 +54,7 @@ export interface SetEntitlementInput {
 }
 
 export interface UpdateSubscriptionStripeInput {
-  tenantId: TenantId
+  organizationId: OrganizationId
   stripeCustomerId: string
   stripeSubscriptionId: string
   stripePriceId?: string
@@ -70,9 +70,9 @@ export interface UpdateSubscriptionStripeInput {
 export interface IBillingService {
   // Subscriptions
   createSubscription(input: CreateSubscriptionInput): Promise<PlatformResult<Subscription>>
-  getSubscription(tenantId: TenantId): Promise<PlatformResult<Subscription>>
+  getSubscription(organizationId: OrganizationId): Promise<PlatformResult<Subscription>>
   updateSubscriptionStatus(
-    tenantId: TenantId,
+    organizationId: OrganizationId,
     status: BillingStatus
   ): Promise<PlatformResult<Subscription>>
 
@@ -117,11 +117,11 @@ export class BillingService implements IBillingService {
 
   async createSubscription(input: CreateSubscriptionInput): Promise<PlatformResult<Subscription>> {
     try {
-      const existing = await this.repo.findSubscriptionByTenantId(input.tenantId)
+      const existing = await this.repo.findSubscriptionByOrganizationId(input.organizationId)
       if (existing) {
         return err({
           code: PlatformErrorCode.VALIDATION_ERROR,
-          message: 'A subscription already exists for this tenant',
+          message: 'A subscription already exists for this organization',
         })
       }
 
@@ -152,9 +152,9 @@ export class BillingService implements IBillingService {
     }
   }
 
-  async getSubscription(tenantId: TenantId): Promise<PlatformResult<Subscription>> {
+  async getSubscription(organizationId: OrganizationId): Promise<PlatformResult<Subscription>> {
     try {
-      const subscription = await this.repo.findSubscriptionByTenantId(tenantId)
+      const subscription = await this.repo.findSubscriptionByOrganizationId(organizationId)
       if (!subscription) {
         return err({ code: PlatformErrorCode.NOT_FOUND, message: 'Subscription not found' })
       }
@@ -165,11 +165,11 @@ export class BillingService implements IBillingService {
   }
 
   async updateSubscriptionStatus(
-    tenantId: TenantId,
+    organizationId: OrganizationId,
     status: BillingStatus
   ): Promise<PlatformResult<Subscription>> {
     try {
-      const result = await this.getSubscription(tenantId)
+      const result = await this.getSubscription(organizationId)
       if (!result.ok) return result
       const updated: Subscription = { ...result.value, status, updatedAt: new Date() }
       await this.repo.saveSubscription(updated)
@@ -237,7 +237,7 @@ export class BillingService implements IBillingService {
     input: UpdateSubscriptionStripeInput
   ): Promise<PlatformResult<Subscription>> {
     try {
-      const result = await this.getSubscription(input.tenantId)
+      const result = await this.getSubscription(input.organizationId)
       if (!result.ok) return result
 
       const updated: Subscription = {
@@ -251,7 +251,9 @@ export class BillingService implements IBillingService {
         updatedAt: new Date(),
       }
       await this.repo.saveSubscription(updated)
-      logger.info('[BILLING] Stripe subscription data updated', { tenantId: input.tenantId })
+      logger.info('[BILLING] Stripe subscription data updated', {
+        organizationId: input.organizationId,
+      })
       return ok(updated)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })

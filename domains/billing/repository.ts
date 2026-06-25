@@ -1,4 +1,4 @@
-import type { OrganizationId, TenantId, UsageEvent, UsageEventType } from '@/shared/types'
+import type { OrganizationId, UsageEvent, UsageEventType } from '@/shared/types'
 import type { Entitlement, Subscription } from './types'
 
 /**
@@ -6,6 +6,7 @@ import type { Entitlement, Subscription } from './types'
  *
  * Declares the storage contract for the Billing domain.
  *
+ * Subscriptions are keyed by organizationId (one per organization).
  * Entitlements use a composite primary key of (organizationId, feature).
  * The limit field maps to a nullable bigint in the database — null represents
  * unlimited, which the service maps to/from Infinity. The repository
@@ -16,9 +17,9 @@ import type { Entitlement, Subscription } from './types'
  */
 
 export interface IBillingRepository {
-  // Subscriptions — one per Tenant
+  // Subscriptions — one per Organization
   saveSubscription(subscription: Subscription): Promise<Subscription>
-  findSubscriptionByTenantId(tenantId: TenantId): Promise<Subscription | null>
+  findSubscriptionByOrganizationId(organizationId: OrganizationId): Promise<Subscription | null>
 
   // Usage events — append-only
   saveUsageEvent(event: UsageEvent): Promise<UsageEvent>

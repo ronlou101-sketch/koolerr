@@ -145,13 +145,16 @@ export class SupabaseBillingRepository implements IBillingRepository {
     return mapSubscription(data as SubscriptionRow)
   }
 
-  async findSubscriptionByTenantId(tenantId: TenantId): Promise<Subscription | null> {
+  async findSubscriptionByOrganizationId(
+    organizationId: OrganizationId
+  ): Promise<Subscription | null> {
     const { data, error } = await this.client
       .from('subscriptions')
       .select('*')
-      .eq('tenant_id', tenantId)
+      .eq('organization_id', organizationId)
       .maybeSingle()
-    if (error) throw new Error(`[BILLING_REPO] findSubscriptionByTenantId failed: ${error.message}`)
+    if (error)
+      throw new Error(`[BILLING_REPO] findSubscriptionByOrganizationId failed: ${error.message}`)
     return data ? mapSubscription(data as SubscriptionRow) : null
   }
 

@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const subscriptionResult = await billingService.getSubscription(ctx.tenantId)
+  const subscriptionResult = await billingService.getSubscription(ctx.organizationId)
   if (!subscriptionResult.ok) {
     return NextResponse.json({ error: 'Subscription not found' }, { status: 404 })
   }
