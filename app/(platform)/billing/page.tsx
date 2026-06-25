@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { billingService } from '@/domains/billing'
 import type { PlanId } from '@/domains/billing/plans'
+import { CheckoutButton } from './checkout-button'
 
 /**
  * Billing page — AI Workforce Packages.
@@ -15,8 +16,6 @@ import type { PlanId } from '@/domains/billing/plans'
  */
 
 // ── Package display data ──────────────────────────────────────────────────────
-// Maps to backend plan IDs: 'starter' = BUILD, 'growth' = GROW.
-// SCALE is display-only (no backend planId) — contact sales CTA only.
 
 interface FeatureGroup {
   group: string
@@ -24,7 +23,7 @@ interface FeatureGroup {
 }
 
 interface Package {
-  planId: PlanId | null // null = contact sales, no Stripe checkout
+  planId: PlanId
   tier: string
   price: string
   headline: string
@@ -38,7 +37,7 @@ interface Package {
 
 const PACKAGES: Package[] = [
   {
-    planId: 'starter',
+    planId: 'build',
     tier: 'BUILD',
     price: '$99',
     headline: 'Build Your AI Marketing Team',
@@ -73,7 +72,7 @@ const PACKAGES: Package[] = [
     cta: 'Start Hiring AI',
   },
   {
-    planId: 'growth',
+    planId: 'grow',
     tier: 'GROW',
     price: '$499',
     headline: 'Replace Your Marketing Department',
@@ -110,7 +109,7 @@ const PACKAGES: Package[] = [
     cta: 'Scale My AI Team',
   },
   {
-    planId: null,
+    planId: 'scale',
     tier: 'SCALE',
     price: '$1,499',
     headline: 'Operate an AI-Powered Business',
@@ -227,16 +226,18 @@ const COMPARISON_ROWS: ComparisonRow[] = [
 
 const PACKAGE_DISPLAY_NAMES: Record<string, string> = {
   unpaid: 'No active package',
-  starter: 'BUILD — AI Workforce Package',
-  growth: 'GROW — AI Workforce Package',
+  build: 'BUILD — AI Workforce Package',
+  grow: 'GROW — AI Workforce Package',
+  scale: 'SCALE — AI Workforce Package',
 }
 
 // ── Plan order for upgrade logic (unpaid is the initial state, never shown as a card) ─────
 
 const PLAN_ORDER: Record<string, number> = {
   unpaid: 0,
-  starter: 1,
-  growth: 2,
+  build: 1,
+  grow: 2,
+  scale: 3,
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -287,13 +288,11 @@ export default async function BillingPage({
           <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_SECRET_KEY</code>,{' '}
           <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_WEBHOOK_SECRET</code>
           ,{' '}
-          <code className="rounded bg-amber-100 px-1 font-mono text-xs">
-            STRIPE_STARTER_PRICE_ID
-          </code>
-          , and{' '}
-          <code className="rounded bg-amber-100 px-1 font-mono text-xs">
-            STRIPE_GROWTH_PRICE_ID
-          </code>{' '}
+          <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_BUILD_PRICE_ID</code>
+          ,{' '}
+          <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_GROW_PRICE_ID</code>,
+          and{' '}
+          <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_SCALE_PRICE_ID</code>{' '}
           to enable billing.
         </div>
       )}
@@ -409,15 +408,12 @@ export default async function BillingPage({
                       Your Current Package
                     </div>
                   ) : isUpgrade && stripeEnabled ? (
-                    <form action="/api/billing/checkout" method="POST">
-                      <input type="hidden" name="planId" value={pkg.planId ?? ''} />
-                      <button
-                        type="submit"
-                        className="w-full rounded-md bg-background py-2.5 text-sm font-extrabold text-foreground transition-opacity hover:opacity-90"
-                      >
-                        {pkg.cta}
-                      </button>
-                    </form>
+                    <CheckoutButton
+                      planId={pkg.planId}
+                      className="w-full rounded-md bg-background py-2.5 text-sm font-extrabold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                      {pkg.cta}
+                    </CheckoutButton>
                   ) : isUpgrade && !stripeEnabled ? (
                     <div className="rounded-md bg-white/10 py-2.5 text-center text-xs opacity-50">
                       Payments not yet active
@@ -498,24 +494,13 @@ export default async function BillingPage({
                   <div className="rounded-md border border-border py-2.5 text-center text-sm font-semibold text-muted-foreground">
                     Your Current Package
                   </div>
-                ) : pkg.planId === null ? (
-                  // SCALE — contact sales (no Stripe tier configured yet)
-                  <a
-                    href="mailto:team@koolerr.com"
-                    className="block w-full rounded-md border border-foreground py-2.5 text-center text-sm font-extrabold text-foreground transition-colors hover:bg-foreground hover:text-background"
+                ) : isUpgrade && stripeEnabled ? (
+                  <CheckoutButton
+                    planId={pkg.planId}
+                    className="w-full rounded-md bg-foreground py-2.5 text-sm font-extrabold text-background transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     {pkg.cta}
-                  </a>
-                ) : isUpgrade && stripeEnabled ? (
-                  <form action="/api/billing/checkout" method="POST">
-                    <input type="hidden" name="planId" value={pkg.planId} />
-                    <button
-                      type="submit"
-                      className="w-full rounded-md bg-foreground py-2.5 text-sm font-extrabold text-background transition-opacity hover:opacity-90"
-                    >
-                      {pkg.cta}
-                    </button>
-                  </form>
+                  </CheckoutButton>
                 ) : isUpgrade && !stripeEnabled ? (
                   <p className="text-center text-xs text-muted-foreground">
                     Payments not yet active

@@ -9,10 +9,9 @@ import type { PlanId } from '@/domains/billing/plans'
  * POST /api/billing/checkout
  *
  * Creates a Stripe Checkout Session for plan upgrade.
- * Body: { planId: 'starter' | 'growth' }
+ * Body (JSON): { planId: 'build' | 'grow' | 'scale' }
  * Returns: { url: string } — redirect the browser to this URL.
  *
- * The success URL embeds the session ID so the webhook can be correlated.
  * The webhook (not this route) is responsible for updating the subscription —
  * this route only creates the Checkout session.
  */
@@ -24,12 +23,11 @@ export async function POST(request: Request) {
 
   let planId: PlanId
   try {
-    const formData = await request.formData()
-    const raw = formData.get('planId')
-    if (raw !== 'starter' && raw !== 'growth') {
+    const body = (await request.json()) as { planId?: string }
+    if (body.planId !== 'build' && body.planId !== 'grow' && body.planId !== 'scale') {
       return NextResponse.json({ error: 'Invalid planId' }, { status: 400 })
     }
-    planId = raw
+    planId = body.planId
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }

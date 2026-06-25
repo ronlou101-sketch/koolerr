@@ -13,29 +13,33 @@
 
 export const PLAN_IDS = {
   unpaid: 'unpaid',
-  starter: 'starter',
-  growth: 'growth',
+  build: 'build',
+  grow: 'grow',
+  scale: 'scale',
 } as const
 
 export type PlanId = (typeof PLAN_IDS)[keyof typeof PLAN_IDS]
 
 export const PLAN_LABELS: Record<PlanId, string> = {
   unpaid: 'Not subscribed',
-  starter: 'Starter',
-  growth: 'Growth',
+  build: 'BUILD',
+  grow: 'GROW',
+  scale: 'SCALE',
 }
 
 /** Monthly price in cents. Display only — Stripe is authoritative for billing. */
 export const PLAN_PRICES_CENTS: Record<PlanId, number> = {
   unpaid: 0,
-  starter: 9900,
-  growth: 49900,
+  build: 9900,
+  grow: 49900,
+  scale: 149900,
 }
 
 /** Resolve the Stripe Price ID for a plan from environment variables. */
 export function stripePriceId(planId: PlanId): string | undefined {
-  if (planId === 'starter') return process.env.STRIPE_STARTER_PRICE_ID
-  if (planId === 'growth') return process.env.STRIPE_GROWTH_PRICE_ID
+  if (planId === 'build') return process.env.STRIPE_BUILD_PRICE_ID
+  if (planId === 'grow') return process.env.STRIPE_GROW_PRICE_ID
+  if (planId === 'scale') return process.env.STRIPE_SCALE_PRICE_ID
   return undefined
 }
 
@@ -57,12 +61,16 @@ export const PLAN_ENTITLEMENTS: Record<PlanId, Record<string, number>> = {
     [ENTITLEMENT_FEATURES.engagementRun]: 10,
     [ENTITLEMENT_FEATURES.modelInvocation]: 50_000,
   },
-  starter: {
+  build: {
     [ENTITLEMENT_FEATURES.engagementRun]: 250,
     [ENTITLEMENT_FEATURES.modelInvocation]: 500_000,
   },
-  growth: {
+  grow: {
     [ENTITLEMENT_FEATURES.engagementRun]: Infinity,
     [ENTITLEMENT_FEATURES.modelInvocation]: 5_000_000,
+  },
+  scale: {
+    [ENTITLEMENT_FEATURES.engagementRun]: Infinity,
+    [ENTITLEMENT_FEATURES.modelInvocation]: Infinity,
   },
 }

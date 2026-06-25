@@ -9,8 +9,9 @@ import { logger } from '@/shared/lib/logger'
  * Required environment variables:
  *   STRIPE_SECRET_KEY         — sk_live_... or sk_test_...
  *   STRIPE_WEBHOOK_SECRET     — whsec_... (for webhook verification)
- *   STRIPE_STARTER_PRICE_ID   — Stripe Price ID for the Starter plan
- *   STRIPE_GROWTH_PRICE_ID    — Stripe Price ID for the Growth plan
+ *   STRIPE_BUILD_PRICE_ID     — Stripe Price ID for the BUILD plan
+ *   STRIPE_GROW_PRICE_ID      — Stripe Price ID for the GROW plan
+ *   STRIPE_SCALE_PRICE_ID     — Stripe Price ID for the SCALE plan
  *
  * See docs/adr/ADR-021-stripe-billing-integration.md
  */
