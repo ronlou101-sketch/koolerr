@@ -1,8 +1,6 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -18,7 +16,7 @@ type Stage =
 
 const MAX_CLIENT_RETRIES = 3
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const sessionId = searchParams.get('session_id')
@@ -371,5 +369,19 @@ export default function CheckoutSuccessPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+        </div>
+      }
+    >
+      <CheckoutSuccessContent />
+    </Suspense>
   )
 }
