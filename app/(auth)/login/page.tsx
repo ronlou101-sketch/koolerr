@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabaseClient } from '@/shared/lib/supabase'
@@ -12,24 +12,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-
-  // If the user already has an active session (e.g. navigated to /login
-  // while still logged in), run provision to heal any missing subscription
-  // records, then redirect to the dashboard without requiring a form submit.
-  useEffect(() => {
-    async function healAndRedirectIfAuthenticated() {
-      const supabase = getSupabaseClient()
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      if (session) {
-        await provision('')
-        router.push('/dashboard')
-        router.refresh()
-      }
-    }
-    healAndRedirectIfAuthenticated()
-  }, [router])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
