@@ -26,6 +26,7 @@ const PLANS = [
       'Email support',
     ],
     cta: 'Get started',
+    checkoutHref: '/api/checkout/start?plan=build',
   },
   {
     tier: 'GROW',
@@ -47,6 +48,7 @@ const PLANS = [
       'Priority support',
     ],
     cta: 'Get started',
+    checkoutHref: '/api/checkout/start?plan=grow',
   },
   {
     tier: 'SCALE',
@@ -70,6 +72,7 @@ const PLANS = [
       'Dedicated support',
     ],
     cta: 'Get started',
+    checkoutHref: '/api/checkout/start?plan=scale',
   },
 ]
 
@@ -194,7 +197,7 @@ export default function PricingPage() {
 
                 <div className="p-6 pt-0">
                   <Link
-                    href="/signup"
+                    href={plan.checkoutHref}
                     className={`block w-full rounded-lg py-3 text-center text-sm font-extrabold transition-opacity hover:opacity-90 ${
                       plan.highlight
                         ? 'bg-background text-foreground'
@@ -298,14 +301,14 @@ export default function PricingPage() {
       <section className="bg-foreground py-20 text-background sm:py-28">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
           <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Start with a free run. No card required.
+            Start your AI marketing team today.
           </h2>
           <p className="mt-4 text-base leading-relaxed opacity-70">
-            Sign up in minutes, build your Business Brain, and see what your AI team produces.
+            Choose a plan, complete checkout in minutes, and your AI workforce is ready to run.
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
-              href="/signup"
+              href="/api/checkout/start?plan=build"
               className="w-full rounded-lg bg-background px-8 py-3.5 text-center text-sm font-extrabold text-foreground transition-opacity hover:opacity-90 sm:w-auto"
             >
               Get started →

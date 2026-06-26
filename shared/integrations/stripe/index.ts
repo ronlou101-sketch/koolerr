@@ -44,13 +44,17 @@ export interface PortalSessionResult {
 
 /**
  * Create a Stripe Checkout Session for subscription upgrade.
+ * organizationId is optional for pre-auth checkout flows where the org does
+ * not yet exist. When omitted, organization metadata is excluded from the
+ * session; the /api/checkout/complete route patches it onto the Stripe
+ * subscription after provisioning via updateStripeSubscriptionMetadata.
  * Returns null if STRIPE_SECRET_KEY is not set or the request fails.
  */
 export async function createCheckoutSession(params: {
   priceId: string
   planId: string
   customerId?: string
-  organizationId: string
+  organizationId?: string
   tenantId: string
   successUrl: string
   cancelUrl: string
@@ -138,6 +142,88 @@ export async function createPortalSession(params: {
   } catch (error) {
     logger.warn('[STRIPE] createPortalSession threw', { error: String(error) })
     return null
+  }
+}
+
+export interface StripeCheckoutSessionData {
+  id: string
+  payment_status: string
+  customer: string
+  subscription: string
+  metadata: Record<string, string>
+  customer_details: { email: string | null } | null
+}
+
+/**
+ * Retrieve a Stripe Checkout Session by ID.
+ * Used by /api/checkout/complete to verify payment and extract session data.
+ * Returns null if STRIPE_SECRET_KEY is not set or the request fails.
+ */
+export async function retrieveCheckoutSession(
+  sessionId: string
+): Promise<StripeCheckoutSessionData | null> {
+  if (!process.env.STRIPE_SECRET_KEY) return null
+  try {
+    const response = await fetch(
+      `${STRIPE_API}/checkout/sessions/${encodeURIComponent(sessionId)}`,
+      {
+        headers: stripeHeaders(),
+      }
+    )
+    if (!response.ok) {
+      const text = await response.text()
+      logger.warn('[STRIPE] retrieveCheckoutSession failed', {
+        status: response.status,
+        body: text.slice(0, 200),
+      })
+      return null
+    }
+    return (await response.json()) as StripeCheckoutSessionData
+  } catch (error) {
+    logger.warn('[STRIPE] retrieveCheckoutSession threw', { error: String(error) })
+    return null
+  }
+}
+
+/**
+ * Patch metadata onto an existing Stripe Subscription.
+ * Called after pre-auth checkout provisioning to set organization_id so that
+ * future webhook events (subscription.updated, invoice.payment_failed) can
+ * route correctly to the now-provisioned organization.
+ * Returns false (non-fatal) on any failure.
+ */
+export async function updateStripeSubscriptionMetadata(
+  subscriptionId: string,
+  metadata: Record<string, string>
+): Promise<boolean> {
+  if (!process.env.STRIPE_SECRET_KEY) return false
+  try {
+    const fields: Record<string, string> = {}
+    for (const [k, v] of Object.entries(metadata)) {
+      fields[`metadata[${k}]`] = v
+    }
+    const response = await fetch(
+      `${STRIPE_API}/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      {
+        method: 'POST',
+        headers: stripeHeaders(),
+        body: formEncode(fields),
+      }
+    )
+    if (!response.ok) {
+      const text = await response.text()
+      logger.warn('[STRIPE] updateStripeSubscriptionMetadata failed', {
+        subscriptionId,
+        status: response.status,
+        body: text.slice(0, 200),
+      })
+      return false
+    }
+    logger.info('[STRIPE] Subscription metadata updated', { subscriptionId })
+    return true
+  } catch (error) {
+    logger.warn('[STRIPE] updateStripeSubscriptionMetadata threw', { error: String(error) })
+    return false
   }
 }
 

@@ -38,6 +38,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`)
   }
 
+  // Password reset flow: the recovery code establishes a session so the user
+  // can call supabase.auth.updateUser() on the reset-password page.
+  if (next === '/reset-password') {
+    return NextResponse.redirect(`${origin}/reset-password`)
+  }
+
   // After exchanging the code, the session cookie is now set. Provision the
   // platform account idempotently — this handles the email-confirmation path
   // where the signup page cannot provision because no session existed yet.

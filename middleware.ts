@@ -43,6 +43,14 @@ const PUBLIC_PATHS: string[] = [
   '/support',
   // Stripe webhook: self-secured via HMAC signature — no session cookie
   '/api/webhooks/stripe',
+  // Pre-auth checkout: unauthenticated users completing a Stripe checkout
+  '/api/checkout/start',
+  '/api/checkout/complete',
+  '/api/checkout/set-password',
+  '/checkout/success',
+  // Password management
+  '/forgot-password',
+  '/reset-password',
 ]
 
 function isPublicPath(pathname: string): boolean {
@@ -50,9 +58,16 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname
+
+  // Forward the pathname to Server Components via a request header so platform
+  // layout can enforce subscription-based access control without a client hook.
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', path)
+
   // Start with a passthrough response. The cookie adapter below replaces this
   // with a new NextResponse whenever Supabase needs to rotate the session cookie.
-  let supabaseResponse = NextResponse.next({ request })
+  let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } })
 
   const supabase = createServerClient(env.supabase.url(), env.supabase.anonKey(), {
     cookies: {
@@ -63,8 +78,9 @@ export async function middleware(request: NextRequest) {
         // Step 1: write cookie values back onto the mutated request object so
         // that subsequent Server Component reads in the same request see them.
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-        // Step 2: replace the response so the Set-Cookie header reaches the browser.
-        supabaseResponse = NextResponse.next({ request })
+        // Step 2: replace the response (preserving the x-pathname header) so
+        // the Set-Cookie header reaches the browser.
+        supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } })
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set(name, value, options)
         )
@@ -80,7 +96,6 @@ export async function middleware(request: NextRequest) {
     error: getUserError,
   } = await supabase.auth.getUser()
 
-  const path = request.nextUrl.pathname
   if (!user && !isPublicPath(path)) {
     console.log(
       `[MW] unauthenticated request to ${path} (${getUserError?.message ?? 'no user'}) → redirect /login`
