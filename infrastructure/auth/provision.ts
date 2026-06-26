@@ -84,9 +84,38 @@ export async function provisionPlatformAccount(
 
   // ------------------------------------------------------------------
   // Step 2: Check if already fully provisioned (idempotency)
+  //
+  // If the user already has a membership the org/brain/workforce steps
+  // are complete. We still check for the subscription separately: it
+  // could be missing if subscription creation failed on a previous
+  // provisioning run (e.g. due to the now-fixed UNIQUE(tenant_id) bug).
   // ------------------------------------------------------------------
   const membershipsResult = await identityService.getMemberships(userId)
   if (membershipsResult.ok && membershipsResult.value.length > 0) {
+    const existingOrgId = membershipsResult.value[0].organizationId
+    const existingSub = await billingService.getSubscription(existingOrgId)
+    if (!existingSub.ok) {
+      // Subscription missing — create it now without re-running other steps.
+      const subResult = await billingService.createSubscription({
+        tenantId,
+        organizationId: existingOrgId,
+        planId: PLAN_IDS.unpaid,
+      })
+      if (subResult.ok) {
+        const freeLimits = PLAN_ENTITLEMENTS[PLAN_IDS.unpaid]
+        for (const [feature, limit] of Object.entries(freeLimits)) {
+          await billingService.setEntitlement({ organizationId: existingOrgId, feature, limit })
+        }
+        logger.info('[PROVISION] Healed missing subscription for existing organization', {
+          organizationId: existingOrgId,
+        })
+      } else {
+        logger.warn('[PROVISION] Failed to heal missing subscription', {
+          organizationId: existingOrgId,
+          error: subResult.error.message,
+        })
+      }
+    }
     return { success: true, alreadyProvisioned: true }
   }
 
