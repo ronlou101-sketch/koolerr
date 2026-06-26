@@ -9,6 +9,7 @@ import type {
 import type { Entitlement, Subscription } from './types'
 import type { IBillingRepository } from './repository'
 import type { BillingStatus } from './types'
+import { logger } from '@/shared/lib/logger'
 
 // ---------------------------------------------------------------------------
 // Database row types — mirror the schema in migration 006
@@ -148,11 +149,24 @@ export class SupabaseBillingRepository implements IBillingRepository {
   async findSubscriptionByOrganizationId(
     organizationId: OrganizationId
   ): Promise<Subscription | null> {
+    // TEMPORARY DIAGNOSTIC — remove after root cause is confirmed
+    logger.info('[BILLING_REPO_DIAG] findSubscriptionByOrganizationId called', { organizationId })
+
     const { data, error } = await this.client
       .from('subscriptions')
       .select('*')
       .eq('organization_id', organizationId)
       .maybeSingle()
+
+    // TEMPORARY DIAGNOSTIC — remove after root cause is confirmed
+    logger.info('[BILLING_REPO_DIAG] query result', {
+      organizationIdQueried: organizationId,
+      found: !!data,
+      returnedOrgId: data ? (data as SubscriptionRow).organization_id : null,
+      returnedPlanId: data ? (data as SubscriptionRow).plan_id : null,
+      error: error ? error.message : null,
+    })
+
     if (error)
       throw new Error(`[BILLING_REPO] findSubscriptionByOrganizationId failed: ${error.message}`)
     return data ? mapSubscription(data as SubscriptionRow) : null

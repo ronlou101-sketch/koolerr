@@ -4,6 +4,7 @@ import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { billingService } from '@/domains/billing'
 import type { PlanId } from '@/domains/billing/plans'
 import { CheckoutButton } from './checkout-button'
+import { logger } from '@/shared/lib/logger'
 
 /**
  * Billing page — AI Workforce Packages.
@@ -250,8 +251,25 @@ export default async function BillingPage({
   const ctx = await getRequestPlatformContext()
   if (!ctx) redirect('/login')
 
+  // TEMPORARY DIAGNOSTIC — remove after root cause is confirmed
+  logger.info('[BILLING_PAGE_DIAG] context resolved', {
+    actorType: ctx.actor.type,
+    userId: ctx.actor.type === 'user' ? ctx.actor.userId : undefined,
+    organizationId: ctx.organizationId,
+    tenantId: ctx.tenantId,
+  })
+
   const { upgraded } = await searchParams
   const subscriptionResult = await billingService.getSubscription(ctx.organizationId)
+
+  // TEMPORARY DIAGNOSTIC — remove after root cause is confirmed
+  logger.info('[BILLING_PAGE_DIAG] getSubscription result', {
+    ok: subscriptionResult.ok,
+    planId: subscriptionResult.ok ? subscriptionResult.value.planId : null,
+    subscriptionOrgId: subscriptionResult.ok ? subscriptionResult.value.organizationId : null,
+    error: subscriptionResult.ok ? null : subscriptionResult.error.message,
+  })
+
   const subscription = subscriptionResult.ok ? subscriptionResult.value : null
   const currentPlanId = (subscription?.planId ?? 'unpaid') as PlanId
   const stripeEnabled = !!process.env.STRIPE_SECRET_KEY
