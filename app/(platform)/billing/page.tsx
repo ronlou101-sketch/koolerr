@@ -316,7 +316,7 @@ export default async function BillingPage({
       )}
 
       {/* ── Active package summary ── */}
-      {subscription && (
+      {subscription && currentPlanId !== 'unpaid' && (
         <div className="flex items-start justify-between gap-6 rounded-xl border border-border bg-card p-5">
           <div className="space-y-0.5">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
