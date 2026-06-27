@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { signOut } from './layout-actions'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
+import { isOwner, isOwnerAlwaysPath } from '@/infrastructure/auth/guards'
 import { billingService } from '@/domains/billing'
 import type { BillingStatus } from '@/domains/billing/types'
 
@@ -126,8 +127,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     </header>
   )
 
-  // Expired/canceled subscription: block all pages except /billing.
-  if (accessLevel === 'billing_only' && !pathname.startsWith('/billing')) {
+  // Expired/canceled subscription: block all pages except /billing and owner-always paths.
+  const ownerCanAccess = ctx !== null && isOwner(ctx) && isOwnerAlwaysPath(pathname)
+  if (accessLevel === 'billing_only' && !pathname.startsWith('/billing') && !ownerCanAccess) {
     return (
       <div className="min-h-screen bg-background">
         {nav}
