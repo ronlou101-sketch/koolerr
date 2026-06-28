@@ -36,6 +36,7 @@ export const OWNER_ALWAYS_PATHS = [
   '/revenue', // Revenue data and business management
   '/mission-control', // Platform control and administration
   '/settings', // Organization settings, user management, API keys, integrations
+  '/tracker', // Development tracker — admin-only, always accessible to Owner
 ] as const
 
 /**

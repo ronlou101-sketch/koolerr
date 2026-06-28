@@ -116,6 +116,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
             <Link href="/billing" className="text-sm text-muted-foreground hover:text-foreground">
               Billing
             </Link>
+            <Link href="/tracker" className="text-sm text-muted-foreground hover:text-foreground">
+              Tracker
+            </Link>
           </nav>
         </div>
         <form action={signOut}>
