@@ -44,7 +44,7 @@ their Business Brain, and working around the clock.
 
 ## 2. Overall Completion
 
-**~20%** — Phase 1 is complete. Phases 2 and 3 are in progress. Phases 4–10 are not started.
+**~28%** — Phase 1 is complete. Phase 2 is near-complete. Phase 3 is in progress. Phases 4–10 are not started.
 
 > ⚠️ Percentage reflects code implementation only. No phase is counted Complete until
 > end-to-end verification in the running application is confirmed.
@@ -52,8 +52,8 @@ their Business Brain, and working around the clock.
 | Phase | Name                    | Status         | Est. Complete |
 | ----- | ----------------------- | -------------- | ------------- |
 | 1     | Production Foundation   | ✅ Complete    | 100%          |
-| 2     | Launch Readiness Review | 🟡 In Progress | ~75%          |
-| 3     | Stripe Integration      | 🟡 In Progress | ~60%          |
+| 2     | Launch Readiness Review | 🟡 In Progress | ~90%          |
+| 3     | Stripe Integration      | 🟡 In Progress | ~70%          |
 | 4     | AI Integrations         | ⬜ Not Started | 0%            |
 | 5     | Core V1 Experiences     | ⬜ Not Started | 0%            |
 | 6     | End-to-End Verification | ⬜ Not Started | 0%            |
@@ -70,12 +70,16 @@ their Business Brain, and working around the clock.
 > A milestone may only be recorded here after it has been demonstrated working in the
 > running application and approved by the founder.
 
-| Date       | Phase                       | Mission                                            | What Was Completed                                                                                                                                                                                                                                                                              | Verification Performed                                                                               | Founder Approved |
-| ---------- | --------------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------- |
-| 2026-06-23 | 1 — Production Foundation   | Build the complete platform foundation             | Next.js 15 App Router; Supabase Auth + RLS; all domain services (Identity, Business Brain, Workforce Engine, Deliverables, Billing, Consent); Model Gateway + Trust Engine; Orchestration Engine with persistence; Content Workforce MVP; SEO Workforce MVP; CTO Agent; 22 ADRs; 155-test suite | TypeScript clean, 155 tests passing, deployed to Vercel                                              | Yes              |
-| 2026-06-23 | 2 — Launch Readiness Review | Create all public marketing pages                  | Landing, Features, Pricing, Privacy, Terms, Contact, Support pages; PublicHeader + PublicFooter; middleware updated for public route access                                                                                                                                                     | Pages publicly accessible on koolerr.vercel.app without authentication                               | Yes              |
-| 2026-06-23 | 2 — Launch Readiness Review | Implement approved Koolerr logo and favicon        | Logo variants (Trimmed, Wordmark, Icon-only); full favicon set; OG + Twitter images; PWA manifest; SEO metadata in app/layout.tsx                                                                                                                                                               | Assets visible in browser tab, OG preview, and all application surfaces on koolerr.vercel.app        | Yes              |
-| 2026-06-23 | 2 — Launch Readiness Review | Polish logo sizing and spacing across all surfaces | Platform header h-10; auth layout Wordmark h-16; nav spacing widened; OG images regenerated with trimmed logo                                                                                                                                                                                   | Visually verified across platform header, auth pages, and public header/footer on koolerr.vercel.app | Yes              |
+| Date       | Phase                       | Mission                                                    | What Was Completed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Verification Performed                                                                                                           | Founder Approved                                                  |
+| ---------- | --------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 2026-06-23 | 1 — Production Foundation   | Build the complete platform foundation                     | Next.js 15 App Router; Supabase Auth + RLS; all domain services (Identity, Business Brain, Workforce Engine, Deliverables, Billing, Consent); Model Gateway + Trust Engine; Orchestration Engine with persistence; Content Workforce MVP; SEO Workforce MVP; CTO Agent; 22 ADRs; 155-test suite                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | TypeScript clean, 155 tests passing, deployed to Vercel                                                                          | Yes                                                               |
+| 2026-06-23 | 2 — Launch Readiness Review | Create all public marketing pages                          | Landing, Features, Pricing, Privacy, Terms, Contact, Support pages; PublicHeader + PublicFooter; middleware updated for public route access                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Pages publicly accessible on koolerr.vercel.app without authentication                                                           | Yes                                                               |
+| 2026-06-23 | 2 — Launch Readiness Review | Implement approved Koolerr logo and favicon                | Logo variants (Trimmed, Wordmark, Icon-only); full favicon set; OG + Twitter images; PWA manifest; SEO metadata in app/layout.tsx                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Assets visible in browser tab, OG preview, and all application surfaces on koolerr.vercel.app                                    | Yes                                                               |
+| 2026-06-23 | 2 — Launch Readiness Review | Polish logo sizing and spacing across all surfaces         | Platform header h-10; auth layout Wordmark h-16; nav spacing widened; OG images regenerated with trimmed logo                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Visually verified across platform header, auth pages, and public header/footer on koolerr.vercel.app                             | Yes                                                               |
+| 2026-06-26 | 3 — Stripe Integration      | Harden billing, provisioning, and login flows              | Provisioning idempotency fix (heal missing subscription on re-provision); login healing for already-authenticated users with no subscription record; billing display fix suppressing active package section for unpaid plan; temporary diagnostic logging removed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | TypeScript clean; deployed to koolerr.vercel.app                                                                                 | Yes                                                               |
+| 2026-06-26 | 3 — Stripe Integration      | Redesign customer onboarding with pre-auth Stripe checkout | New customer flow: /pricing → /api/checkout/start?plan=x → Stripe Checkout → /checkout/success (provision org/subscription/user/workforce + password creation + auto sign-in → /dashboard). POST /api/checkout/complete with 3-attempt internal retry + client Retry button + support email fallback (never-stranded guarantee). POST /api/checkout/set-password (httpOnly cookie auth, 30-min expiry). /forgot-password + /reset-password flows added. Subscription enforcement in platform layout: soft amber banner (past_due/unpaid) + billing_only hard gate (expired/canceled). Middleware updated: x-pathname header for server components; 6 new public paths. Stripe integration extended: retrieveCheckoutSession, updateStripeSubscriptionMetadata. Schema migration 016: subscriptions_organization_id_key unique constraint. | TypeScript clean; 155 tests passing; build successful; deployed to koolerr.vercel.app; owner login and dashboard access verified | Yes                                                               |
+| 2026-06-27 | 3 — Stripe Integration      | Implement permanent Owner Protection                       | infrastructure/auth/guards.ts created as single source of truth: OWNER_ALWAYS_PATHS (11 administrative routes), isOwner(ctx), isOwnerAlwaysPath(pathname). Platform layout billing_only gate updated to exempt owner on all administrative and recovery paths while preserving customer subscription enforcement on feature routes (/runs, /cto, /analytics). 73 regression tests in infrastructure/auth/guards.test.ts verify every guarantee.                                                                                                                                                                                                                                                                                                                                                                                           | TypeScript clean; 228 tests (11 files) passing; deployed to koolerr.vercel.app                                                   | Yes                                                               |
+| 2026-06-27 | 3 — Stripe Integration      | Production deployment and verification (partial)           | Production deployment dpl_EejVAZS9AK9dvg9BYz3CnPvo2uxA deployed to koolerr.vercel.app. Verification: owner login infrastructure ✅; all 13 platform routes live ✅; customer subscription enforcement confirmed by test suite ✅; Stripe API handler error responses correct ✅; 228/228 regression tests pass ✅. Regression found: password reset email link fails with /login?error=missing_code#error=access_denied&error_code=otp_expired. Root cause identified: Supabase OTP consumed by email security scanner (prefetch) before user clicks the link. Fix not yet implemented (B-006).                                                                                                                                                                                                                                           | 228/228 tests passing; TypeScript clean; 5 of 6 production verification items confirmed                                          | Yes — deployment approved; password reset regression awaiting fix |
 
 ---
 
@@ -101,9 +105,16 @@ Any change to the roadmap requires explicit founder approval.
 
 **Phase 3 — Stripe Integration** 🟡
 
-All Stripe code is complete and pushed to production. Configuration in Stripe Dashboard and
-Vercel is pending user action and has not been confirmed. Phase 3 is not complete until
-end-to-end checkout is demonstrated working in the live application.
+All Stripe and onboarding code is implemented and deployed to production (commit `7dbd5cc`).
+The complete pre-auth checkout flow is live: `/pricing` → `/api/checkout/start` → Stripe Checkout
+→ `/checkout/success` (provision + password creation + auto sign-in → `/dashboard`). Subscription
+enforcement (soft banner + billing_only hard gate) and permanent Owner Protection are deployed.
+
+B-006 (password reset regression) code fix is implemented and uncommitted: scanner-proof `/confirm`
+page created; middleware updated. Fix awaits Supabase email template change (user action) and
+end-to-end production verification before B-006 can be closed. Stripe Dashboard configuration and
+Vercel env vars are still pending user action (`B-001`, `B-002`). Phase 3 is not complete until
+the password reset regression is fixed AND end-to-end checkout passes full production verification.
 
 **Phase gate:** Stripe must pass full end-to-end production verification before Phase 4
 (AI Integrations) begins. This is a hard gate — no exceptions.
@@ -117,19 +128,30 @@ end-to-end checkout is demonstrated working in the live application.
 
 **Current Phase:** Phase 3 — Stripe Integration
 
-**Current Mission:** Complete and verify Stripe in production.
+**Current Mission:** Fix password reset regression and complete full Stripe production verification.
 
 **Success Criteria** — all items must be checked before this mission is closed:
+
+**Regression fix (immediate — blocks all verification below):**
+
+- [ ] Password reset regression fixed (B-006): email link no longer fails with `otp_expired` — solution must prevent OTP consumption by email security scanners
+- [ ] Password reset verified end-to-end in production: request link → receive email → click link → set new password → sign in
+
+**Stripe Dashboard (user action required):**
 
 - [ ] Stripe Products created: "Koolerr BUILD" $99/mo · "Koolerr GROW" $499/mo · "Koolerr SCALE" $1,499/mo
 - [ ] Stripe Price IDs captured and set as Vercel env vars (`STRIPE_BUILD_PRICE_ID`, `STRIPE_GROW_PRICE_ID`, `STRIPE_SCALE_PRICE_ID`)
 - [ ] `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL` set in Vercel Production
-- [ ] Webhook endpoint registered: `https://koolerr.vercel.app/api/webhooks/stripe` (4 events)
-- [ ] Customer Portal activated in Stripe Dashboard, return URL set to `/billing`
+- [ ] Webhook endpoint registered: `https://koolerr.vercel.app/api/webhooks/stripe` (4 events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`)
+- [ ] Webhook signing secret captured → `STRIPE_WEBHOOK_SECRET`
+- [ ] Customer Portal activated in Stripe Dashboard, return URL set to `https://koolerr.vercel.app/billing`
+
+**End-to-end checkout verification:**
+
 - [ ] `/billing` page loads in production with no amber "Payments not yet active" banner
-- [ ] Clicking a checkout button redirects to Stripe Checkout (not a 400 error)
-- [ ] Test checkout with card `4242 4242 4242 4242` completes and lands on `/billing?upgraded=1`
-- [ ] Active Package widget displays the correct plan name after checkout
+- [ ] Clicking a plan button on `/pricing` redirects to Stripe Checkout (via `/api/checkout/start?plan=build|grow|scale`)
+- [ ] Test checkout with card `4242 4242 4242 4242` completes: Stripe redirects to `/checkout/success`, account is provisioned, password creation form appears, customer signs in and reaches `/dashboard`
+- [ ] `/billing` displays the correct plan name and active package after checkout
 - [ ] `checkout.session.completed` webhook shows status 200 in Stripe Dashboard
 - [ ] Subscription record in DB has `stripeCustomerId` and `stripeSubscriptionId` populated
 - [ ] "Manage Billing →" button opens the Stripe Customer Portal successfully
@@ -182,8 +204,8 @@ end-to-end checkout is demonstrated working in the live application.
 
 **Quality**
 
-- ✅ Test suite — 155 tests across 10 files
-- ✅ 22 Architecture Decision Records
+- ✅ Test suite — 228 tests across 11 files (grown from 155/10 through Phase 3 additions)
+- ✅ 22 Architecture Decision Records (ADR-001 through ADR-022)
 
 ---
 
@@ -234,10 +256,16 @@ end-to-end checkout is demonstrated working in the live application.
 
 - ✅ Products — three Stripe products defined: Koolerr BUILD · Koolerr GROW · Koolerr SCALE
 - ✅ Pricing — plan prices aligned: build=$99 · grow=$499 · scale=$1,499 (locked in `PLAN_PRICES_CENTS`)
-- ✅ Checkout — checkout session creation, Stripe redirect, success/cancel URL handling
+- ✅ Pre-auth checkout flow — new customers select plan on `/pricing`, complete Stripe Checkout before account exists, provisioning happens after payment confirmation
+- ✅ Checkout session — session creation, Stripe redirect, success/cancel URL handling
+- ✅ Post-checkout provisioning — idempotent org/subscription/user/workforce creation with 3-attempt internal retry; never-stranded guarantee
+- ✅ Password creation — httpOnly cookie auth; customer creates password on `/checkout/success`; auto sign-in to `/dashboard`
 - ✅ Customer Portal — billing portal session creation and redirect
 - ✅ Webhooks — 4 lifecycle events handled, HMAC-SHA-256 signature verification, 5-min replay protection
-- ⬜ Subscription lifecycle — post-checkout subscription state management
+- ✅ Subscription enforcement — soft amber banner (unpaid/past_due/ending); billing_only hard gate (expired/canceled); fails open on null context
+- ✅ Owner Protection — OWNER_ALWAYS_PATHS exempts owner from billing_only gate on 11 administrative routes; subscription enforcement unchanged for non-owner roles and feature routes
+- ✅ Forgot password flow — `/forgot-password` → Supabase `resetPasswordForEmail` → `/auth/callback?next=/reset-password` → `/reset-password`
+- 🟡 Password reset production verification — B-006 code fix implemented (uncommitted); pending: (1) Supabase Reset Password email template change to `{{ .TokenHash }}` flow in dashboard, (2) end-to-end production verification
 - ⬜ Upgrade/Downgrade — plan change flows (proration, timing)
 - ⬜ Cancellation — cancellation handling and access revocation
 - ⬜ Payment failure handling — dunning, retry logic, access suspension
@@ -246,20 +274,33 @@ end-to-end checkout is demonstrated working in the live application.
 > ⚠️ ✅ items above are code implementation only. None qualify as ✅ Complete under the
 > project definition until verified working in the running application.
 
-**Code — complete and pushed**
+**Code — complete and pushed (commit `7dbd5cc`)**
 
-- ✅ `shared/integrations/stripe/index.ts` — `createCheckoutSession`, `createPortalSession`, `verifyStripeWebhook` (no SDK, native fetch, Web Crypto HMAC-SHA-256, 5-min replay protection)
-- ✅ `POST /api/billing/checkout` — reads JSON body, validates `build | grow | scale`
+- ✅ `shared/integrations/stripe/index.ts` — `createCheckoutSession` (organizationId optional for pre-auth), `createPortalSession`, `retrieveCheckoutSession`, `updateStripeSubscriptionMetadata`, `verifyStripeWebhook` (no SDK, native fetch, Web Crypto HMAC-SHA-256, 5-min replay protection)
+- ✅ `GET /api/checkout/start` — maps `?plan=build|grow|scale` to Stripe price ID; creates pre-auth checkout session; redirects to Stripe
+- ✅ `POST /api/checkout/complete` — verifies Stripe payment; provisions platform account (idempotent); patches Stripe subscription metadata with `organization_id` for future webhook routing
+- ✅ `POST /api/checkout/set-password` — sets password on newly-created account via Supabase Admin API; authorized via httpOnly `pending_password_setup` cookie (30-min expiry)
+- ✅ `/checkout/success` — client page: provisioning spinner → password creation form → auto sign-in → `/dashboard`; client Retry button (3 attempts); support email fallback
+- ✅ `POST /api/billing/checkout` — existing endpoint for authenticated billing page upgrades (still active)
 - ✅ `POST /api/billing/portal` — requires existing `stripeCustomerId`
 - ✅ `POST /api/webhooks/stripe` — handles 4 lifecycle events, HMAC signature verification
-- ✅ `CheckoutButton` client component — POSTs `{ planId }` as JSON, redirects to Stripe URL
-- ✅ Billing page — BUILD / GROW / SCALE cards, comparison table, active package widget
-- ✅ Middleware — `/api/webhooks/stripe` in `PUBLIC_PATHS` (self-secured via Stripe signature)
+- ✅ `/forgot-password` — email form, `resetPasswordForEmail` with `redirectTo: /auth/callback?next=/reset-password`
+- ✅ `/reset-password` — verifies recovery session via `getUser()`; calls `updateUser({ password })`; redirects to `/dashboard`
+- ✅ `/auth/callback` — recovery branch: if `next === '/reset-password'` skip provisioning and redirect directly
+- 🟡 `app/(auth)/confirm/page.tsx` — NEW (uncommitted): scanner-proof password reset confirmation page at `/confirm`; renders form on GET without consuming OTP; Server Action calls `verifyOtp({ token_hash, type: 'recovery' })` only on form POST (user click); redirects to `/reset-password` on success
+- 🟡 `middleware.ts` — `/confirm` added to PUBLIC_PATHS (uncommitted); required so unauthenticated users can reach the confirm page
+- ✅ `infrastructure/auth/guards.ts` — `OWNER_ALWAYS_PATHS`, `isOwner()`, `isOwnerAlwaysPath()`; 73 regression tests in `guards.test.ts`
+- ✅ `app/(platform)/layout.tsx` — subscription enforcement + Owner Protection gate
+- ✅ Middleware — x-pathname header; 6 new public paths including checkout and password routes
+- ✅ Pricing page — plan CTAs link to `/api/checkout/start?plan=build|grow|scale` (not signup)
+- ✅ Login page — "Forgot password?" link added
 - ✅ Plan IDs: `unpaid` / `build` / `grow` / `scale` (all `free` / `starter` / `growth` references removed)
 - ✅ `PLAN_PRICES_CENTS`: build=$99, grow=$499, scale=$1,499
 - ✅ `stripePriceId()` reads `STRIPE_BUILD_PRICE_ID`, `STRIPE_GROW_PRICE_ID`, `STRIPE_SCALE_PRICE_ID`
 - ✅ SCALE is self-serve Stripe checkout (no contact-sales gate)
-- 🟡 DB migration `plan_id 'free' → 'unpaid'` — SQL provided, execution not confirmed (Needs Review)
+- ✅ Schema migration 016 (`20260626000016_subscription_unique_per_org.sql`) — `subscriptions_organization_id_key` unique constraint; `subscriptions_tenant_id_key` dropped
+- ✅ Test suite — 228 tests across 11 files (73 new owner-protection regression tests)
+- 🟡 DB migration `plan_id 'free' → 'unpaid'` — SQL provided, execution in production not confirmed (Needs Review)
 
 > ⚠️ Code items above are marked ✅ for implementation only. None qualify as ✅ Complete
 > under the project definition until verified working in the running application.
@@ -284,7 +325,7 @@ end-to-end checkout is demonstrated working in the live application.
 - 🟡 `STRIPE_SCALE_PRICE_ID` set in Production — Needs Review
 - 🟡 `NEXT_PUBLIC_APP_URL` set in Production — Needs Review
 
-**End-to-End Verification — not started**
+**End-to-End Verification — blocked on B-006 and B-001/B-002**
 
 See Section 6 (Session Objective) → Success Criteria for the full verification checklist.
 
@@ -319,27 +360,34 @@ Not started. Scope to be defined after Phase 5 is complete.
 
 ## 8. Session Log
 
-| Date       | Summary                                                                                                                                                                                                 |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-06-23 | Phase 2 public pages: Landing, Features, Pricing, Privacy, Terms, Contact, Support. PublicHeader, PublicFooter. Middleware public route whitelist.                                                      |
-| 2026-06-23 | Logo/favicon: Trimmed + Wordmark PNG variants generated. Full favicon set. OG/Twitter images. PWA manifest. SEO metadata.                                                                               |
-| 2026-06-23 | UI Polish: platform header h-10, auth Wordmark h-16, nav spacing widened, OG image regenerated.                                                                                                         |
-| 2026-06-23 | Phase 3.1 audit: complete readiness reports for Stripe, Manus, HeyGen, Higgsfield. Gaps identified: 4 missing Stripe env vars, webhook not registered, form/JSON mismatch, middleware blocking webhook. |
-| 2026-06-24 | Stripe code fixes: middleware webhook exemption, checkout formData→JSON, `'free'`→`'unpaid'` plan rename, `PLAN_PRICES_CENTS` corrected to $99/$499.                                                    |
-| 2026-06-24 | Plan ID alignment: `starter`/`growth` → `build`/`grow`; SCALE added as purchasable Stripe tier with `planId: 'scale'`; `CheckoutButton` client component created; env var names updated.                |
-| 2026-06-25 | KOOLERR_MASTER_TRACKER.md created.                                                                                                                                                                      |
+| Date       | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-06-23 | Phase 2 public pages: Landing, Features, Pricing, Privacy, Terms, Contact, Support. PublicHeader, PublicFooter. Middleware public route whitelist.                                                                                                                                                                                                                                                                                                            |
+| 2026-06-23 | Logo/favicon: Trimmed + Wordmark PNG variants generated. Full favicon set. OG/Twitter images. PWA manifest. SEO metadata.                                                                                                                                                                                                                                                                                                                                     |
+| 2026-06-23 | UI Polish: platform header h-10, auth Wordmark h-16, nav spacing widened, OG image regenerated.                                                                                                                                                                                                                                                                                                                                                               |
+| 2026-06-23 | Phase 3.1 audit: complete readiness reports for Stripe, Manus, HeyGen, Higgsfield. Gaps identified: 4 missing Stripe env vars, webhook not registered, form/JSON mismatch, middleware blocking webhook.                                                                                                                                                                                                                                                       |
+| 2026-06-24 | Stripe code fixes: middleware webhook exemption, checkout formData→JSON, `'free'`→`'unpaid'` plan rename, `PLAN_PRICES_CENTS` corrected to $99/$499.                                                                                                                                                                                                                                                                                                          |
+| 2026-06-24 | Plan ID alignment: `starter`/`growth` → `build`/`grow`; SCALE added as purchasable Stripe tier with `planId: 'scale'`; `CheckoutButton` client component created; env var names updated.                                                                                                                                                                                                                                                                      |
+| 2026-06-25 | KOOLERR_MASTER_TRACKER.md created.                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 2026-06-26 | Billing/provisioning hardening: heal missing subscription on idempotent re-provision; login healing for already-authenticated users; suppress active package widget for unpaid plan; remove diagnostic logging.                                                                                                                                                                                                                                               |
+| 2026-06-26 | Onboarding redesign (commit `81af314`): pre-auth Stripe checkout (/pricing → /api/checkout/start → Stripe → /checkout/success with provisioning + password creation + auto sign-in → /dashboard); /forgot-password and /reset-password; subscription enforcement (soft banner + billing_only gate); middleware x-pathname header; schema migration 016.                                                                                                       |
+| 2026-06-27 | Owner Protection (commit `7dbd5cc`): OWNER_ALWAYS_PATHS in infrastructure/auth/guards.ts; isOwner() and isOwnerAlwaysPath() guards; platform layout gate updated; 73 regression tests; TypeScript clean; 228 tests passing; deployed to production.                                                                                                                                                                                                           |
+| 2026-06-27 | Production verification: 5 of 6 items confirmed. Regression identified: password reset email links fail with otp_expired — Supabase OTP consumed by email security scanner before user click. Root cause documented. Fix not yet implemented (B-006).                                                                                                                                                                                                         |
+| 2026-06-28 | Tracker synchronized with codebase state through commit 7dbd5cc. All unrecorded work from 2026-06-26 and 2026-06-27 entered. Phase 3 checklist, success criteria, and blockers updated.                                                                                                                                                                                                                                                                       |
+| 2026-06-28 | B-006 root-cause verification (5 dimensions): confirmed OTP consumed by email scanner via {{ .ConfirmationURL }} → supabase.co/auth/v1/verify prefetch. Scanner-proof fix implemented (uncommitted): app/(auth)/confirm/page.tsx — verifyOtp on form POST only, not GET; middleware.ts — /confirm added to PUBLIC_PATHS. TypeScript clean, 228/228 tests pass. Pending: Supabase dashboard template change ({{ .TokenHash }} flow) + end-to-end verification. |
 
 ---
 
 ## 9. Blockers
 
-| ID    | Blocker                                                             | Phase | Owner   | Status                     |
-| ----- | ------------------------------------------------------------------- | ----- | ------- | -------------------------- |
-| B-001 | Stripe Dashboard not configured (products, prices, webhook, portal) | 3     | User    | 🟡 Pending                 |
-| B-002 | Vercel Stripe env vars not set                                      | 3     | User    | 🟡 Pending                 |
-| B-003 | End-to-end checkout not verified                                    | 3     | —       | ⬜ Waiting on B-001, B-002 |
-| B-004 | DB migration `plan_id 'free'→'unpaid'` execution not confirmed      | 3     | User    | 🟡 Needs Review            |
-| B-005 | Manus product role undefined                                        | 4     | Founder | 🚫 Blocked                 |
+| ID    | Blocker                                                                                                                                                                                                                                                                                                                                                                                       | Phase | Owner   | Status                                                                                |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------- | ------------------------------------------------------------------------------------- |
+| B-001 | Stripe Dashboard not configured (products, prices, webhook, portal)                                                                                                                                                                                                                                                                                                                           | 3     | User    | 🟡 Pending                                                                            |
+| B-002 | Vercel Stripe env vars not set                                                                                                                                                                                                                                                                                                                                                                | 3     | User    | 🟡 Pending                                                                            |
+| B-003 | End-to-end checkout not verified                                                                                                                                                                                                                                                                                                                                                              | 3     | —       | ⬜ Waiting on B-001, B-002, B-006                                                     |
+| B-004 | DB migration `plan_id 'free'→'unpaid'` execution not confirmed                                                                                                                                                                                                                                                                                                                                | 3     | User    | 🟡 Needs Review                                                                       |
+| B-005 | Manus product role undefined                                                                                                                                                                                                                                                                                                                                                                  | 4     | Founder | 🚫 Blocked                                                                            |
+| B-006 | Password reset email link fails with `otp_expired` in production. Root cause: Supabase OTP consumed by email security scanner before user click. Fix implemented (uncommitted): scanner-proof `/confirm` page — verifyOtp called only on form POST, not GET. Requires Supabase dashboard email template change to `{{ .TokenHash }}` flow + end-to-end production verification before closed. | 3     | —       | 🟡 Code fix implemented — pending dashboard template change + production verification |
 
 ---
 
@@ -479,4 +527,4 @@ Before every coding session:
 
 ## Last Updated
 
-**2026-06-25**
+**2026-06-28** (B-006 fix implementation and tracker sync)

@@ -51,6 +51,9 @@ const PUBLIC_PATHS: string[] = [
   // Password management
   '/forgot-password',
   '/reset-password',
+  // Scanner-proof password reset confirmation: token_hash is consumed only on
+  // POST (button click), not on GET, so email scanner prefetch cannot invalidate the OTP.
+  '/confirm',
 ]
 
 function isPublicPath(pathname: string): boolean {
