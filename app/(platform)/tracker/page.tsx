@@ -1,6 +1,8 @@
+import { notFound } from 'next/navigation'
 import { parseTracker } from './parse-tracker'
 import { PhaseCard } from './PhaseCard'
 import type { ItemStatus, BlockerStatus } from './parse-tracker'
+import { createSessionServerClient } from '@/shared/lib/supabase-session'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,7 +61,13 @@ function Bar({
   )
 }
 
-export default function TrackerPage() {
+export default async function TrackerPage() {
+  const supabase = await createSessionServerClient()
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser()
+  if (authUser?.email !== 'ronlou101@gmail.com') notFound()
+
   const data = parseTracker()
 
   const openBlockers = data.blockers.filter((b) => b.status !== 'resolved')
