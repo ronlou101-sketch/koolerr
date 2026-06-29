@@ -1,8 +1,35 @@
 import Link from 'next/link'
 import { TowerCard } from './_components/TowerCard'
 import { TowerSection } from './_components/TowerSection'
+import { getPlatformHealth } from './health/health-data'
+import type { HealthStatus } from './health/health-data'
 
-export default function TowerPage() {
+export const dynamic = 'force-dynamic'
+
+const STATUS_DOT: Record<HealthStatus, string> = {
+  healthy: 'bg-emerald-500',
+  warning: 'bg-amber-400',
+  critical: 'bg-destructive',
+  'not-configured': 'bg-muted-foreground/30',
+}
+
+const STATUS_TEXT: Record<HealthStatus, string> = {
+  healthy: 'Healthy',
+  warning: 'Warning',
+  critical: 'Critical',
+  'not-configured': '—',
+}
+
+export default async function TowerPage() {
+  const health = await getPlatformHealth()
+
+  const statusStrip = [
+    { label: 'Database', status: health.database.status, href: '/tower/health/database' },
+    { label: 'Auth', status: health.authentication.status, href: '/tower/health/authentication' },
+    { label: 'AI Runs', status: health.engagementRuns.status, href: '/tower/health/runs' },
+    { label: 'Billing', status: health.billingHealth.status, href: '/tower/health/billing' },
+  ] as const
+
   return (
     <div className="space-y-10">
       {/* Header */}
@@ -18,20 +45,27 @@ export default function TowerPage() {
             Koolerr Founder Command Center · Operational hub for running and scaling Koolerr
           </p>
         </div>
-        <div className="text-right">
-          <p className="text-xs font-medium text-muted-foreground">Phase 1</p>
-          <p className="text-xs text-muted-foreground">Shell · Data integrations pending</p>
-        </div>
+        <Link
+          href="/tower/health"
+          className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-xs text-muted-foreground hover:border-foreground/20"
+        >
+          <span className={`h-2 w-2 rounded-full ${STATUS_DOT[health.overall]}`} />
+          <span>
+            {health.overall === 'healthy'
+              ? 'All Systems Operational'
+              : health.overall === 'warning'
+                ? 'Degraded Performance'
+                : health.overall === 'critical'
+                  ? 'System Issues'
+                  : 'Status Unknown'}
+          </span>
+          <span className="opacity-50">→</span>
+        </Link>
       </div>
 
       {/* Platform status strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: 'API', href: '/tower/health' },
-          { label: 'Database', href: '/tower/health' },
-          { label: 'Auth', href: '/tower/health' },
-          { label: 'Webhooks', href: '/tower/health' },
-        ].map(({ label, href }) => (
+        {statusStrip.map(({ label, status, href }) => (
           <Link
             key={label}
             href={href}
@@ -39,8 +73,8 @@ export default function TowerPage() {
           >
             <span>{label}</span>
             <span className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
-              <span>—</span>
+              <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[status]}`} />
+              <span>{STATUS_TEXT[status]}</span>
             </span>
           </Link>
         ))}
@@ -55,17 +89,17 @@ export default function TowerPage() {
         <TowerCard
           title="API Health"
           description="Response times, error rates, and endpoint availability across all routes."
-          href="/tower/health"
+          href="/tower/health/api"
         />
         <TowerCard
           title="Database Health"
           description="Query latency, connection pool depth, and migration state."
-          href="/tower/health"
+          href="/tower/health/database"
         />
         <TowerCard
           title="Authentication Status"
           description="Supabase Auth availability, session health, and RLS coverage."
-          href="/tower/health"
+          href="/tower/health/authentication"
         />
         <TowerCard
           title="Webhook Status"
@@ -85,12 +119,12 @@ export default function TowerPage() {
         <TowerCard
           title="Background Jobs"
           description="Async task execution status, queue depth, and failure rates."
-          href="/tower/health"
+          href="/tower/health/jobs"
         />
         <TowerCard
           title="Deployments"
           description="Vercel production deployment history and rollback status."
-          href="/tower/health"
+          href="/tower/health/deployments"
           badge="External"
         />
       </TowerSection>
@@ -159,7 +193,7 @@ export default function TowerPage() {
         <TowerCard
           title="Subscription Health"
           description="Active, trialing, past_due, and canceled subscription breakdown."
-          href="/tower/billing"
+          href="/tower/health/subscriptions"
         />
         <TowerCard
           title="Active Plans"
@@ -169,7 +203,7 @@ export default function TowerPage() {
         <TowerCard
           title="Payment Issues"
           description="Organizations with past_due, failed payments, or dunning status."
-          href="/tower/billing"
+          href="/tower/health/billing"
         />
       </TowerSection>
 
@@ -215,7 +249,7 @@ export default function TowerPage() {
         <TowerCard
           title="Run Success Rate"
           description="Platform-wide success and failure rates for AI-generated runs."
-          href="/tower/runs"
+          href="/tower/health/runs"
         />
         <TowerCard
           title="Pending Approvals"

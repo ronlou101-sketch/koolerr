@@ -193,3 +193,282 @@ export async function getPlatformHealth(): Promise<PlatformHealthData> {
     fetchedAt,
   }
 }
+
+// ── Detail Data Types ──────────────────────────────────────────────────────────
+
+export interface DatabaseHealthDetail {
+  tables: Array<{ name: string; count: number | null; accessible: boolean }>
+  overall: HealthStatus
+  fetchedAt: string
+}
+
+export interface AuthHealthDetail {
+  userCount: number
+  overall: HealthStatus
+  fetchedAt: string
+}
+
+export interface OrgHealthDetail {
+  active: number
+  inactive: number
+  recentlyCreated: number
+  total: number
+  overall: HealthStatus
+  fetchedAt: string
+}
+
+export interface UserHealthDetail {
+  total: number
+  overall: HealthStatus
+  fetchedAt: string
+}
+
+export interface SubscriptionHealthDetail {
+  active: number
+  trialing: number
+  pastDue: number
+  canceled: number
+  total: number
+  planBreakdown: Array<{ planId: string; count: number }>
+  overall: HealthStatus
+  fetchedAt: string
+}
+
+export interface BillingHealthDetail {
+  stripeConnected: boolean
+  stripeActiveCount: number
+  pastDueCount: number
+  totalSubscriptions: number
+  overall: HealthStatus
+  fetchedAt: string
+}
+
+export interface RunsHealthDetail {
+  pending: number
+  running: number
+  awaitingApproval: number
+  approved: number
+  rejected: number
+  completed: number
+  failed: number
+  total: number
+  overall: HealthStatus
+  fetchedAt: string
+}
+
+export interface AuditHealthDetail {
+  total24h: number
+  success24h: number
+  denied24h: number
+  errors24h: number
+  recentEvents: Array<{
+    action: string
+    outcome: string
+    actorType: string
+    occurredAt: string
+  }>
+  overall: HealthStatus
+  fetchedAt: string
+}
+
+// ── Detail Data Functions ──────────────────────────────────────────────────────
+
+export async function getDatabaseHealthDetail(): Promise<DatabaseHealthDetail> {
+  const db = createServerSupabaseClient()
+  const fetchedAt = new Date().toISOString()
+  const tableNames = ['organizations', 'users', 'subscriptions', 'engagement_runs', 'audit_events']
+
+  const results = await Promise.allSettled(
+    tableNames.map((name) => db.from(name).select('id', { count: 'exact', head: true }))
+  )
+
+  const tables = tableNames.map((name, i) => {
+    const result = results[i]!
+    if (result.status === 'rejected' || result.value.error) {
+      return { name, count: null, accessible: false }
+    }
+    return { name, count: result.value.count ?? 0, accessible: true }
+  })
+
+  const hasError = tables.some((t) => !t.accessible)
+  return { tables, overall: hasError ? 'critical' : 'healthy', fetchedAt }
+}
+
+export async function getAuthHealthDetail(): Promise<AuthHealthDetail> {
+  const db = createServerSupabaseClient()
+  const fetchedAt = new Date().toISOString()
+  const { count, error } = await db.from('users').select('id', { count: 'exact', head: true })
+  return { userCount: error ? 0 : (count ?? 0), overall: 'healthy', fetchedAt }
+}
+
+export async function getOrganizationsHealthDetail(): Promise<OrgHealthDetail> {
+  const db = createServerSupabaseClient()
+  const fetchedAt = new Date().toISOString()
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const { data, error } = await db.from('organizations').select('id, status, created_at')
+  if (error || !data) {
+    return { active: 0, inactive: 0, recentlyCreated: 0, total: 0, overall: 'critical', fetchedAt }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const orgs: any[] = data
+  const active = orgs.filter((o) => o.status === 'active').length
+  const inactive = orgs.filter((o) => o.status !== 'active').length
+  const recentlyCreated = orgs.filter((o) => o.created_at >= sevenDaysAgo).length
+  return { active, inactive, recentlyCreated, total: orgs.length, overall: 'healthy', fetchedAt }
+}
+
+export async function getUsersHealthDetail(): Promise<UserHealthDetail> {
+  const db = createServerSupabaseClient()
+  const fetchedAt = new Date().toISOString()
+  const { count, error } = await db.from('users').select('id', { count: 'exact', head: true })
+  if (error) return { total: 0, overall: 'critical', fetchedAt }
+  return { total: count ?? 0, overall: 'healthy', fetchedAt }
+}
+
+export async function getSubscriptionsHealthDetail(): Promise<SubscriptionHealthDetail> {
+  const db = createServerSupabaseClient()
+  const fetchedAt = new Date().toISOString()
+  const { data, error } = await db.from('subscriptions').select('status, plan_id')
+  if (error || !data) {
+    return {
+      active: 0,
+      trialing: 0,
+      pastDue: 0,
+      canceled: 0,
+      total: 0,
+      planBreakdown: [],
+      overall: 'critical',
+      fetchedAt,
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const subs: any[] = data
+  const active = subs.filter((s) => s.status === 'active').length
+  const trialing = subs.filter((s) => s.status === 'trialing').length
+  const pastDue = subs.filter((s) => s.status === 'past_due').length
+  const canceled = subs.filter((s) => s.status === 'canceled').length
+  const planCounts = new Map<string, number>()
+  subs.forEach((s) => planCounts.set(s.plan_id, (planCounts.get(s.plan_id) ?? 0) + 1))
+  const planBreakdown = Array.from(planCounts.entries())
+    .map(([planId, count]) => ({ planId, count }))
+    .sort((a, b) => b.count - a.count)
+  return {
+    active,
+    trialing,
+    pastDue,
+    canceled,
+    total: subs.length,
+    planBreakdown,
+    overall: pastDue > 0 ? 'warning' : 'healthy',
+    fetchedAt,
+  }
+}
+
+export async function getBillingHealthDetail(): Promise<BillingHealthDetail> {
+  const db = createServerSupabaseClient()
+  const fetchedAt = new Date().toISOString()
+  const { data, error } = await db.from('subscriptions').select('status, stripe_subscription_id')
+  if (error || !data) {
+    return {
+      stripeConnected: false,
+      stripeActiveCount: 0,
+      pastDueCount: 0,
+      totalSubscriptions: 0,
+      overall: 'critical',
+      fetchedAt,
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const subs: any[] = data
+  const stripeConnected = subs.some((s) => s.stripe_subscription_id != null)
+  const stripeActiveCount = subs.filter(
+    (s) => s.stripe_subscription_id != null && s.status === 'active'
+  ).length
+  const pastDueCount = subs.filter((s) => s.status === 'past_due').length
+  return {
+    stripeConnected,
+    stripeActiveCount,
+    pastDueCount,
+    totalSubscriptions: subs.length,
+    overall: !stripeConnected ? 'not-configured' : pastDueCount > 0 ? 'warning' : 'healthy',
+    fetchedAt,
+  }
+}
+
+export async function getRunsHealthDetail(): Promise<RunsHealthDetail> {
+  const db = createServerSupabaseClient()
+  const fetchedAt = new Date().toISOString()
+  const { data, error } = await db.from('engagement_runs').select('status')
+  if (error || !data) {
+    return {
+      pending: 0,
+      running: 0,
+      awaitingApproval: 0,
+      approved: 0,
+      rejected: 0,
+      completed: 0,
+      failed: 0,
+      total: 0,
+      overall: 'critical',
+      fetchedAt,
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const runs: any[] = data
+  const cnt = (s: string) => runs.filter((r) => r.status === s).length
+  const failed = cnt('failed')
+  return {
+    pending: cnt('pending'),
+    running: cnt('running'),
+    awaitingApproval: cnt('awaiting_approval'),
+    approved: cnt('approved'),
+    rejected: cnt('rejected'),
+    completed: cnt('completed'),
+    failed,
+    total: runs.length,
+    overall: failed > 0 ? 'warning' : 'healthy',
+    fetchedAt,
+  }
+}
+
+export async function getAuditHealthDetail(): Promise<AuditHealthDetail> {
+  const db = createServerSupabaseClient()
+  const fetchedAt = new Date().toISOString()
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { data, error } = await db
+    .from('audit_events')
+    .select('action, outcome, actor_type, occurred_at')
+    .gte('occurred_at', twentyFourHoursAgo)
+    .order('occurred_at', { ascending: false })
+    .limit(100)
+  if (error || !data) {
+    return {
+      total24h: 0,
+      success24h: 0,
+      denied24h: 0,
+      errors24h: 0,
+      recentEvents: [],
+      overall: 'critical',
+      fetchedAt,
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const events: any[] = data
+  const success24h = events.filter((e) => e.outcome === 'success').length
+  const denied24h = events.filter((e) => e.outcome === 'denied').length
+  const errors24h = events.filter((e) => e.outcome === 'error').length
+  return {
+    total24h: events.length,
+    success24h,
+    denied24h,
+    errors24h,
+    recentEvents: events.slice(0, 10).map((e) => ({
+      action: e.action,
+      outcome: e.outcome,
+      actorType: e.actor_type,
+      occurredAt: e.occurred_at,
+    })),
+    overall: errors24h > 0 ? 'warning' : 'healthy',
+    fetchedAt,
+  }
+}

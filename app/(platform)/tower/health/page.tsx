@@ -76,24 +76,28 @@ export default async function SystemHealthPage() {
           status={health.database.status}
           value={health.database.value}
           detail={health.database.detail}
+          href="/tower/health/database"
         />
         <TowerHealthCard
           title="Authentication"
           status={health.authentication.status}
           value={health.authentication.value}
           detail={health.authentication.detail}
+          href="/tower/health/authentication"
         />
         <TowerHealthCard
           title="API Health"
           status={health.apiHealth.status}
           value={health.apiHealth.value}
           detail={health.apiHealth.detail}
+          href="/tower/health/api"
         />
         <TowerHealthCard
           title="Background Jobs"
           status={health.backgroundJobs.status}
           value={health.backgroundJobs.value}
           detail={health.backgroundJobs.detail}
+          href="/tower/health/jobs"
         />
       </TowerSection>
 
@@ -107,28 +111,28 @@ export default async function SystemHealthPage() {
           status={health.activeOrganizations.status}
           value={health.activeOrganizations.value}
           detail={health.activeOrganizations.detail}
-          href="/tower/orgs"
+          href="/tower/health/organizations"
         />
         <TowerHealthCard
           title="Active Users"
           status={health.activeUsers.status}
           value={health.activeUsers.value}
           detail={health.activeUsers.detail}
-          href="/tower/users"
+          href="/tower/health/users"
         />
         <TowerHealthCard
           title="Active Subscriptions"
           status={health.subscriptions.status}
           value={health.subscriptions.value}
           detail={health.subscriptions.detail}
-          href="/tower/billing"
+          href="/tower/health/subscriptions"
         />
         <TowerHealthCard
           title="Billing Health"
           status={health.billingHealth.status}
           value={health.billingHealth.value}
           detail={health.billingHealth.detail}
-          href="/tower/billing"
+          href="/tower/health/billing"
         />
       </TowerSection>
 
@@ -142,20 +146,21 @@ export default async function SystemHealthPage() {
           status={health.engagementRuns.status}
           value={health.engagementRuns.value}
           detail={health.engagementRuns.detail}
-          href="/tower/runs"
+          href="/tower/health/runs"
         />
         <TowerHealthCard
           title="Audit Log (24h)"
           status={health.auditLog.status}
           value={health.auditLog.value}
           detail={health.auditLog.detail}
-          href="/tower/audit"
+          href="/tower/health/audit"
         />
         <TowerHealthCard
           title="Recent Deployments"
           status={health.deployments.status}
           value={health.deployments.value}
           detail={health.deployments.detail}
+          href="/tower/health/deployments"
         />
       </TowerSection>
     </div>
