@@ -35,7 +35,17 @@ const NAV = [
   },
   {
     section: 'AI Workforce',
-    items: [{ href: '/tower/runs', label: 'Activity' }],
+    items: [
+      { href: '/tower/runs', label: 'Activity' },
+      { href: '/tower/workforce-status', label: 'Workforce Status' },
+    ],
+  },
+  {
+    section: 'Operations',
+    items: [
+      { href: '/tower/cto', label: 'CTO Operations' },
+      { href: '/tower/automation', label: 'Automation' },
+    ],
   },
   {
     section: 'Growth',
@@ -43,6 +53,16 @@ const NAV = [
       { href: '/tower/marketing', label: 'Marketing' },
       { href: '/tower/growth', label: 'Growth Center' },
       { href: '/tower/analytics', label: 'Analytics' },
+    ],
+  },
+  {
+    section: 'Support',
+    items: [
+      { href: '/tower/support', label: 'Support Center' },
+      { href: '/tower/customer-success', label: 'Customer Success' },
+      { href: '/tower/knowledge-base', label: 'Knowledge Base' },
+      { href: '/tower/feedback', label: 'Product Feedback' },
+      { href: '/tower/docs', label: 'Internal Docs' },
     ],
   },
   {
