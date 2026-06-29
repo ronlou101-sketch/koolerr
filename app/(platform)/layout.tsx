@@ -6,6 +6,7 @@ import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { isOwner, isOwnerAlwaysPath } from '@/infrastructure/auth/guards'
 import { billingService } from '@/domains/billing'
 import type { BillingStatus } from '@/domains/billing/types'
+import { createSessionServerClient } from '@/shared/lib/supabase-session'
 
 export const runtime = 'nodejs'
 
@@ -58,6 +59,16 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     accessLevel = resolveAccessLevel(sub)
     if (accessLevel === 'soft') bannerMessage = softBanner(sub)
   }
+
+  // Tracker tab is visible only to the platform founder.
+  // Every provisioned user holds role:'owner' for their own org, so isOwner()
+  // returns true for all users and cannot distinguish the founder. Email is the
+  // only reliable discriminator available at this layer without changing shared types.
+  const supabase = await createSessionServerClient()
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser()
+  const isFounder = authUser?.email === 'ronlou101@gmail.com'
 
   const nav = (
     <header className="border-b border-border bg-card">
@@ -116,7 +127,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
             <Link href="/billing" className="text-sm text-muted-foreground hover:text-foreground">
               Billing
             </Link>
-            {ctx !== null && isOwner(ctx) && (
+            {isFounder && (
               <Link href="/tracker" className="text-sm text-muted-foreground hover:text-foreground">
                 Tracker
               </Link>
