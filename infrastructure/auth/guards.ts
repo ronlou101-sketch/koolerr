@@ -37,6 +37,7 @@ export const OWNER_ALWAYS_PATHS = [
   '/mission-control', // Platform control and administration
   '/settings', // Organization settings, user management, API keys, integrations
   '/tracker', // Development tracker — admin-only, always accessible to Owner
+  '/tower', // Founder Command Center — admin-only, always accessible to Owner
 ] as const
 
 /**

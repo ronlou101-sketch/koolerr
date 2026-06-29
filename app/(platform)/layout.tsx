@@ -128,6 +128,11 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               Billing
             </Link>
             {isFounder && (
+              <Link href="/tower" className="text-sm text-muted-foreground hover:text-foreground">
+                Tower
+              </Link>
+            )}
+            {isFounder && (
               <Link href="/tracker" className="text-sm text-muted-foreground hover:text-foreground">
                 Tracker
               </Link>
