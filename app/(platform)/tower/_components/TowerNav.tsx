@@ -6,7 +6,10 @@ import { usePathname } from 'next/navigation'
 const NAV = [
   {
     section: null,
-    items: [{ href: '/tower', label: 'Overview' }],
+    items: [
+      { href: '/tower', label: 'Overview' },
+      { href: '/tower/morning-brief', label: 'Morning Brief' },
+    ],
   },
   {
     section: 'Platform',
@@ -37,6 +40,7 @@ const NAV = [
   {
     section: 'Growth',
     items: [
+      { href: '/tower/marketing', label: 'Marketing' },
       { href: '/tower/growth', label: 'Growth Center' },
       { href: '/tower/analytics', label: 'Analytics' },
     ],

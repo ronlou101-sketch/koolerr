@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { TowerCard } from './_components/TowerCard'
 import { TowerSection } from './_components/TowerSection'
-import { getPlatformHealth } from './health/health-data'
-import type { HealthStatus } from './health/health-data'
+import { TowerExecutiveSummary } from './_components/TowerExecutiveSummary'
+import { TowerActionQueue } from './_components/TowerActionQueue'
+import { getExecutiveData } from './executive/executive-data'
+import type { HealthStatus } from './executive/executive-data'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,17 +23,22 @@ const STATUS_TEXT: Record<HealthStatus, string> = {
 }
 
 export default async function TowerPage() {
-  const health = await getPlatformHealth()
+  const data = await getExecutiveData()
+  const { health } = data
 
   const statusStrip = [
     { label: 'Database', status: health.database.status, href: '/tower/health/database' },
-    { label: 'Auth', status: health.authentication.status, href: '/tower/health/authentication' },
+    {
+      label: 'Auth',
+      status: health.authentication.status,
+      href: '/tower/health/authentication',
+    },
     { label: 'AI Runs', status: health.engagementRuns.status, href: '/tower/health/runs' },
     { label: 'Billing', status: health.billingHealth.status, href: '/tower/health/billing' },
   ] as const
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -79,6 +86,12 @@ export default async function TowerPage() {
           </Link>
         ))}
       </div>
+
+      {/* Executive Summary */}
+      <TowerExecutiveSummary summary={data.summary} generatedAt={data.generatedAt} />
+
+      {/* Founder Action Queue */}
+      <TowerActionQueue items={data.actionQueue} />
 
       {/* ── 1. System Health ── */}
       <TowerSection
@@ -262,42 +275,49 @@ export default async function TowerPage() {
       <TowerSection
         title="Marketing"
         description="Campaign performance, traffic, and top-of-funnel metrics"
-        viewAllHref="/tower/growth"
+        viewAllHref="/tower/marketing"
       >
-        <TowerCard
-          title="Marketing Campaigns"
-          description="Active and scheduled campaigns across all marketing channels."
-          href="/tower/growth"
-        />
         <TowerCard
           title="Website Traffic"
           description="Visitor counts, traffic sources, and landing page performance."
-          href="/tower/growth"
+          href="/tower/marketing"
+          badge="Not Connected"
         />
         <TowerCard
-          title="Conversion Funnel"
+          title="Lead Funnel"
           description="Visitor → signup → trial → paid conversion rates."
-          href="/tower/growth"
+          href="/tower/marketing"
+          badge="Not Connected"
+        />
+        <TowerCard
+          title="Waitlist"
+          description="Waitlist signups, invitation queue, and activation rates."
+          href="/tower/marketing"
+          badge="Not Connected"
         />
         <TowerCard
           title="Email Campaigns"
           description="Outbound email performance: open rates, click rates, and deliverability."
-          href="/tower/growth"
-        />
-        <TowerCard
-          title="Social Media"
-          description="Social channel performance and content calendar status."
-          href="/tower/growth"
+          href="/tower/marketing"
+          badge="Not Connected"
         />
         <TowerCard
           title="Referral Program"
           description="Referral link activity, conversions, and reward redemptions."
-          href="/tower/growth"
+          href="/tower/marketing"
+          badge="Not Connected"
         />
         <TowerCard
-          title="Affiliate Program"
-          description="Affiliate partner performance and commission tracking."
-          href="/tower/growth"
+          title="Social Growth"
+          description="Social channel performance and follower growth."
+          href="/tower/marketing"
+          badge="Not Connected"
+        />
+        <TowerCard
+          title="Conversion Metrics"
+          description="Trial-to-paid, lead-to-customer, and acquisition cost trends."
+          href="/tower/marketing"
+          badge="Not Connected"
         />
       </TowerSection>
 
@@ -409,7 +429,7 @@ export default async function TowerPage() {
         <TowerCard
           title="Daily Executive Summary"
           description="Morning briefing: yesterday's metrics, today's priorities, and open items."
-          href="/tower/recommendations"
+          href="/tower/morning-brief"
         />
         <TowerCard
           title="Weekly Growth Report"
