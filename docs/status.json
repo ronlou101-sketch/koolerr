@@ -1,0 +1,97 @@
+{
+  "focus": "Phase 3 — Stripe Integration",
+  "tasks": [
+    {
+      "id": "pw-reset-fixed",
+      "label": "Password reset regression fixed (B-006) — scanner-proof /confirm page deployed",
+      "done": true
+    },
+    {
+      "id": "pw-reset-verified",
+      "label": "Password reset verified end-to-end in production",
+      "done": true
+    },
+    {
+      "id": "stripe-products",
+      "label": "Stripe Products created: BUILD $99 · GROW $499 · SCALE $1,499",
+      "done": false
+    },
+    {
+      "id": "stripe-price-ids",
+      "label": "Price IDs set as Vercel env vars (STRIPE_BUILD/GROW/SCALE_PRICE_ID)",
+      "done": false
+    },
+    {
+      "id": "stripe-env-vars",
+      "label": "STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, NEXT_PUBLIC_APP_URL set in Vercel Production",
+      "done": false
+    },
+    {
+      "id": "stripe-webhook",
+      "label": "Webhook endpoint registered at /api/webhooks/stripe with 4 events",
+      "done": false
+    },
+    {
+      "id": "stripe-portal",
+      "label": "Customer Portal activated in Stripe Dashboard, return URL set to /billing",
+      "done": false
+    },
+    {
+      "id": "stripe-checkout-e2e",
+      "label": "End-to-end checkout verified: /pricing → Stripe → /checkout/success → /dashboard",
+      "done": false
+    },
+    {
+      "id": "stripe-billing-page",
+      "label": "/billing loads without amber warning; displays correct plan after checkout",
+      "done": false
+    },
+    {
+      "id": "stripe-webhook-200",
+      "label": "checkout.session.completed webhook shows 200 in Stripe Dashboard",
+      "done": false
+    },
+    {
+      "id": "stripe-manage-billing",
+      "label": "Manage Billing button opens Stripe Customer Portal",
+      "done": false
+    },
+    {
+      "id": "db-migration",
+      "label": "DB migration plan_id 'free' → 'unpaid' confirmed in production",
+      "done": false
+    }
+  ],
+  "blockers": [
+    {
+      "id": "B-001",
+      "label": "Stripe Dashboard not configured (products, prices, webhook, portal)",
+      "owner": "User",
+      "resolved": false
+    },
+    {
+      "id": "B-002",
+      "label": "Vercel Stripe env vars not set",
+      "owner": "User",
+      "resolved": false
+    },
+    {
+      "id": "B-003",
+      "label": "End-to-end checkout not verified — waiting on B-001 and B-002",
+      "owner": null,
+      "resolved": false
+    },
+    {
+      "id": "B-004",
+      "label": "DB migration plan_id 'free' → 'unpaid' execution not confirmed in production",
+      "owner": "User",
+      "resolved": false
+    },
+    {
+      "id": "B-005",
+      "label": "Manus product role undefined — do not begin implementation until founder defines scope",
+      "owner": "Founder",
+      "resolved": false
+    }
+  ]
+}

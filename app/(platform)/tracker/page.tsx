@@ -1,44 +1,57 @@
 import { notFound } from 'next/navigation'
 import { execSync } from 'child_process'
-import { parseTracker } from './parse-tracker'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 import { createSessionServerClient } from '@/shared/lib/supabase-session'
 
 export const dynamic = 'force-dynamic'
 
-interface ActivityItem {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface StatusTask {
   id: string
   label: string
-  meta: string
+  done: boolean
 }
 
-function getGitActivity(): ActivityItem[] | null {
-  try {
-    const raw = execSync('git log -8 --pretty=format:%h%x09%s%x09%cr', {
-      encoding: 'utf8',
-      cwd: process.cwd(),
-      timeout: 3000,
-    })
-    return raw
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => {
-        const [hash, subject, ago] = line.split('\t')
-        return { id: hash ?? '', label: subject ?? '', meta: ago ?? '' }
-      })
-  } catch {
-    return null
-  }
+interface StatusBlocker {
+  id: string
+  label: string
+  owner: string | null
+  resolved: boolean
+}
+
+interface StatusData {
+  focus: string
+  tasks: StatusTask[]
+  blockers: StatusBlocker[]
+}
+
+interface Commit {
+  hash: string
+  subject: string
+  ago: string
+}
+
+// ─── Data readers ─────────────────────────────────────────────────────────────
+
+function readStatus(): StatusData {
+  const raw = readFileSync(join(process.cwd(), 'docs', 'status.json'), 'utf-8')
+  return JSON.parse(raw) as StatusData
+}
+
+function git(args: string): string {
+  return execSync(`git ${args}`, {
+    encoding: 'utf8',
+    cwd: process.cwd(),
+    timeout: 4000,
+  }).trim()
 }
 
 function getTowerPhaseCount(): number {
   try {
-    const raw = execSync('git log --oneline', {
-      encoding: 'utf8',
-      cwd: process.cwd(),
-      timeout: 3000,
-    })
-    const matches = raw.match(/feat\(tower\): Phase \d+/g) ?? []
+    const log = git('log --oneline')
+    const matches = log.match(/feat\(tower\): Phase \d+/g) ?? []
     const phases = new Set(
       matches.flatMap((m) => {
         const n = m.match(/Phase (\d+)/)?.[1]
@@ -51,6 +64,31 @@ function getTowerPhaseCount(): number {
   }
 }
 
+function getLastCommitAge(): string {
+  try {
+    return git('log -1 --pretty=format:%cr')
+  } catch {
+    return 'unknown'
+  }
+}
+
+function getRecentCommits(): Commit[] {
+  try {
+    const raw = git('log -8 --pretty=format:%h%x09%s%x09%cr')
+    return raw
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [hash, subject, ago] = line.split('\t')
+        return { hash: hash ?? '', subject: subject ?? '', ago: ago ?? '' }
+      })
+  } catch {
+    return []
+  }
+}
+
+// ─── Components ───────────────────────────────────────────────────────────────
+
 function Bar({ percent, color = 'bg-emerald-500' }: { percent: number; color?: string }) {
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -62,6 +100,8 @@ function Bar({ percent, color = 'bg-emerald-500' }: { percent: number; color?: s
   )
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default async function TrackerPage() {
   const supabase = await createSessionServerClient()
   const {
@@ -69,32 +109,30 @@ export default async function TrackerPage() {
   } = await supabase.auth.getUser()
   if (authUser?.email !== 'ronlou101@gmail.com') notFound()
 
-  const data = parseTracker()
-  const gitActivity = getGitActivity()
+  const status = readStatus()
   const platformPhaseCount = getTowerPhaseCount()
+  const lastCommitAge = getLastCommitAge()
+  const recentCommits = getRecentCommits()
 
   const TOTAL_PLATFORM_PHASES = 12
   const platformComplete = platformPhaseCount >= TOTAL_PLATFORM_PHASES
 
-  const openBlockers = data.blockers.filter((b) => b.status !== 'resolved')
-  const doneItems = data.objectiveItems.filter((o) => o.done)
-  const pendingItems = data.objectiveItems.filter((o) => !o.done)
-  const taskTotal = data.objectiveItems.length
-  const taskPct = taskTotal > 0 ? Math.round((doneItems.length / taskTotal) * 100) : 0
+  const pendingTasks = status.tasks.filter((t) => !t.done)
+  const doneTasks = status.tasks.filter((t) => t.done)
+  const taskTotal = status.tasks.length
+  const taskPct = taskTotal > 0 ? Math.round((doneTasks.length / taskTotal) * 100) : 0
 
-  const recentActivity: ActivityItem[] = gitActivity
-    ? gitActivity
-    : data.ledger.slice(0, 6).map((e) => ({ id: e.date, label: e.mission, meta: e.date }))
+  const openBlockers = status.blockers.filter((b) => !b.resolved)
 
   return (
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Project Status</h1>
-        <p className="text-xs text-muted-foreground">Tracker updated {data.lastUpdated}</p>
+        <p className="text-xs text-muted-foreground">Last commit {lastCommitAge}</p>
       </div>
 
-      {/* Platform Development + Current Focus */}
+      {/* Platform Status + Current Focus */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div
           className={`rounded-lg border p-4 ${
@@ -123,26 +161,20 @@ export default async function TrackerPage() {
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Current Focus
           </p>
-          <p className="mt-2 text-sm font-semibold text-foreground">
-            {data.currentPhaseName || 'Not set'}
-          </p>
-          {data.currentMission && (
-            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-              {data.currentMission}
-            </p>
-          )}
+          <p className="mt-2 text-sm font-semibold text-foreground">{status.focus || 'Not set'}</p>
         </div>
       </div>
 
       {/* Active Tasks + Blockers */}
       <div className="grid gap-4 lg:grid-cols-2">
+        {/* Tasks */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Active Tasks
             </p>
             <span className="text-xs text-muted-foreground">
-              {doneItems.length}/{taskTotal}
+              {doneTasks.length} / {taskTotal}
             </span>
           </div>
           <Bar percent={taskPct} color={taskPct === 100 ? 'bg-emerald-500' : 'bg-amber-400'} />
@@ -150,23 +182,23 @@ export default async function TrackerPage() {
             <p className="mt-3 text-xs text-muted-foreground">No active tasks.</p>
           ) : (
             <ul className="mt-3 space-y-1.5">
-              {[...pendingItems, ...doneItems].map((item, i) => (
-                <li key={i} className="flex items-start gap-2">
+              {[...pendingTasks, ...doneTasks].map((task) => (
+                <li key={task.id} className="flex items-start gap-2">
                   <span
                     className={`mt-px flex-shrink-0 text-xs leading-none ${
-                      item.done ? 'text-emerald-500' : 'text-muted-foreground'
+                      task.done ? 'text-emerald-500' : 'text-muted-foreground'
                     }`}
                   >
-                    {item.done ? '✓' : '○'}
+                    {task.done ? '✓' : '○'}
                   </span>
                   <span
                     className={`text-xs leading-relaxed ${
-                      item.done
+                      task.done
                         ? 'text-muted-foreground line-through decoration-muted-foreground/40'
                         : 'text-foreground'
                     }`}
                   >
-                    {item.label}
+                    {task.label}
                   </span>
                 </li>
               ))}
@@ -174,6 +206,7 @@ export default async function TrackerPage() {
           )}
         </div>
 
+        {/* Blockers */}
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -194,7 +227,12 @@ export default async function TrackerPage() {
                   <span className="mt-px flex-shrink-0 font-mono text-xs font-semibold text-amber-500">
                     {b.id}
                   </span>
-                  <span className="text-xs leading-relaxed text-foreground">{b.title}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs leading-relaxed text-foreground">{b.label}</p>
+                    {b.owner && (
+                      <p className="mt-0.5 text-xs text-muted-foreground">Owner: {b.owner}</p>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -207,22 +245,24 @@ export default async function TrackerPage() {
         <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Recent Activity
         </p>
-        {recentActivity.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No activity found.</p>
+        {recentCommits.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Git history not available.</p>
         ) : (
           <ul className="divide-y divide-border">
-            {recentActivity.map((item) => (
+            {recentCommits.map((c) => (
               <li
-                key={item.id}
+                key={c.hash}
                 className="flex items-baseline justify-between gap-4 py-1.5 first:pt-0 last:pb-0"
               >
                 <div className="flex min-w-0 items-baseline gap-2">
                   <span className="flex-shrink-0 font-mono text-xs text-muted-foreground">
-                    {item.id}
+                    {c.hash}
                   </span>
-                  <span className="truncate text-xs text-foreground">{item.label}</span>
+                  <span className="truncate text-xs text-foreground">{c.subject}</span>
                 </div>
-                <span className="flex-shrink-0 text-xs text-muted-foreground">{item.meta}</span>
+                <span className="flex-shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                  {c.ago}
+                </span>
               </li>
             ))}
           </ul>
