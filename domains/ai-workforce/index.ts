@@ -71,3 +71,23 @@ export {
   buildResearchPrompt,
   parseResearchBrief,
 } from './research'
+
+// ─── Strategy Department ──────────────────────────────────────────────────────
+export type {
+  CustomerPersona,
+  ContentCalendarEntry,
+  WeeklyPostingSchedule,
+  StrategyBrief,
+  StrategyJob,
+  StrategyJobStatus,
+  StrategyError,
+  StrategyErrorCode,
+  StrategyRequest,
+  IStrategyDepartmentService,
+} from './strategy'
+export {
+  StrategyDepartmentService,
+  strategyDepartment,
+  buildStrategyPrompt,
+  parseStrategyBrief,
+} from './strategy'

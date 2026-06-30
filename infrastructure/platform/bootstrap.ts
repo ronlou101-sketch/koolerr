@@ -23,6 +23,7 @@ import { createServerSupabaseClient } from '@/shared/lib/supabase-server'
 import { _registerProvider, _registerUsageSink, modelGateway } from '@/shared/model-gateway'
 import { AnthropicAdapter } from '@/shared/model-gateway/anthropic-adapter'
 import { ManusAdapter } from '@/shared/model-gateway/manus-adapter'
+import { OpenAIAdapter } from '@/shared/model-gateway/openai-adapter'
 import { logger } from '@/shared/lib/logger'
 
 import { SupabaseBillingRepository } from '@/domains/billing/supabase-repository'
@@ -196,6 +197,22 @@ export async function bootstrapPlatform(): Promise<PlatformBootstrapResult> {
     logger.warn(
       '[PLATFORM] MANUS_API_KEY not set — Manus research provider is not available. ' +
         'Set MANUS_API_KEY to enable the AI Workforce Research Department.'
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5c. Register the OpenAI provider adapter.
+  //     OpenAI powers the AI Workforce Strategy Department (and fallback
+  //     paths for Research, QA, and Delivery departments).
+  //     Only registered when OPENAI_API_KEY is present.
+  // ---------------------------------------------------------------------------
+  if (process.env.OPENAI_API_KEY) {
+    _registerProvider(new OpenAIAdapter())
+    logger.info('[PLATFORM] OpenAI provider adapter registered')
+  } else {
+    logger.warn(
+      '[PLATFORM] OPENAI_API_KEY not set — OpenAI provider is not available. ' +
+        'Set OPENAI_API_KEY to enable the AI Workforce Strategy Department.'
     )
   }
 

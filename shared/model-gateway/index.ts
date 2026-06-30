@@ -12,3 +12,4 @@
 export * from './types'
 export { modelGateway, _registerProvider, _registerUsageSink } from './gateway'
 export { ManusAdapter } from './manus-adapter'
+export { OpenAIAdapter } from './openai-adapter'
