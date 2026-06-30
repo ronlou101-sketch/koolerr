@@ -22,6 +22,7 @@ import {
 import { createServerSupabaseClient } from '@/shared/lib/supabase-server'
 import { _registerProvider, _registerUsageSink, modelGateway } from '@/shared/model-gateway'
 import { AnthropicAdapter } from '@/shared/model-gateway/anthropic-adapter'
+import { ManusAdapter } from '@/shared/model-gateway/manus-adapter'
 import { logger } from '@/shared/lib/logger'
 
 import { SupabaseBillingRepository } from '@/domains/billing/supabase-repository'
@@ -180,6 +181,21 @@ export async function bootstrapPlatform(): Promise<PlatformBootstrapResult> {
     logger.warn(
       '[PLATFORM] ANTHROPIC_API_KEY not set — Model Gateway has no provider registered. ' +
         'Set ANTHROPIC_API_KEY before triggering Engagement Runs.'
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5b. Register the Manus provider adapter.
+  //     Manus powers the AI Workforce Research Department.
+  //     Only registered when MANUS_API_KEY is present.
+  // ---------------------------------------------------------------------------
+  if (process.env.MANUS_API_KEY) {
+    _registerProvider(new ManusAdapter())
+    logger.info('[PLATFORM] Manus provider adapter registered')
+  } else {
+    logger.warn(
+      '[PLATFORM] MANUS_API_KEY not set — Manus research provider is not available. ' +
+        'Set MANUS_API_KEY to enable the AI Workforce Research Department.'
     )
   }
 

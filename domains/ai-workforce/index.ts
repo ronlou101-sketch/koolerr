@@ -53,3 +53,21 @@ export {
 
 // ─── Health ───────────────────────────────────────────────────────────────────
 export { getWorkforceHealth } from './health'
+
+// ─── Research Department ──────────────────────────────────────────────────────
+export type {
+  BusinessProfile,
+  ResearchBrief,
+  ResearchJob,
+  ResearchJobStatus,
+  ResearchError,
+  ResearchErrorCode,
+  ResearchRequest,
+  IResearchDepartmentService,
+} from './research'
+export {
+  ResearchDepartmentService,
+  researchDepartment,
+  buildResearchPrompt,
+  parseResearchBrief,
+} from './research'

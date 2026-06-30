@@ -8,9 +8,12 @@
     "Tower Control v1",
     "AI Workforce Foundation"
   ],
-  "current": ["Stripe Integration", "Launch Readiness"],
+  "current": [
+    "Stripe Integration",
+    "Launch Readiness",
+    "AI Integrations (Manus, HeyGen, Higgsfield, ElevenLabs)"
+  ],
   "remaining": [
-    "AI Integrations (HeyGen, Higgsfield, ElevenLabs, Manus)",
     "Customer Onboarding",
     "Koolerr Academy",
     "Internal Dogfooding",
