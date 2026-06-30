@@ -14,6 +14,7 @@ import {
 import { buildCompanyOSData } from '../company-os/company-os-data'
 import { buildCompanyMemoryData } from '../company-memory/company-memory-data'
 import { buildOptimizationData } from '../optimization/optimization-data'
+import { buildPredictionData } from '../predictions/prediction-data'
 import type { BrainScore, ObjectiveStatus, CompanyScores } from './brain-data'
 import type { BusinessPattern, LearningObjective } from '../company-memory/company-memory-data'
 
@@ -171,6 +172,15 @@ export default async function BusinessBrainPage() {
 
   // Optimization Engine — self-improvement recommendations
   const optimization = buildOptimizationData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
+
+  // Predictive Intelligence Engine
+  const prediction = buildPredictionData(
     executiveData,
     supportData,
     workforceData,
@@ -1023,6 +1033,102 @@ export default async function BusinessBrainPage() {
           </div>
         </section>
       )}
+
+      {/* Predictive Intelligence */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Predictive Intelligence</h2>
+          <Link
+            href="/tower/predictions"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full Forecast Center →
+          </Link>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-4">
+          <div className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+            <div>
+              <p className="text-xs text-muted-foreground">Company Momentum</p>
+              <p
+                className={`text-sm font-semibold capitalize ${
+                  prediction.companyMomentum === 'accelerating' ||
+                  prediction.companyMomentum === 'growing'
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : prediction.companyMomentum === 'slowing' ||
+                        prediction.companyMomentum === 'declining'
+                      ? 'text-red-700 dark:text-red-400'
+                      : 'text-foreground'
+                }`}
+              >
+                {prediction.companyMomentum}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Forecast Confidence</p>
+              <p
+                className={`text-sm font-semibold ${
+                  prediction.forecastConfidence >= 75
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : prediction.forecastConfidence >= 55
+                      ? 'text-amber-700 dark:text-amber-400'
+                      : 'text-red-700 dark:text-red-400'
+                }`}
+              >
+                {prediction.forecastConfidence}%
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Emerging Risks</p>
+              <p
+                className={`text-sm font-semibold ${prediction.emergingRisks.length > 0 ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}
+              >
+                {prediction.emergingRisks.length}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Emerging Opportunities</p>
+              <p
+                className={`text-sm font-semibold ${prediction.emergingOpportunities.length > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}
+              >
+                {prediction.emergingOpportunities.length}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs leading-relaxed text-foreground">{prediction.businessTrajectory}</p>
+          {prediction.emergingRisks.length > 0 && (
+            <div className="mt-3">
+              <p className="mb-1 text-xs font-medium text-muted-foreground">Top Emerging Risk</p>
+              <p className="text-xs text-foreground">{prediction.emergingRisks[0].title}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {prediction.emergingRisks[0].recommendedNextStep}
+              </p>
+            </div>
+          )}
+          {prediction.emergingOpportunities.length > 0 && (
+            <div className="mt-3">
+              <p className="mb-1 text-xs font-medium text-muted-foreground">
+                Top Emerging Opportunity
+              </p>
+              <p className="text-xs text-foreground">{prediction.emergingOpportunities[0].title}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {prediction.emergingOpportunities[0].recommendedNextStep}
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {[
+            { label: 'Weekly Focus', text: prediction.predictedWeeklyFocus },
+            { label: 'Monthly Focus', text: prediction.predictedMonthlyFocus },
+            { label: 'Quarter Outlook', text: prediction.predictedQuarterOutlook },
+          ].map(({ label, text }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-3">
+              <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
+              <p className="text-xs leading-relaxed text-foreground">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* Philosophy note */}
       <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-4">

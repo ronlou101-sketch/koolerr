@@ -8,6 +8,7 @@ import { buildBrainScores, buildBrainObjectives } from '../business-brain/brain-
 import { buildCompanyOSData } from '../company-os/company-os-data'
 import { buildCompanyMemoryData } from '../company-memory/company-memory-data'
 import { buildOptimizationData } from '../optimization/optimization-data'
+import { buildPredictionData } from '../predictions/prediction-data'
 import type { ActionPriority } from '../executive/executive-data'
 
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,13 @@ export default async function FounderIntelligencePage() {
     execJobs
   )
   const optimization = buildOptimizationData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
+  const prediction = buildPredictionData(
     executiveData,
     supportData,
     workforceData,
@@ -763,6 +771,138 @@ export default async function FounderIntelligencePage() {
                 Requires approval →
               </Link>
             )}
+          </div>
+        )}
+      </section>
+
+      {/* Decision Forecast */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Decision Forecast</h2>
+          <Link
+            href="/tower/predictions"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full Forecast Center →
+          </Link>
+        </div>
+        {/* Founder workload + readiness */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            {
+              label: 'Founder Workload',
+              value: prediction.expectedFounderWorkload,
+              color:
+                prediction.expectedFounderWorkload === 'overwhelming'
+                  ? 'text-red-700 dark:text-red-400'
+                  : prediction.expectedFounderWorkload === 'heavy'
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : prediction.expectedFounderWorkload === 'moderate'
+                      ? 'text-foreground'
+                      : 'text-emerald-700 dark:text-emerald-400',
+            },
+            {
+              label: 'Upcoming Decisions',
+              value: prediction.upcomingDecisions.length,
+              color:
+                prediction.upcomingDecisions.length > 3
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-foreground',
+            },
+            {
+              label: 'Forecast Confidence',
+              value: `${prediction.forecastConfidence}%`,
+              color:
+                prediction.forecastConfidence >= 75
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : 'text-amber-700 dark:text-amber-400',
+            },
+            {
+              label: 'Company Momentum',
+              value: prediction.companyMomentum,
+              color:
+                prediction.companyMomentum === 'accelerating' ||
+                prediction.companyMomentum === 'growing'
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : prediction.companyMomentum === 'declining'
+                    ? 'text-red-700 dark:text-red-400'
+                    : 'text-foreground',
+            },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p className={`mt-2 text-lg font-semibold capitalize tabular-nums ${color}`}>
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
+        {/* Decision forecast narrative */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-xs font-medium text-muted-foreground">Decision Forecast</p>
+          <p className="mt-1 text-xs leading-relaxed text-foreground">
+            {prediction.decisionForecast}
+          </p>
+          <p className="mt-2 text-xs font-medium text-muted-foreground">Executive Readiness</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-foreground">
+            {prediction.executiveReadiness}
+          </p>
+        </div>
+        {/* Strategic priorities */}
+        {prediction.upcomingStrategicPriorities.length > 0 && (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              Upcoming Strategic Priorities
+            </p>
+            <ol className="space-y-1.5">
+              {prediction.upcomingStrategicPriorities.map((priority, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs">
+                  <span className="flex-shrink-0 font-semibold text-muted-foreground">
+                    {i + 1}.
+                  </span>
+                  <span className="text-foreground">{priority}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        {/* Delegation demand */}
+        <div className="rounded-lg border border-border bg-card px-4 py-3">
+          <p className="text-xs font-medium text-muted-foreground">Expected Delegation Demand</p>
+          <p className="mt-0.5 text-xs text-foreground">{prediction.expectedDelegationDemand}</p>
+        </div>
+        {/* Upcoming decisions requiring approval */}
+        {prediction.upcomingDecisions.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              Upcoming Decisions Requiring Approval
+            </p>
+            {prediction.upcomingDecisions.slice(0, 3).map((dec) => (
+              <div
+                key={dec.id}
+                className={`flex items-start justify-between gap-3 rounded-lg border bg-card px-4 py-3 ${
+                  dec.priority === 'critical'
+                    ? 'border-red-200 dark:border-red-800'
+                    : 'border-amber-200 dark:border-amber-800'
+                }`}
+              >
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-foreground">{dec.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{dec.recommendedNextStep}</p>
+                </div>
+                <span
+                  className={`flex-shrink-0 text-xs font-medium ${
+                    dec.priority === 'critical'
+                      ? 'text-red-700 dark:text-red-400'
+                      : 'text-amber-700 dark:text-amber-400'
+                  }`}
+                >
+                  {dec.priority}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </section>

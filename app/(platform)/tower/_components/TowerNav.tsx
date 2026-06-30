@@ -13,6 +13,7 @@ const NAV = [
       { href: '/tower/company-memory', label: 'Company Memory' },
       { href: '/tower/business-brain', label: 'Business Brain' },
       { href: '/tower/optimization', label: 'Optimization' },
+      { href: '/tower/predictions', label: 'Predictions' },
       { href: '/tower/agents', label: 'Agent Registry' },
       { href: '/tower/approvals', label: 'Approvals' },
     ],

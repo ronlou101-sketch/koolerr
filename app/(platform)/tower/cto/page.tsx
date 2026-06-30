@@ -9,6 +9,7 @@ import {
 } from '../execution/execution-data'
 import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import { buildOptimizationData } from '../optimization/optimization-data'
+import { buildPredictionData } from '../predictions/prediction-data'
 import { getExecutiveData } from '../executive/executive-data'
 import type { IssueSeverity } from './cto-data'
 import type { TaskPriority } from '../agents/agent-tasks'
@@ -58,6 +59,13 @@ export default async function CTOOperationsCenterPage() {
   const execMetrics = buildExecutionMetrics(execJobs)
   const agentUtil = buildAgentUtilization(execJobs)
   const optimization = buildOptimizationData(
+    executiveData,
+    supportData,
+    workforceData,
+    allTasks,
+    execJobs
+  )
+  const prediction = buildPredictionData(
     executiveData,
     supportData,
     workforceData,
@@ -1168,6 +1176,91 @@ export default async function CTOOperationsCenterPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      {/* Infrastructure & Engineering Forecast */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Infrastructure Forecast</h2>
+          <Link
+            href="/tower/predictions"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full Forecast Center →
+          </Link>
+        </div>
+        {prediction.engineeringForecast.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-5 text-center">
+            <p className="text-xs text-muted-foreground">
+              No engineering forecasts — platform is stable.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {prediction.engineeringForecast.slice(0, 4).map((pred) => (
+              <div
+                key={pred.id}
+                className={`rounded-lg border bg-card p-4 ${
+                  pred.priority === 'critical'
+                    ? 'border-red-200 dark:border-red-800'
+                    : pred.priority === 'high'
+                      ? 'border-amber-200 dark:border-amber-800'
+                      : 'border-border'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground">{pred.title}</p>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        pred.priority === 'critical'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                          : pred.priority === 'high'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
+                      }`}
+                    >
+                      {pred.priority}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{pred.confidence}% conf.</span>
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{pred.description}</p>
+                <p className="mt-1.5 text-xs text-foreground">
+                  <span className="font-medium">Next: </span>
+                  {pred.recommendedNextStep}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+        {/* AI Workforce capacity forecast */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">
+            Projected AI Workforce Utilization
+          </p>
+          <div className="space-y-1.5">
+            {prediction.agentForecasts.map((agent) => (
+              <div key={agent.agentId} className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">{agent.agentName}</span>
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`font-medium ${
+                      agent.predictedCapacity >= 70
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : agent.predictedCapacity >= 45
+                          ? 'text-amber-700 dark:text-amber-400'
+                          : 'text-red-700 dark:text-red-400'
+                    }`}
+                  >
+                    {agent.predictedCapacity}% capacity
+                  </span>
+                  <span className="text-muted-foreground">{agent.trendForecast}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </div>

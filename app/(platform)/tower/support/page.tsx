@@ -6,6 +6,7 @@ import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import { buildAgentTasks } from '../agents/agent-tasks'
 import { buildExecutionJobs } from '../execution/execution-data'
 import { buildOptimizationData } from '../optimization/optimization-data'
+import { buildPredictionData } from '../predictions/prediction-data'
 
 export const dynamic = 'force-dynamic'
 
@@ -83,6 +84,13 @@ export default async function SupportCenterPage() {
   const agentTasks = buildAgentTasks(executiveData)
   const execJobs = buildExecutionJobs(agentTasks, tickets, generatedAt)
   const optimization = buildOptimizationData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
+  const prediction = buildPredictionData(
     executiveData,
     supportData,
     workforceData,
@@ -616,6 +624,62 @@ export default async function SupportCenterPage() {
           ))}
         </div>
       </section>
+
+      {/* Support Capacity Forecast */}
+      {prediction.supportForecast.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">Support Capacity Forecast</h2>
+            <Link
+              href="/tower/predictions"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Full Forecast Center →
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {prediction.supportForecast.slice(0, 3).map((pred) => (
+              <div
+                key={pred.id}
+                className={`rounded-lg border bg-card p-4 ${
+                  pred.priority === 'critical'
+                    ? 'border-red-200 dark:border-red-800'
+                    : pred.priority === 'high'
+                      ? 'border-amber-200 dark:border-amber-800'
+                      : 'border-border'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground">{pred.title}</p>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`text-xs font-medium ${
+                        pred.confidence >= 75
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : 'text-muted-foreground'
+                      }`}
+                    >
+                      {pred.confidence}%
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {pred.timeHorizon === 'today'
+                        ? 'Today'
+                        : pred.timeHorizon === 'this-week'
+                          ? 'This week'
+                          : pred.timeHorizon}
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{pred.description}</p>
+                <p className="mt-1.5 text-xs text-foreground">
+                  <span className="font-medium">Next: </span>
+                  {pred.recommendedNextStep}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Philosophy + flow */}
       <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-4">

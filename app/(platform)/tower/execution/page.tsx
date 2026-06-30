@@ -5,6 +5,7 @@ import { getSupportData } from '../support/support-data'
 import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import { buildAgentTasks } from '../agents/agent-tasks'
 import { buildOptimizationData } from '../optimization/optimization-data'
+import { buildPredictionData } from '../predictions/prediction-data'
 import type { ExecutionStage, ExecutionJob } from './execution-data'
 
 export const dynamic = 'force-dynamic'
@@ -157,6 +158,13 @@ export default async function ExecutionEnginePage() {
   ])
   const agentTasks = buildAgentTasks(executiveData)
   const optimization = buildOptimizationData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    jobs
+  )
+  const prediction = buildPredictionData(
     executiveData,
     supportData,
     workforceData,
@@ -596,6 +604,124 @@ export default async function ExecutionEnginePage() {
           </div>
         </section>
       )}
+
+      {/* Predicted Mission Load */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Predicted Mission Load</h2>
+          <Link
+            href="/tower/predictions"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full Forecast Center →
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            {
+              label: 'Projected Approvals',
+              value: prediction.approvalForecast.filter((p) => p.requiresFounderApproval).length,
+              color:
+                prediction.approvalForecast.filter((p) => p.requiresFounderApproval).length > 3
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-foreground',
+              note: 'Require founder action',
+            },
+            {
+              label: 'Execution Bottlenecks',
+              value: prediction.upcomingBottlenecks.filter(
+                (p) => p.category === 'execution' || p.category === 'ai-workforce'
+              ).length,
+              color:
+                prediction.upcomingBottlenecks.length > 0
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-foreground',
+              note: 'Predicted',
+            },
+            {
+              label: 'Company Momentum',
+              value: prediction.companyMomentum,
+              color:
+                prediction.companyMomentum === 'accelerating' ||
+                prediction.companyMomentum === 'growing'
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : prediction.companyMomentum === 'declining'
+                    ? 'text-red-700 dark:text-red-400'
+                    : 'text-foreground',
+              note: 'Business trajectory',
+            },
+            {
+              label: 'Forecast Confidence',
+              value: `${prediction.forecastConfidence}%`,
+              color:
+                prediction.forecastConfidence >= 75
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : 'text-amber-700 dark:text-amber-400',
+              note: 'Overall signal strength',
+            },
+          ].map(({ label, value, color, note }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p className={`mt-2 text-lg font-semibold capitalize tabular-nums ${color}`}>
+                {value}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{note}</p>
+            </div>
+          ))}
+        </div>
+        {/* Projected agent utilization */}
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="border-b border-border bg-muted/30 px-4 py-2">
+            <p className="text-xs font-medium text-muted-foreground">Projected Agent Utilization</p>
+          </div>
+          <div className="divide-y divide-border">
+            {prediction.agentForecasts.map((agent) => (
+              <div key={agent.agentId} className="flex items-center justify-between px-4 py-2.5">
+                <div>
+                  <p className="text-xs font-medium text-foreground">{agent.agentName}</p>
+                  <p className="text-xs text-muted-foreground">{agent.domain}</p>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span
+                    className={`font-medium ${
+                      agent.predictedCapacity >= 70
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : agent.predictedCapacity >= 45
+                          ? 'text-amber-700 dark:text-amber-400'
+                          : 'text-red-700 dark:text-red-400'
+                    }`}
+                  >
+                    {agent.predictedCapacity}%
+                  </span>
+                  <span className="text-muted-foreground">{agent.forecastedWorkload}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Top predicted bottleneck */}
+        {prediction.upcomingBottlenecks[0] && (
+          <div
+            className={`rounded-lg border bg-card p-4 ${
+              prediction.upcomingBottlenecks[0].priority === 'critical'
+                ? 'border-red-200 dark:border-red-800'
+                : 'border-amber-200 dark:border-amber-800'
+            }`}
+          >
+            <p className="mb-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+              Top Predicted Execution Bottleneck
+            </p>
+            <p className="text-sm font-medium text-foreground">
+              {prediction.upcomingBottlenecks[0].title}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {prediction.upcomingBottlenecks[0].recommendedNextStep}
+            </p>
+          </div>
+        )}
+      </section>
 
       {/* Architecture note */}
       <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-4">

@@ -12,6 +12,7 @@ import {
 import { buildCompanyOSData } from '../company-os/company-os-data'
 import { buildCompanyMemoryData } from '../company-memory/company-memory-data'
 import { buildOptimizationData } from '../optimization/optimization-data'
+import { buildPredictionData } from '../predictions/prediction-data'
 import { TowerExecutiveSummary } from '../_components/TowerExecutiveSummary'
 import { TowerActionQueue } from '../_components/TowerActionQueue'
 import type { HealthStatus } from '../executive/executive-data'
@@ -111,6 +112,8 @@ export default async function MorningBriefPage() {
   const memory = buildCompanyMemoryData(data, supportData, workforceData, agentTasks, execJobs)
   // Optimization Engine — self-improvement signals for morning brief
   const optimization = buildOptimizationData(data, supportData, workforceData, agentTasks, execJobs)
+  // Predictive Intelligence Engine
+  const prediction = buildPredictionData(data, supportData, workforceData, agentTasks, execJobs)
   const topMission = os.topPriorities[0] ?? null
   const mostLoadedAgent = [...os.agentWorkloads].sort(
     (a, b) => b.totalMissions - a.totalMissions
@@ -1072,6 +1075,119 @@ export default async function MorningBriefPage() {
                 </p>
               </div>
             )}
+          </div>
+        )}
+      </section>
+
+      {/* Today's Forecast */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Today&apos;s Forecast</h2>
+          <Link
+            href="/tower/predictions"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full Forecast Center →
+          </Link>
+        </div>
+        {/* Forecast strip */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            {
+              label: 'Momentum',
+              value: prediction.companyMomentum,
+              color:
+                prediction.companyMomentum === 'accelerating' ||
+                prediction.companyMomentum === 'growing'
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : prediction.companyMomentum === 'slowing' ||
+                      prediction.companyMomentum === 'declining'
+                    ? 'text-red-700 dark:text-red-400'
+                    : 'text-foreground',
+            },
+            {
+              label: 'Confidence',
+              value: `${prediction.forecastConfidence}%`,
+              color:
+                prediction.forecastConfidence >= 75
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : 'text-amber-700 dark:text-amber-400',
+            },
+            {
+              label: 'Risks',
+              value: prediction.emergingRisks.length,
+              color:
+                prediction.emergingRisks.length > 0
+                  ? 'text-red-700 dark:text-red-400'
+                  : 'text-foreground',
+            },
+            {
+              label: 'Opportunities',
+              value: prediction.emergingOpportunities.length,
+              color:
+                prediction.emergingOpportunities.length > 0
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : 'text-muted-foreground',
+            },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p className={`mt-1.5 text-lg font-semibold capitalize tabular-nums ${color}`}>
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
+        {/* Trajectory */}
+        <div className="rounded-lg border border-border bg-card p-4">
+          <p className="text-xs font-medium text-muted-foreground">Business Trajectory</p>
+          <p className="mt-1 text-xs leading-relaxed text-foreground">
+            {prediction.businessTrajectory}
+          </p>
+        </div>
+        {/* Top risk + opportunity */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {prediction.emergingRisks[0] && (
+            <div className="rounded-lg border border-red-200 bg-card p-3 dark:border-red-800">
+              <p className="mb-1 text-xs font-medium text-red-700 dark:text-red-400">
+                Biggest Emerging Risk
+              </p>
+              <p className="text-xs font-medium text-foreground">
+                {prediction.emergingRisks[0].title}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {prediction.emergingRisks[0].recommendedNextStep}
+              </p>
+            </div>
+          )}
+          {prediction.emergingOpportunities[0] && (
+            <div className="rounded-lg border border-emerald-200 bg-card p-3 dark:border-emerald-800">
+              <p className="mb-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                Biggest Emerging Opportunity
+              </p>
+              <p className="text-xs font-medium text-foreground">
+                {prediction.emergingOpportunities[0].title}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {prediction.emergingOpportunities[0].recommendedNextStep}
+              </p>
+            </div>
+          )}
+        </div>
+        {/* Predicted bottleneck */}
+        {prediction.upcomingBottlenecks[0] && (
+          <div className="rounded-lg border border-amber-200 bg-card p-3 dark:border-amber-800">
+            <p className="mb-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+              Predicted Bottleneck
+            </p>
+            <p className="text-xs font-medium text-foreground">
+              {prediction.upcomingBottlenecks[0].title}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {prediction.upcomingBottlenecks[0].recommendedNextStep}
+            </p>
           </div>
         )}
       </section>

@@ -5,6 +5,7 @@ import { getExecutiveData } from '../executive/executive-data'
 import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import { buildExecutionJobs, buildAgentUtilization } from '../execution/execution-data'
 import { buildOptimizationData } from '../optimization/optimization-data'
+import { buildPredictionData } from '../predictions/prediction-data'
 import type { AgentStatus, AgentHealth } from './agent-registry'
 
 export const dynamic = 'force-dynamic'
@@ -74,6 +75,14 @@ export default async function AgentRegistryPage() {
     execJobs
   )
   const efficiencyByAgentId = new Map(optimization.agentEfficiency.map((e) => [e.agentId, e]))
+  const prediction = buildPredictionData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
+  const forecastByAgentId = new Map(prediction.agentForecasts.map((f) => [f.agentId, f]))
 
   const generatedTime = new Date(generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -163,6 +172,7 @@ export default async function AgentRegistryPage() {
           const statusCfg = STATUS_CONFIG[agent.status]
           const util = utilizationByAgentId.get(agent.id)
           const efficiency = efficiencyByAgentId.get(agent.id)
+          const forecast = forecastByAgentId.get(agent.id)
           return (
             <div key={agent.id} className="rounded-lg border border-border bg-card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -355,6 +365,57 @@ export default async function AgentRegistryPage() {
                         ))}
                       </ul>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Predictive Capacity Forecast */}
+              {forecast && (
+                <div className="mt-3 rounded-lg border border-border/50 bg-blue-50/30 p-3 dark:bg-blue-950/10">
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    Capacity Forecast
+                  </p>
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
+                    <span>
+                      <span className="text-muted-foreground">Predicted capacity: </span>
+                      <span
+                        className={`font-medium ${
+                          forecast.predictedCapacity >= 70
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : forecast.predictedCapacity >= 45
+                              ? 'text-amber-700 dark:text-amber-400'
+                              : 'text-red-700 dark:text-red-400'
+                        }`}
+                      >
+                        {forecast.predictedCapacity}%
+                      </span>
+                    </span>
+                    <span>
+                      <span className="text-muted-foreground">Workload: </span>
+                      <span className="font-medium text-foreground">
+                        {forecast.forecastedWorkload}
+                      </span>
+                    </span>
+                    <span>
+                      <span className="text-muted-foreground">Trend: </span>
+                      <span
+                        className={`font-medium ${
+                          forecast.trendForecast === 'expanding'
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : forecast.trendForecast === 'contracting'
+                              ? 'text-red-700 dark:text-red-400'
+                              : 'text-muted-foreground'
+                        }`}
+                      >
+                        {forecast.trendForecast}
+                      </span>
+                    </span>
+                  </div>
+                  {forecast.expectedBottlenecks[0] !== 'No predicted bottlenecks' && (
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">Bottleneck: </span>
+                      {forecast.expectedBottlenecks[0]}
+                    </p>
                   )}
                 </div>
               )}
