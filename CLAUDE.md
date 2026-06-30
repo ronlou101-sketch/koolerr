@@ -189,17 +189,52 @@ If a request would introduce a Phase 3+ capability, say so before proceeding.
 
 ---
 
-## Milestone Commit and Push Protocol
+## Tracker Workflow — docs/status.json
 
-After each completed Phase 2 milestone:
+`docs/status.json` is the machine-readable source of truth for the `/tracker` dashboard.
+It must reflect the current project state at all times.
 
-1. Run `npx tsc --noEmit`. Fix any errors before continuing.
-2. Run `npx vitest run`. Fix any failures before continuing.
-3. Stage all files created or modified for this milestone.
-4. Commit locally with a conventional commit message.
-5. Output the exact `git push` command for the user to run in their authenticated terminal.
-6. Wait for the user to confirm the push succeeded, then continue with the next milestone.
+**Updating `docs/status.json` is not optional documentation. It is part of every commit
+that changes project state.** Failure to include it when state changes is a workflow bug.
+
+Update `docs/status.json` in the same commit whenever:
+
+| Change                                   | What to update                                      |
+| ---------------------------------------- | --------------------------------------------------- |
+| Focus shifts to a new phase or objective | `currentFocus` string                               |
+| A task is completed                      | `"done": true` on the relevant `activeTasks` entry  |
+| A new task is identified                 | Append entry to `activeTasks`                       |
+| A blocker is resolved                    | `"resolved": true` on the relevant `blockers` entry |
+| A new blocker surfaces                   | Append entry to `blockers`                          |
+
+The schema is intentionally minimal — only these three fields:
+
+```json
+{
+  "currentFocus": "string",
+  "activeTasks": [{ "id": "string", "label": "string", "done": boolean }],
+  "blockers": [{ "id": "string", "label": "string", "owner": "string|null", "resolved": boolean }]
+}
+```
+
+Everything else (platform phase count, last-updated timestamp, recent activity) is derived
+automatically from git history. Never store in `status.json` what git already knows.
+
+---
+
+## Commit Protocol
+
+For every feature, fix, enhancement, or refactor:
+
+1. Implement the code.
+2. Update `docs/status.json` if project state changed (see Tracker Workflow above).
+3. Run `npx tsc --noEmit`. Fix any errors before continuing.
+4. Run `npx vitest run`. Fix any failures before continuing.
+5. Run `npm run build`. Fix any errors before continuing.
+6. Stage all modified files — including `docs/status.json` when updated.
+7. Commit with a conventional commit message.
+8. Run `git push origin master` when instructed by the founder.
 
 GitHub credentials are not available in the Claude Code execution environment.
-Never attempt `git push` directly — always hand it off to the user.
+Never attempt `git push` without explicit instruction from the founder.
 Never block development waiting for a push to complete.
