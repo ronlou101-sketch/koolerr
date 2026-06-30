@@ -1,6 +1,6 @@
 {
-  "focus": "Phase 3 — Stripe Integration",
-  "tasks": [
+  "currentFocus": "Phase 3 — Stripe Integration",
+  "activeTasks": [
     {
       "id": "pw-reset-fixed",
       "label": "Password reset regression fixed (B-006) — scanner-proof /confirm page deployed",
