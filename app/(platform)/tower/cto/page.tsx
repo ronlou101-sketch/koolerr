@@ -53,6 +53,30 @@ export default async function CTOOperationsCenterPage() {
   const execMetrics = buildExecutionMetrics(execJobs)
   const agentUtil = buildAgentUtilization(execJobs)
 
+  // Business Brain cross-agent intelligence (derived from existing data)
+  const tasksByAgent = new Map<string, typeof allTasks>()
+  for (const task of allTasks) {
+    const existing = tasksByAgent.get(task.agentId) ?? []
+    existing.push(task)
+    tasksByAgent.set(task.agentId, existing)
+  }
+  const billingTasks = allTasks.filter((t) => t.agentId === 'cfo')
+  const supportTasks = allTasks.filter((t) => t.agentId === 'support-manager')
+  const csTasks = allTasks.filter((t) => t.agentId === 'customer-success')
+  const crossAgentCollaborations: Array<{ agents: string; topic: string }> = []
+  if (billingTasks.length > 0 && csTasks.length > 0) {
+    crossAgentCollaborations.push({
+      agents: 'CFO + Customer Success',
+      topic: 'Billing health and customer retention require coordinated action',
+    })
+  }
+  if (allTasks.filter((t) => t.agentId === 'cto').length > 0 && supportTasks.length > 0) {
+    crossAgentCollaborations.push({
+      agents: 'CTO + Support Manager',
+      topic: 'Technical issues feeding into support ticket queue',
+    })
+  }
+
   const ctoTasks = allTasks.filter((t) => t.agentId === 'cto')
   const ctoCritical = ctoTasks.filter((t) => t.priority === 'critical' || t.priority === 'high')
   const ctoOther = ctoTasks.filter((t) => t.priority === 'medium' || t.priority === 'low')
@@ -355,6 +379,121 @@ export default async function CTOOperationsCenterPage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Business Brain Insights */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Business Brain Insights</h2>
+          <Link
+            href="/tower/business-brain"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full Business Brain →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Cross-agent coordination */}
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Cross-Agent Coordination
+            </p>
+            {crossAgentCollaborations.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No active cross-agent collaborations</p>
+            ) : (
+              <ul className="space-y-2">
+                {crossAgentCollaborations.map((c, i) => (
+                  <li key={i}>
+                    <p className="text-xs font-medium text-foreground">{c.agents}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{c.topic}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Organizational bottlenecks */}
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Bottlenecks
+            </p>
+            {execMetrics.waitingApproval === 0 && supportData.stats.awaitingFounder === 0 ? (
+              <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                No organizational bottlenecks detected
+              </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {execMetrics.waitingApproval > 0 && (
+                  <li className="text-xs text-muted-foreground">
+                    <span className="font-medium text-amber-700 dark:text-amber-400">
+                      {execMetrics.waitingApproval} execution job
+                      {execMetrics.waitingApproval !== 1 ? 's' : ''}
+                    </span>{' '}
+                    blocked on founder approval
+                  </li>
+                )}
+                {supportData.stats.awaitingFounder > 0 && (
+                  <li className="text-xs text-muted-foreground">
+                    <span className="font-medium text-amber-700 dark:text-amber-400">
+                      {supportData.stats.awaitingFounder} support ticket
+                      {supportData.stats.awaitingFounder !== 1 ? 's' : ''}
+                    </span>{' '}
+                    require founder decision
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
+
+          {/* Long-term risks */}
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Long-Term Risks
+            </p>
+            {technicalDebt.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No registered technical debt</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {technicalDebt.slice(0, 3).map((item) => (
+                  <li key={item.id} className="text-xs">
+                    <span className="font-medium text-foreground">{item.title}</span>
+                    <span className="ml-1 text-muted-foreground">· {item.category}</span>
+                  </li>
+                ))}
+                {technicalDebt.length > 3 && (
+                  <li className="text-xs text-muted-foreground">
+                    +{technicalDebt.length - 3} more items
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
+
+          {/* Suggested improvements */}
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Suggested Platform Improvements
+            </p>
+            {maintenance.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No maintenance items queued</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {maintenance.slice(0, 3).map((item) => (
+                  <li key={item.id} className="text-xs">
+                    <span className="font-medium text-foreground">{item.title}</span>
+                    <span className="ml-1 text-muted-foreground">· {item.effort}</span>
+                  </li>
+                ))}
+                {maintenance.length > 3 && (
+                  <li className="text-xs text-muted-foreground">
+                    +{maintenance.length - 3} more items
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
+        </div>
       </section>
 
       {/* Execution Intelligence */}

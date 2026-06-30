@@ -4,6 +4,11 @@ import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import { buildAgentTasks } from '../agents/agent-tasks'
 import { getSupportData } from '../support/support-data'
 import { buildExecutionJobs, buildExecutionMetrics } from '../execution/execution-data'
+import {
+  buildBrainScores,
+  buildBrainReasoning,
+  buildBrainObjectives,
+} from '../business-brain/brain-data'
 import { TowerExecutiveSummary } from '../_components/TowerExecutiveSummary'
 import { TowerActionQueue } from '../_components/TowerActionQueue'
 import type { HealthStatus } from '../executive/executive-data'
@@ -75,6 +80,19 @@ export default async function MorningBriefPage() {
   const agentTasks = buildAgentTasks(data)
   const execJobs = buildExecutionJobs(agentTasks, supportData.tickets, generatedAt)
   const execMetrics = buildExecutionMetrics(execJobs)
+
+  // Business Brain
+  const brainScores = buildBrainScores(data, supportData, workforceData)
+  const brainReasoning = buildBrainReasoning(data, brainScores)
+  const brainObjectives = buildBrainObjectives(data, supportData, workforceData)
+  const biggestOpportunity =
+    brainObjectives
+      .filter((o) => o.status === 'at-risk' || o.status === 'blocked')
+      .sort((a, b) => b.score - a.score)[0] ?? null
+  const biggestRisk =
+    brainObjectives
+      .filter((o) => o.status === 'blocked' || o.status === 'at-risk')
+      .sort((a, b) => a.score - b.score)[0] ?? null
   const tasksNeedingApproval = agentTasks.filter((t) => t.requiresApproval)
   const urgentApprovals = tasksNeedingApproval.filter(
     (t) => t.priority === 'critical' || t.priority === 'high'
@@ -109,6 +127,95 @@ export default async function MorningBriefPage() {
         </div>
         <p className="text-xs text-muted-foreground">Generated {briefTime} · Refreshes on load</p>
       </div>
+
+      {/* Business Brain Summary */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Business Brain Summary</h2>
+          <Link
+            href="/tower/business-brain"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full intelligence view →
+          </Link>
+        </div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          {/* Score strip */}
+          <div className="grid grid-cols-4 divide-x divide-border border-b border-border">
+            {[
+              { label: 'Overall', value: brainScores.overall.score },
+              { label: 'Growth', value: brainScores.growth.score },
+              { label: 'Financial', value: brainScores.financial.score },
+              { label: 'Risk', value: brainScores.risk.score },
+            ].map(({ label, value }) => (
+              <div key={label} className="p-3 text-center">
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p
+                  className={`mt-1 text-lg font-semibold tabular-nums ${
+                    value >= 70
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : value >= 45
+                        ? 'text-amber-700 dark:text-amber-400'
+                        : 'text-red-700 dark:text-red-400'
+                  }`}
+                >
+                  {value}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-4">
+            {/* Executive recommendation */}
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Executive Recommendation
+            </p>
+            <p className="mt-1.5 text-sm font-medium text-foreground">{brainReasoning.belief}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{brainReasoning.why}</p>
+
+            {/* Top 3 priorities */}
+            <div className="mt-4 space-y-1.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Top 3 Priorities Today
+              </p>
+              {brainReasoning.recommendedActions.slice(0, 3).map((action, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                    {i + 1}
+                  </span>
+                  <p className="text-xs text-foreground">{action}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Opportunity + Risk */}
+            {(biggestOpportunity || biggestRisk) && (
+              <div className="mt-4 grid grid-cols-1 gap-2 border-t border-border/50 pt-3 sm:grid-cols-2">
+                {biggestOpportunity && (
+                  <div>
+                    <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                      Biggest Opportunity
+                    </p>
+                    <p className="mt-0.5 text-xs text-foreground">{biggestOpportunity.title}</p>
+                    <p className="text-xs text-muted-foreground">{biggestOpportunity.signal}</p>
+                  </div>
+                )}
+                {biggestRisk && (
+                  <div>
+                    <p className="text-xs font-medium text-red-700 dark:text-red-400">
+                      Biggest Risk
+                    </p>
+                    <p className="mt-0.5 text-xs text-foreground">{biggestRisk.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {biggestRisk.blockingIssue ?? biggestRisk.signal}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

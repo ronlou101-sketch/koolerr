@@ -9,6 +9,7 @@ const NAV = [
     items: [
       { href: '/tower', label: 'Overview' },
       { href: '/tower/morning-brief', label: 'Morning Brief' },
+      { href: '/tower/business-brain', label: 'Business Brain' },
       { href: '/tower/agents', label: 'Agent Registry' },
       { href: '/tower/approvals', label: 'Approvals' },
     ],
@@ -71,6 +72,7 @@ const NAV = [
   {
     section: 'Founder',
     items: [
+      { href: '/tower/founder-intelligence', label: 'Founder Intelligence' },
       { href: '/tower/recommendations', label: 'Recommendations' },
       { href: '/tracker', label: 'Tracker ↗' },
       { href: '/mission-control', label: 'Mission Control ↗' },
