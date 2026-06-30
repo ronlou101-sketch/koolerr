@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getExecutiveData } from '../executive/executive-data'
 import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import { buildAgentTasks } from '../agents/agent-tasks'
+import { getSupportData } from '../support/support-data'
 import { TowerExecutiveSummary } from '../_components/TowerExecutiveSummary'
 import { TowerActionQueue } from '../_components/TowerActionQueue'
 import type { HealthStatus } from '../executive/executive-data'
@@ -45,7 +46,11 @@ const TASK_PRIORITY_BADGE: Record<TaskPriority, string> = {
 }
 
 export default async function MorningBriefPage() {
-  const [data, workforceData] = await Promise.all([getExecutiveData(), getWorkforceStatusData()])
+  const [data, workforceData, supportData] = await Promise.all([
+    getExecutiveData(),
+    getWorkforceStatusData(),
+    getSupportData(),
+  ])
   const { health, summary, actionQueue, revenue, recentActivity, newCustomers, generatedAt } = data
 
   const briefDate = new Date(generatedAt).toLocaleDateString('en-US', {
@@ -583,6 +588,79 @@ export default async function MorningBriefPage() {
             )}
           </div>
         </div>
+      </section>
+
+      {/* Support Intelligence */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Support Intelligence</h2>
+          <Link
+            href="/tower/support"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Support command center →
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {[
+            { label: 'Opened (8h)', value: supportData.stats.openedLast8h },
+            {
+              label: 'Auto-Resolved',
+              value: supportData.stats.autoResolved,
+              color:
+                supportData.stats.autoResolved > 0
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : undefined,
+            },
+            {
+              label: 'Awaiting Founder',
+              value: supportData.stats.awaitingFounder,
+              color:
+                supportData.stats.awaitingFounder > 0
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : undefined,
+            },
+            {
+              label: 'Escalations',
+              value: supportData.stats.escalations,
+              color:
+                supportData.stats.escalations > 0 ? 'text-red-700 dark:text-red-400' : undefined,
+            },
+            {
+              label: 'Avg Response',
+              value: '< 5 min',
+              color: 'text-muted-foreground',
+            },
+            {
+              label: 'CSAT',
+              value: '—',
+              color: 'text-muted-foreground',
+            },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p
+                className={`mt-2 text-xl font-semibold tabular-nums ${color ?? 'text-foreground'}`}
+              >
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
+        {supportData.stats.awaitingFounder > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/30">
+            <span className="h-2 w-2 flex-shrink-0 rounded-full bg-amber-400" />
+            <p className="text-xs text-amber-800 dark:text-amber-300">
+              {supportData.stats.awaitingFounder} ticket
+              {supportData.stats.awaitingFounder !== 1 ? 's' : ''} require founder approval —{' '}
+              <Link href="/tower/approvals" className="font-medium underline underline-offset-2">
+                review now
+              </Link>
+            </p>
+          </div>
+        )}
       </section>
     </div>
   )

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getCTOData } from './cto-data'
 import { getAgentTasks } from '../agents/agent-tasks'
+import { getSupportData } from '../support/support-data'
 import type { IssueSeverity } from './cto-data'
 import type { TaskPriority } from '../agents/agent-tasks'
 
@@ -36,7 +37,11 @@ const PRIORITY_BADGE: Record<string, string> = {
 }
 
 export default async function CTOOperationsCenterPage() {
-  const [data, { tasks: allTasks }] = await Promise.all([getCTOData(), getAgentTasks()])
+  const [data, { tasks: allTasks }, supportData] = await Promise.all([
+    getCTOData(),
+    getAgentTasks(),
+    getSupportData(),
+  ])
   const { platformIssues, maintenance, technicalDebt, pendingDecisions, generatedAt } = data
 
   const ctoTasks = allTasks.filter((t) => t.agentId === 'cto')
@@ -339,6 +344,144 @@ export default async function CTOOperationsCenterPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* Support Operations */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Support Operations</h2>
+          <Link
+            href="/tower/support"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Support command center →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {[
+            {
+              label: 'Open Tickets',
+              value: supportData.stats.totalOpen,
+              color:
+                supportData.stats.totalOpen > 0
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-emerald-700 dark:text-emerald-400',
+            },
+            {
+              label: 'Escalations',
+              value: supportData.stats.escalations,
+              color:
+                supportData.stats.escalations > 0
+                  ? 'text-red-700 dark:text-red-400'
+                  : 'text-foreground',
+            },
+            {
+              label: 'AI Resolution',
+              value:
+                supportData.stats.aiResolutionPct !== null
+                  ? `${supportData.stats.aiResolutionPct}%`
+                  : '—',
+              color: 'text-foreground',
+            },
+            { label: 'Avg Resolution', value: '—', color: 'text-muted-foreground' },
+            {
+              label: 'Awaiting Founder',
+              value: supportData.stats.awaitingFounder,
+              color:
+                supportData.stats.awaitingFounder > 0
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-foreground',
+            },
+            {
+              label: 'Active Agents',
+              value: supportData.agents.filter((a) => a.status === 'active').length,
+              color: 'text-foreground',
+            },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p className={`mt-2 text-xl font-semibold tabular-nums ${color}`}>{value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Agent workload */}
+        {supportData.agents.some((a) => a.currentWorkload > 0) && (
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-muted/40">
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Agent
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Workload
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground sm:table-cell">
+                    Avg Response
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground md:table-cell">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {supportData.agents
+                  .filter((a) => a.status !== 'not-configured')
+                  .map((agent) => (
+                    <tr key={agent.id}>
+                      <td className="px-4 py-3">
+                        <p className="text-xs font-medium text-foreground">{agent.name}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{agent.role}</p>
+                      </td>
+                      <td className="px-4 py-3 text-right text-xs font-medium text-foreground">
+                        {agent.currentWorkload > 0 ? `${agent.currentWorkload}` : '—'}
+                      </td>
+                      <td className="hidden px-4 py-3 text-right text-xs text-muted-foreground sm:table-cell">
+                        {agent.avgResponseTime}
+                      </td>
+                      <td className="hidden px-4 py-3 text-right md:table-cell">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            agent.status === 'active'
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'
+                              : 'bg-muted text-muted-foreground'
+                          }`}
+                        >
+                          {agent.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Bottlenecks */}
+        {supportData.stats.awaitingFounder > 0 && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+            <span className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-400" />
+            <div className="flex-1">
+              <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                Bottleneck: {supportData.stats.awaitingFounder} ticket
+                {supportData.stats.awaitingFounder !== 1 ? 's' : ''} blocked on founder approval
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Billing tickets and escalations require founder sign-off before the agent can act.
+              </p>
+            </div>
+            <Link
+              href="/tower/approvals"
+              className="flex-shrink-0 text-xs text-foreground hover:underline"
+            >
+              Approve →
+            </Link>
           </div>
         )}
       </section>
