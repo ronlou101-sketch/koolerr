@@ -1,11 +1,12 @@
 import Link from 'next/link'
 import { getExecutiveData } from '../executive/executive-data'
 import { getWorkforceStatusData } from '../workforce-status/workforce-data'
-import { derivePendingDecisions } from '../cto/cto-data'
+import { buildAgentTasks } from '../agents/agent-tasks'
 import { TowerExecutiveSummary } from '../_components/TowerExecutiveSummary'
 import { TowerActionQueue } from '../_components/TowerActionQueue'
 import type { HealthStatus } from '../executive/executive-data'
 import type { WorkforceHealth } from '../workforce-status/workforce-data'
+import type { TaskPriority } from '../agents/agent-tasks'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +37,13 @@ const WF_HEALTH_DOT: Record<WorkforceHealth, string> = {
   'not-configured': 'bg-muted-foreground/30',
 }
 
+const TASK_PRIORITY_BADGE: Record<TaskPriority, string> = {
+  critical: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+  high: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
+  medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+  low: 'bg-muted text-muted-foreground',
+}
+
 export default async function MorningBriefPage() {
   const [data, workforceData] = await Promise.all([getExecutiveData(), getWorkforceStatusData()])
   const { health, summary, actionQueue, revenue, recentActivity, newCustomers, generatedAt } = data
@@ -57,11 +65,16 @@ export default async function MorningBriefPage() {
     (i) => i.priority === 'critical' || i.priority === 'high'
   ).length
 
-  const criticalIssues = actionQueue.filter(
-    (i) => i.priority === 'critical' || i.priority === 'high'
+  // Agent intelligence
+  const agentTasks = buildAgentTasks(data)
+  const tasksNeedingApproval = agentTasks.filter((t) => t.requiresApproval)
+  const urgentApprovals = tasksNeedingApproval.filter(
+    (t) => t.priority === 'critical' || t.priority === 'high'
   )
-  const nextThreeActions = actionQueue.slice(0, 3)
-  const pendingDecisions = derivePendingDecisions(data)
+  const deferrableApprovals = tasksNeedingApproval.filter(
+    (t) => t.priority === 'medium' || t.priority === 'low'
+  )
+  const topThreeTasks = agentTasks.slice(0, 3)
 
   // Workforce summary
   const wfHealthy = workforceData.workforces.filter((w) => w.health === 'healthy').length
@@ -70,18 +83,6 @@ export default async function MorningBriefPage() {
   const wfTotal = workforceData.workforces.length
   const wfActiveRuns = workforceData.workforces.reduce((s, w) => s + w.runningRuns, 0)
   const wfFailedTotal = workforceData.workforces.reduce((s, w) => s + w.failedRuns, 0)
-
-  // CTO report: top issues from health
-  const ctoIssueCount = [
-    health.database.status === 'critical',
-    health.billingHealth.status === 'not-configured',
-    health.subscriptions.status === 'warning',
-    health.engagementRuns.status === 'warning' || health.engagementRuns.status === 'critical',
-    health.auditLog.status === 'warning',
-    health.apiHealth.status === 'not-configured',
-    health.deployments.status === 'not-configured',
-    health.backgroundJobs.status === 'not-configured',
-  ].filter(Boolean).length
 
   return (
     <div className="space-y-8">
@@ -372,377 +373,216 @@ export default async function MorningBriefPage() {
         )}
       </section>
 
-      {/* CTO Report */}
+      {/* Daily Agent Intelligence */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">CTO Report</h2>
-          <Link href="/tower/cto" className="text-xs text-muted-foreground hover:text-foreground">
-            Full CTO Operations →
-          </Link>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4">
-          {ctoIssueCount === 0 ? (
-            <p className="text-sm text-emerald-700 dark:text-emerald-400">
-              No platform issues detected — all monitored systems are operating normally
-            </p>
-          ) : (
-            <>
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-amber-400" />
-                <p className="text-sm font-medium text-foreground">
-                  {ctoIssueCount} platform issue{ctoIssueCount !== 1 ? 's' : ''} detected
-                </p>
-              </div>
-              <ul className="mt-3 space-y-1.5">
-                {[
-                  health.database.status === 'critical' && {
-                    label: 'Database connection failure — all operations blocked',
-                    href: '/tower/health/database',
-                    sev: 'critical' as const,
-                  },
-                  health.billingHealth.status === 'not-configured' && {
-                    label: 'Stripe not configured — billing cannot process payments',
-                    href: '/tower/health/billing',
-                    sev: 'high' as const,
-                  },
-                  health.subscriptions.status === 'warning' && {
-                    label: 'Past due subscriptions — revenue at risk',
-                    href: '/tower/health/billing',
-                    sev: 'high' as const,
-                  },
-                  (health.engagementRuns.status === 'warning' ||
-                    health.engagementRuns.status === 'critical') && {
-                    label: 'Failed engagement runs — customer impact possible',
-                    href: '/tower/health/runs',
-                    sev: 'medium' as const,
-                  },
-                  health.auditLog.status === 'warning' && {
-                    label: 'Error events in audit log — investigation needed',
-                    href: '/tower/health/audit',
-                    sev: 'medium' as const,
-                  },
-                  health.apiHealth.status === 'not-configured' && {
-                    label: 'No API monitoring configured',
-                    href: '/tower/health/api',
-                    sev: 'low' as const,
-                  },
-                  health.deployments.status === 'not-configured' && {
-                    label: 'Deployment tracking not connected',
-                    href: '/tower/health/deployments',
-                    sev: 'low' as const,
-                  },
-                  health.backgroundJobs.status === 'not-configured' && {
-                    label: 'No background job queue configured',
-                    href: '/tower/health/jobs',
-                    sev: 'low' as const,
-                  },
-                ]
-                  .filter(Boolean)
-                  .map(
-                    (issue) =>
-                      issue && (
-                        <li key={issue.href} className="flex items-start gap-2">
-                          <span
-                            className={`mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full ${issue.sev === 'critical' ? 'bg-destructive' : issue.sev === 'high' ? 'bg-amber-400' : issue.sev === 'medium' ? 'bg-blue-400' : 'bg-muted-foreground/40'}`}
-                          />
-                          <Link
-                            href={issue.href}
-                            className="text-xs text-muted-foreground hover:text-foreground"
-                          >
-                            {issue.label}
-                          </Link>
-                        </li>
-                      )
-                  )}
-              </ul>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* AI Workforce Report */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">AI Workforce Report</h2>
+          <h2 className="text-sm font-semibold text-foreground">Daily Agent Intelligence</h2>
           <Link
-            href="/tower/workforce-status"
+            href="/tower/approvals"
             className="text-xs text-muted-foreground hover:text-foreground"
           >
-            Workforce Status →
+            Full approval queue →
           </Link>
         </div>
-        {wfTotal === 0 ? (
-          <div className="rounded-lg border border-border bg-card px-4 py-6 text-center">
-            <p className="text-sm text-muted-foreground">No AI workforces configured yet</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Workforces are created by customer organizations
+
+        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          {/* What happened? */}
+          <div className="p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              What happened? (last 24h)
             </p>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-border bg-card p-4">
-            <div className="flex flex-wrap gap-x-8 gap-y-3">
+            <div className="flex flex-wrap gap-x-8 gap-y-2">
               <div>
-                <p className="text-xs text-muted-foreground">Total workforces</p>
-                <p className="text-lg font-semibold text-foreground">{wfTotal}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Status</p>
-                <div className="mt-1 flex items-center gap-3">
-                  {wfHealthy > 0 && (
-                    <span className="flex items-center gap-1.5 text-xs">
-                      <span className={`h-1.5 w-1.5 rounded-full ${WF_HEALTH_DOT.healthy}`} />
-                      <span className="text-foreground">{wfHealthy} healthy</span>
-                    </span>
-                  )}
-                  {wfWarning > 0 && (
-                    <span className="flex items-center gap-1.5 text-xs">
-                      <span className={`h-1.5 w-1.5 rounded-full ${WF_HEALTH_DOT.warning}`} />
-                      <span className="text-amber-700 dark:text-amber-400">
-                        {wfWarning} warning
-                      </span>
-                    </span>
-                  )}
-                  {wfCritical > 0 && (
-                    <span className="flex items-center gap-1.5 text-xs">
-                      <span className={`h-1.5 w-1.5 rounded-full ${WF_HEALTH_DOT.critical}`} />
-                      <span className="text-red-700 dark:text-red-400">{wfCritical} critical</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total runs</p>
-                <p className="text-lg font-semibold text-foreground">
-                  {workforceData.totalRunsAllWorkforces}
+                <p className="text-xs text-muted-foreground">Audit events</p>
+                <p className="mt-0.5 text-sm font-medium text-foreground">
+                  {recentActivity.total24h}
                 </p>
               </div>
-              {wfActiveRuns > 0 && (
+              {(newCustomers.orgsLast24h > 0 || newCustomers.usersLast24h > 0) && (
                 <div>
-                  <p className="text-xs text-muted-foreground">Active now</p>
-                  <p className="text-lg font-semibold text-blue-700 dark:text-blue-400">
-                    {wfActiveRuns}
+                  <p className="text-xs text-muted-foreground">New signups</p>
+                  <p className="mt-0.5 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                    {newCustomers.orgsLast24h > 0 &&
+                      `+${newCustomers.orgsLast24h} org${newCustomers.orgsLast24h !== 1 ? 's' : ''}`}
+                    {newCustomers.orgsLast24h > 0 && newCustomers.usersLast24h > 0 && ' · '}
+                    {newCustomers.usersLast24h > 0 &&
+                      `+${newCustomers.usersLast24h} user${newCustomers.usersLast24h !== 1 ? 's' : ''}`}
                   </p>
                 </div>
               )}
-              {wfFailedTotal > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Total failed</p>
-                  <p className="text-lg font-semibold text-red-700 dark:text-red-400">
-                    {wfFailedTotal}
-                  </p>
-                </div>
+              {wfTotal > 0 && (
+                <>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Workforce runs</p>
+                    <p className="mt-0.5 text-sm font-medium text-foreground">
+                      {workforceData.totalRunsAllWorkforces}
+                    </p>
+                  </div>
+                  {wfFailedTotal > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Failed runs</p>
+                      <p className="mt-0.5 text-sm font-medium text-red-700 dark:text-red-400">
+                        {wfFailedTotal}
+                      </p>
+                    </div>
+                  )}
+                  {wfActiveRuns > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Active now</p>
+                      <p className="mt-0.5 text-sm font-medium text-blue-700 dark:text-blue-400">
+                        {wfActiveRuns}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">Workforce health</p>
+                    <div className="mt-0.5 flex items-center gap-3">
+                      {wfHealthy > 0 && (
+                        <span className="flex items-center gap-1 text-xs">
+                          <span className={`h-1.5 w-1.5 rounded-full ${WF_HEALTH_DOT.healthy}`} />
+                          <span className="text-foreground">{wfHealthy}</span>
+                        </span>
+                      )}
+                      {wfWarning > 0 && (
+                        <span className="flex items-center gap-1 text-xs">
+                          <span className={`h-1.5 w-1.5 rounded-full ${WF_HEALTH_DOT.warning}`} />
+                          <span className="text-amber-700 dark:text-amber-400">{wfWarning}</span>
+                        </span>
+                      )}
+                      {wfCritical > 0 && (
+                        <span className="flex items-center gap-1 text-xs">
+                          <span className={`h-1.5 w-1.5 rounded-full ${WF_HEALTH_DOT.critical}`} />
+                          <span className="text-red-700 dark:text-red-400">{wfCritical}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </div>
-        )}
-      </section>
 
-      {/* Revenue Alerts */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">Revenue Alerts</h2>
-        <div className="rounded-lg border border-border bg-card p-4">
-          {revenue.pastDue > 0 ? (
-            <div className="flex items-start gap-2">
-              <span className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-400" />
-              <div>
-                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                  {revenue.pastDue} past-due subscription{revenue.pastDue !== 1 ? 's' : ''}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Payment failures detected. Review Stripe dunning settings and follow up with
-                  affected customers.
-                </p>
-                <Link
-                  href="/tower/health/billing"
-                  className="mt-2 inline-block text-xs text-foreground hover:underline"
-                >
-                  Review billing →
-                </Link>
-              </div>
-            </div>
-          ) : !revenue.stripeConnected ? (
-            <div className="flex items-start gap-2">
-              <span className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-400" />
-              <div>
-                <p className="text-sm font-medium text-foreground">Stripe not configured</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Billing cannot process customer payments until Stripe is connected.
-                </p>
-                <Link
-                  href="/tower/health/billing"
-                  className="mt-2 inline-block text-xs text-foreground hover:underline"
-                >
-                  Configure billing →
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-emerald-700 dark:text-emerald-400">
-              No revenue alerts — billing is operating normally
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* Growth Alerts */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">Growth Alerts</h2>
-        <div className="rounded-lg border border-border bg-card p-4">
-          {newCustomers.orgsLast24h > 0 || newCustomers.usersLast24h > 0 ? (
-            <div className="flex items-start gap-2">
-              <span className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-emerald-500" />
-              <div>
-                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                  New signups in the last 24 hours
-                </p>
-                <ul className="mt-1.5 space-y-1">
-                  {newCustomers.orgsLast24h > 0 && (
-                    <li className="text-xs text-muted-foreground">
-                      · {newCustomers.orgsLast24h} new organization
-                      {newCustomers.orgsLast24h !== 1 ? 's' : ''}
-                    </li>
-                  )}
-                  {newCustomers.usersLast24h > 0 && (
-                    <li className="text-xs text-muted-foreground">
-                      · {newCustomers.usersLast24h} new user
-                      {newCustomers.usersLast24h !== 1 ? 's' : ''}
-                    </li>
-                  )}
-                </ul>
-                <Link
-                  href="/tower/orgs"
-                  className="mt-2 inline-block text-xs text-foreground hover:underline"
-                >
-                  View organizations →
-                </Link>
-              </div>
-            </div>
-          ) : actionQueue.some((a) => a.id === 'no-customers') ? (
-            <div className="flex items-start gap-2">
-              <span className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-400" />
-              <div>
-                <p className="text-sm font-medium text-foreground">No customers onboarded yet</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Acquiring the first customer is the top growth priority. The platform is ready.
-                </p>
-                <Link
-                  href="/tower/marketing"
-                  className="mt-2 inline-block text-xs text-foreground hover:underline"
-                >
-                  Configure marketing →
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No new signups in the last 24 hours</p>
-          )}
-        </div>
-      </section>
-
-      {/* Critical Risks */}
-      {criticalIssues.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-foreground">
-            Critical Risks{' '}
-            <span className="ml-1 font-normal text-muted-foreground">
-              ({criticalIssues.length})
-            </span>
-          </h2>
-          <div className="space-y-2">
-            {criticalIssues.map((issue) => (
-              <div
-                key={issue.id}
-                className={`flex items-start gap-3 rounded-lg border p-3 ${issue.priority === 'critical' ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30' : 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30'}`}
-              >
-                <span
-                  className={`mt-0.5 h-2 w-2 flex-shrink-0 rounded-full ${issue.priority === 'critical' ? 'bg-destructive' : 'bg-amber-400'}`}
-                />
-                <div className="flex-1">
-                  <p
-                    className={`text-xs font-medium ${issue.priority === 'critical' ? 'text-red-800 dark:text-red-300' : 'text-amber-800 dark:text-amber-300'}`}
-                  >
-                    {issue.title}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{issue.reason}</p>
-                </div>
-                <Link
-                  href={issue.href}
-                  className="flex-shrink-0 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Fix →
-                </Link>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Upcoming Founder Decisions */}
-      {pendingDecisions.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">
-              Upcoming Decisions{' '}
-              <span className="ml-1 font-normal text-muted-foreground">
-                ({pendingDecisions.length})
-              </span>
-            </h2>
-            <Link href="/tower/cto" className="text-xs text-muted-foreground hover:text-foreground">
-              CTO Operations →
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {pendingDecisions.map((decision) => (
-              <div key={decision.id} className="rounded-lg border border-border bg-card p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-medium text-foreground">{decision.title}</p>
-                  <Link
-                    href={decision.href}
-                    className="flex-shrink-0 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    Decide →
-                  </Link>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">{decision.context}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Recommended Next 3 Actions */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">Recommended Next 3 Actions</h2>
-        {nextThreeActions.length === 0 ? (
-          <div className="rounded-lg border border-border bg-card px-4 py-6 text-center">
-            <p className="text-sm text-emerald-700 dark:text-emerald-400">
-              No actions required — platform is operating well
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {nextThreeActions.map((action, i) => (
-              <div
-                key={action.id}
-                className="flex items-start gap-3 rounded-lg border border-border bg-card p-3"
-              >
-                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                  {i + 1}
+          {/* What needs approval? */}
+          <div className="p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                What needs approval?{' '}
+                <span className="font-normal">
+                  ({urgentApprovals.length} critical/high priority)
                 </span>
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-foreground">{action.title}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{action.recommendedAction}</p>
-                </div>
-                <Link
-                  href={action.href}
-                  className="flex-shrink-0 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Go →
+              </p>
+              {urgentApprovals.length > 0 && (
+                <Link href="/tower/approvals" className="text-xs text-foreground hover:underline">
+                  Review all →
                 </Link>
+              )}
+            </div>
+            {urgentApprovals.length === 0 ? (
+              <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                No critical or high-priority approvals pending
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {urgentApprovals.map((task) => (
+                  <div
+                    key={task.id}
+                    className={`flex items-start justify-between gap-2 rounded-md border p-2.5 ${
+                      task.priority === 'critical'
+                        ? 'border-red-200 dark:border-red-800'
+                        : 'border-amber-200 dark:border-amber-800'
+                    }`}
+                  >
+                    <div className="flex min-w-0 flex-1 items-start gap-2">
+                      <span
+                        className={`mt-px inline-flex flex-shrink-0 items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${TASK_PRIORITY_BADGE[task.priority]}`}
+                      >
+                        {task.priority}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-medium text-foreground">
+                          {task.description}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{task.agentName}</p>
+                      </div>
+                    </div>
+                    <Link
+                      href="/tower/approvals"
+                      className="flex-shrink-0 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Approve →
+                    </Link>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        )}
+
+          {/* What can wait? */}
+          <div className="p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              What can wait?{' '}
+              <span className="font-normal">
+                ({deferrableApprovals.length} medium/low priority)
+              </span>
+            </p>
+            {deferrableApprovals.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Nothing deferred</p>
+            ) : (
+              <div className="space-y-1.5">
+                {deferrableApprovals.map((task) => (
+                  <div key={task.id} className="flex items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="inline-flex flex-shrink-0 items-center rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                        {task.priority}
+                      </span>
+                      <p className="truncate text-xs text-muted-foreground">{task.description}</p>
+                    </div>
+                    <Link
+                      href="/tower/approvals"
+                      className="flex-shrink-0 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      View →
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* What should I do first? */}
+          <div className="p-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              What should I do first?
+            </p>
+            {topThreeTasks.length === 0 ? (
+              <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                No agent recommendations — all systems clear
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {topThreeTasks.map((task, i) => (
+                  <div key={task.id} className="flex items-start gap-3">
+                    <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                      {i + 1}
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-foreground">{task.description}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {task.recommendedAction}
+                      </p>
+                    </div>
+                    <Link
+                      href={task.href}
+                      className="flex-shrink-0 text-xs text-foreground hover:underline"
+                    >
+                      Go →
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </section>
     </div>
   )

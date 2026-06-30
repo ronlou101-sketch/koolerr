@@ -1,8 +1,17 @@
 import Link from 'next/link'
 import { getCTOData } from './cto-data'
+import { getAgentTasks } from '../agents/agent-tasks'
 import type { IssueSeverity } from './cto-data'
+import type { TaskPriority } from '../agents/agent-tasks'
 
 export const dynamic = 'force-dynamic'
+
+const TASK_PRIORITY_BADGE: Record<TaskPriority, string> = {
+  critical: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
+  high: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
+  medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',
+  low: 'bg-muted text-muted-foreground',
+}
 
 const SEVERITY_BADGE: Record<IssueSeverity, string> = {
   critical: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300',
@@ -27,8 +36,12 @@ const PRIORITY_BADGE: Record<string, string> = {
 }
 
 export default async function CTOOperationsCenterPage() {
-  const data = await getCTOData()
+  const [data, { tasks: allTasks }] = await Promise.all([getCTOData(), getAgentTasks()])
   const { platformIssues, maintenance, technicalDebt, pendingDecisions, generatedAt } = data
+
+  const ctoTasks = allTasks.filter((t) => t.agentId === 'cto')
+  const ctoCritical = ctoTasks.filter((t) => t.priority === 'critical' || t.priority === 'high')
+  const ctoOther = ctoTasks.filter((t) => t.priority === 'medium' || t.priority === 'low')
 
   const briefTime = new Date(generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -55,6 +68,62 @@ export default async function CTOOperationsCenterPage() {
         </div>
         <p className="text-xs text-muted-foreground">Generated {briefTime} · Refreshes on load</p>
       </div>
+
+      {/* CTO Agent Recommendations */}
+      {ctoTasks.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">
+              CTO Agent Recommendations{' '}
+              <span className="ml-1 font-normal text-muted-foreground">({ctoTasks.length})</span>
+            </h2>
+            <Link
+              href="/tower/approvals?agent=cto"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Review all in queue →
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {[...ctoCritical, ...ctoOther].map((task) => (
+              <div
+                key={task.id}
+                className={`rounded-lg border bg-card p-4 ${
+                  task.priority === 'critical'
+                    ? 'border-red-200 dark:border-red-800'
+                    : task.priority === 'high'
+                      ? 'border-amber-200 dark:border-amber-800'
+                      : 'border-border'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${TASK_PRIORITY_BADGE[task.priority]}`}
+                    >
+                      {task.priority}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{task.source}</span>
+                  </div>
+                  <Link
+                    href={`/tower/approvals?agent=cto`}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Submit to approvals →
+                  </Link>
+                </div>
+                <p className="mt-2 text-sm font-medium text-foreground">{task.description}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {task.recommendedAction}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Agents recommend · Founder approves · System executes
+          </p>
+        </section>
+      )}
 
       {/* Platform Issues */}
       <section className="space-y-3">
