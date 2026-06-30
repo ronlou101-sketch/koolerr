@@ -5,11 +5,12 @@
     "AI SEO Workforce",
     "Public Marketing Website",
     "Brand & Visual Identity",
-    "Tower Control v1"
+    "Tower Control v1",
+    "AI Workforce Foundation"
   ],
   "current": ["Stripe Integration", "Launch Readiness"],
   "remaining": [
-    "AI Integrations (HeyGen, Higgsfield)",
+    "AI Integrations (HeyGen, Higgsfield, ElevenLabs, Manus)",
     "Customer Onboarding",
     "Koolerr Academy",
     "Internal Dogfooding",
