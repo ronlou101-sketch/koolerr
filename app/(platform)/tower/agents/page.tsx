@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { getAgentRegistry } from './agent-registry'
+import { getSupportData } from '../support/support-data'
+import { buildExecutionJobs, buildAgentUtilization } from '../execution/execution-data'
 import type { AgentStatus, AgentHealth } from './agent-registry'
 
 export const dynamic = 'force-dynamic'
@@ -50,7 +52,14 @@ function timeAgo(iso: string): string {
 }
 
 export default async function AgentRegistryPage() {
-  const { agents, generatedAt } = await getAgentRegistry()
+  const [{ agents, agentTasks, generatedAt }, supportData] = await Promise.all([
+    getAgentRegistry(),
+    getSupportData(),
+  ])
+
+  const execJobs = buildExecutionJobs(agentTasks, supportData.tickets, generatedAt)
+  const utilization = buildAgentUtilization(execJobs)
+  const utilizationByAgentId = new Map(utilization.map((u) => [u.agentId, u]))
 
   const generatedTime = new Date(generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -62,7 +71,7 @@ export default async function AgentRegistryPage() {
     (a) => a.status === 'active' || a.status === 'attention-required'
   ).length
   const attentionCount = agents.filter((a) => a.status === 'attention-required').length
-  const totalPending = agents.reduce((s, a) => s + a.pendingTaskCount, 0)
+  const totalWaitingApproval = utilization.reduce((s, u) => s + u.waitingApproval, 0)
 
   return (
     <div className="space-y-8">
@@ -92,13 +101,20 @@ export default async function AgentRegistryPage() {
           { label: 'Total Agents', value: agents.length },
           { label: 'Active', value: activeCount },
           { label: 'Need Attention', value: attentionCount },
-          { label: 'Pending Tasks', value: totalPending },
-        ].map(({ label, value }) => (
+          {
+            label: 'Awaiting Approval',
+            value: totalWaitingApproval,
+            color:
+              totalWaitingApproval > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-foreground',
+          },
+        ].map(({ label, value, color }) => (
           <div key={label} className="rounded-lg border border-border bg-card p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {label}
             </p>
-            <p className="mt-2 text-xl font-semibold tabular-nums text-foreground">{value}</p>
+            <p className={`mt-2 text-xl font-semibold tabular-nums ${color ?? 'text-foreground'}`}>
+              {value}
+            </p>
           </div>
         ))}
       </div>
@@ -111,12 +127,18 @@ export default async function AgentRegistryPage() {
             <p className="text-xs font-medium text-muted-foreground">{phrase}</p>
           </div>
         ))}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-4">
+          <Link
+            href="/tower/execution"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Execution engine →
+          </Link>
           <Link
             href="/tower/approvals"
             className="text-xs font-medium text-foreground hover:underline"
           >
-            View approval queue →
+            Approval queue →
           </Link>
         </div>
       </div>
@@ -125,6 +147,7 @@ export default async function AgentRegistryPage() {
       <div className="space-y-3">
         {agents.map((agent) => {
           const statusCfg = STATUS_CONFIG[agent.status]
+          const util = utilizationByAgentId.get(agent.id)
           return (
             <div key={agent.id} className="rounded-lg border border-border bg-card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -163,12 +186,49 @@ export default async function AgentRegistryPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs text-muted-foreground">Pending work</p>
+                  <p className="text-xs text-muted-foreground">Pending tasks</p>
                   <p className="mt-0.5 text-xs font-medium text-foreground">
                     {agent.pendingTaskCount > 0
                       ? `${agent.pendingTaskCount} task${agent.pendingTaskCount !== 1 ? 's' : ''}`
                       : 'None'}
                   </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground">Queue (total)</p>
+                  <p className="mt-0.5 text-xs font-medium text-foreground">
+                    {util ? util.totalJobs : 0}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground">Waiting approval</p>
+                  <p
+                    className={`mt-0.5 text-xs font-medium ${
+                      util && util.waitingApproval > 0
+                        ? 'text-amber-700 dark:text-amber-400'
+                        : 'text-muted-foreground'
+                    }`}
+                  >
+                    {util ? util.waitingApproval : 0}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground">Avg confidence</p>
+                  <p className="mt-0.5 text-xs font-medium text-foreground">
+                    {util ? `${util.avgConfidence}%` : 'No data'}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground">Completed today</p>
+                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">0</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-muted-foreground">Success rate</p>
+                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">No history</p>
                 </div>
 
                 {agent.lastRecommendation && (
@@ -181,9 +241,9 @@ export default async function AgentRegistryPage() {
                 )}
               </div>
 
-              {/* Action link */}
-              {agent.pendingTaskCount > 0 && (
-                <div className="mt-3">
+              {/* Action links */}
+              <div className="mt-3 flex items-center gap-4">
+                {agent.pendingTaskCount > 0 && (
                   <Link
                     href={`/tower/approvals?agent=${agent.id}`}
                     className="text-xs text-foreground hover:underline"
@@ -191,8 +251,16 @@ export default async function AgentRegistryPage() {
                     Review {agent.pendingTaskCount} pending task
                     {agent.pendingTaskCount !== 1 ? 's' : ''} →
                   </Link>
-                </div>
-              )}
+                )}
+                {util && util.totalJobs > 0 && (
+                  <Link
+                    href="/tower/execution"
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    View in execution engine →
+                  </Link>
+                )}
+              </div>
             </div>
           )
         })}

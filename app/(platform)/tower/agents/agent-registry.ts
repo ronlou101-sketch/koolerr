@@ -20,6 +20,7 @@ export interface AgentRecord {
 
 export interface AgentRegistryData {
   agents: AgentRecord[]
+  agentTasks: AgentTask[]
   generatedAt: string
 }
 
@@ -167,6 +168,7 @@ export async function getAgentRegistry(): Promise<AgentRegistryData> {
   const tasks = buildAgentTasks(data)
   return {
     agents: buildAgentRegistry(tasks, data),
+    agentTasks: tasks,
     generatedAt: data.generatedAt,
   }
 }

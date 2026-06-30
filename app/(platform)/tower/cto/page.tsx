@@ -2,6 +2,11 @@ import Link from 'next/link'
 import { getCTOData } from './cto-data'
 import { getAgentTasks } from '../agents/agent-tasks'
 import { getSupportData } from '../support/support-data'
+import {
+  buildExecutionJobs,
+  buildExecutionMetrics,
+  buildAgentUtilization,
+} from '../execution/execution-data'
 import type { IssueSeverity } from './cto-data'
 import type { TaskPriority } from '../agents/agent-tasks'
 
@@ -43,6 +48,10 @@ export default async function CTOOperationsCenterPage() {
     getSupportData(),
   ])
   const { platformIssues, maintenance, technicalDebt, pendingDecisions, generatedAt } = data
+
+  const execJobs = buildExecutionJobs(allTasks, supportData.tickets, data.generatedAt)
+  const execMetrics = buildExecutionMetrics(execJobs)
+  const agentUtil = buildAgentUtilization(execJobs)
 
   const ctoTasks = allTasks.filter((t) => t.agentId === 'cto')
   const ctoCritical = ctoTasks.filter((t) => t.priority === 'critical' || t.priority === 'high')
@@ -346,6 +355,153 @@ export default async function CTOOperationsCenterPage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Execution Intelligence */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Execution Intelligence</h2>
+          <Link
+            href="/tower/execution"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full execution engine →
+          </Link>
+        </div>
+
+        {/* Queue health */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            {
+              label: 'Total in Queue',
+              value: execJobs.length,
+            },
+            {
+              label: 'Waiting Approval',
+              value: execMetrics.waitingApproval,
+              color:
+                execMetrics.waitingApproval > 0
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-foreground',
+            },
+            { label: 'Avg Execution Time', value: execMetrics.avgExecutionTime, isText: true },
+            { label: 'Failure Rate', value: 'No history', isText: true },
+          ].map(({ label, value, color, isText }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p
+                className={`mt-2 ${isText ? 'text-sm font-medium' : 'text-xl font-semibold tabular-nums'} ${color ?? 'text-foreground'}`}
+              >
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottlenecks */}
+        {execMetrics.waitingApproval > 0 && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
+            <span className="mt-0.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-400" />
+            <div className="flex-1">
+              <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                Bottleneck: {execMetrics.waitingApproval} job
+                {execMetrics.waitingApproval !== 1 ? 's' : ''} blocked on founder approval
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Execution cannot proceed until the founder approves these tasks.
+              </p>
+            </div>
+            <Link
+              href="/tower/approvals"
+              className="flex-shrink-0 text-xs text-foreground hover:underline"
+            >
+              Approve →
+            </Link>
+          </div>
+        )}
+
+        {/* Agent utilization table */}
+        {agentUtil.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-muted/40">
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Agent
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground sm:table-cell">
+                    Domain
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Queue
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground md:table-cell">
+                    Awaiting Approval
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground lg:table-cell">
+                    Confidence
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {agentUtil.map((rec) => (
+                  <tr key={rec.agentId}>
+                    <td className="px-4 py-3 text-xs font-medium text-foreground">
+                      {rec.agentName}
+                    </td>
+                    <td className="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell">
+                      {rec.domain}
+                    </td>
+                    <td className="px-4 py-3 text-right text-xs font-semibold tabular-nums text-foreground">
+                      {rec.totalJobs}
+                    </td>
+                    <td className="hidden px-4 py-3 text-right text-xs tabular-nums md:table-cell">
+                      <span
+                        className={
+                          rec.waitingApproval > 0
+                            ? 'font-medium text-amber-700 dark:text-amber-400'
+                            : 'text-muted-foreground'
+                        }
+                      >
+                        {rec.waitingApproval}
+                      </span>
+                    </td>
+                    <td className="hidden px-4 py-3 text-right lg:table-cell">
+                      <span
+                        className={`text-xs font-medium ${
+                          rec.avgConfidence >= 80
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : rec.avgConfidence >= 60
+                              ? 'text-amber-700 dark:text-amber-400'
+                              : 'text-red-700 dark:text-red-400'
+                        }`}
+                      >
+                        {rec.avgConfidence}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[
+            { label: 'Retry Count', value: '0' },
+            { label: 'Top Performing Agent', value: 'No history' },
+            { label: 'Slowest Executions', value: 'No history' },
+          ].map(({ label, value }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p className="mt-2 text-sm font-medium text-muted-foreground">{value}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Support Operations */}

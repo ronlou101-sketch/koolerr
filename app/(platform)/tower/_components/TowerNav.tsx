@@ -45,6 +45,7 @@ const NAV = [
   {
     section: 'Operations',
     items: [
+      { href: '/tower/execution', label: 'Execution Engine' },
       { href: '/tower/cto', label: 'CTO Operations' },
       { href: '/tower/automation', label: 'Automation' },
     ],

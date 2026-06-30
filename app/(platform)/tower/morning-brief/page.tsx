@@ -3,6 +3,7 @@ import { getExecutiveData } from '../executive/executive-data'
 import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import { buildAgentTasks } from '../agents/agent-tasks'
 import { getSupportData } from '../support/support-data'
+import { buildExecutionJobs, buildExecutionMetrics } from '../execution/execution-data'
 import { TowerExecutiveSummary } from '../_components/TowerExecutiveSummary'
 import { TowerActionQueue } from '../_components/TowerActionQueue'
 import type { HealthStatus } from '../executive/executive-data'
@@ -72,6 +73,8 @@ export default async function MorningBriefPage() {
 
   // Agent intelligence
   const agentTasks = buildAgentTasks(data)
+  const execJobs = buildExecutionJobs(agentTasks, supportData.tickets, generatedAt)
+  const execMetrics = buildExecutionMetrics(execJobs)
   const tasksNeedingApproval = agentTasks.filter((t) => t.requiresApproval)
   const urgentApprovals = tasksNeedingApproval.filter(
     (t) => t.priority === 'critical' || t.priority === 'high'
@@ -588,6 +591,56 @@ export default async function MorningBriefPage() {
             )}
           </div>
         </div>
+      </section>
+
+      {/* Today's Executions */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Today&apos;s Executions</h2>
+          <Link
+            href="/tower/execution"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Execution engine →
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Completed Overnight', value: execMetrics.completedToday, note: 'No history' },
+            { label: 'Running Now', value: execMetrics.running, note: null },
+            {
+              label: 'Waiting Approval',
+              value: execMetrics.waitingApproval,
+              color:
+                execMetrics.waitingApproval > 0 ? 'text-amber-700 dark:text-amber-400' : undefined,
+            },
+            { label: 'Failed', value: execMetrics.failedToday, note: null },
+          ].map(({ label, value, color, note }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p
+                className={`mt-2 text-xl font-semibold tabular-nums ${color ?? 'text-foreground'}`}
+              >
+                {value}
+              </p>
+              {note && <p className="mt-0.5 text-xs text-muted-foreground">{note}</p>}
+            </div>
+          ))}
+        </div>
+        {execMetrics.waitingApproval > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/30">
+            <span className="h-2 w-2 flex-shrink-0 rounded-full bg-amber-400" />
+            <p className="text-xs text-amber-800 dark:text-amber-300">
+              {execMetrics.waitingApproval} execution job
+              {execMetrics.waitingApproval !== 1 ? 's' : ''} waiting for founder approval —{' '}
+              <Link href="/tower/approvals" className="font-medium underline underline-offset-2">
+                review now
+              </Link>
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Support Intelligence */}
