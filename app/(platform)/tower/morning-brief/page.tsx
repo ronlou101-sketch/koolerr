@@ -10,6 +10,7 @@ import {
   buildBrainObjectives,
 } from '../business-brain/brain-data'
 import { buildCompanyOSData } from '../company-os/company-os-data'
+import { buildCompanyMemoryData } from '../company-memory/company-memory-data'
 import { TowerExecutiveSummary } from '../_components/TowerExecutiveSummary'
 import { TowerActionQueue } from '../_components/TowerActionQueue'
 import type { HealthStatus } from '../executive/executive-data'
@@ -105,6 +106,8 @@ export default async function MorningBriefPage() {
 
   // Company OS
   const os = buildCompanyOSData(data, supportData, workforceData, agentTasks)
+  // Company Memory — institutional learning derived from same sources
+  const memory = buildCompanyMemoryData(data, supportData, workforceData, agentTasks, execJobs)
   const topMission = os.topPriorities[0] ?? null
   const mostLoadedAgent = [...os.agentWorkloads].sort(
     (a, b) => b.totalMissions - a.totalMissions
@@ -967,6 +970,96 @@ export default async function MorningBriefPage() {
                 review now
               </Link>
             </p>
+          </div>
+        )}
+      </section>
+
+      {/* Learning Intelligence */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Learning Intelligence</h2>
+          <Link
+            href="/tower/company-memory"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full Company Memory →
+          </Link>
+        </div>
+
+        {/* Score strip */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Intelligence Score', value: memory.intelligenceScore.overall },
+            { label: 'Execution Health', value: memory.intelligenceScore.executionHealth },
+            { label: 'Automation Health', value: memory.intelligenceScore.automationHealth },
+            { label: 'Learning Progress', value: memory.intelligenceScore.learningProgress },
+          ].map(({ label, value }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-3">
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p
+                className={`mt-1 text-xl font-semibold tabular-nums ${
+                  value >= 70
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : value >= 45
+                      ? 'text-amber-700 dark:text-amber-400'
+                      : 'text-red-700 dark:text-red-400'
+                }`}
+              >
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Top win + top failure */}
+        {(memory.recentWins.length > 0 || memory.recentFailures.length > 0) && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {memory.recentWins[0] && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-900 dark:bg-emerald-950/10">
+                <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                  Top Win
+                </p>
+                <p className="mt-1 text-sm font-medium text-foreground">
+                  {memory.recentWins[0].title}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {memory.recentWins[0].summary}
+                </p>
+              </div>
+            )}
+            {memory.recentFailures[0] && (
+              <div className="rounded-lg border border-red-200 bg-red-50/50 p-4 dark:border-red-900 dark:bg-red-950/10">
+                <p className="text-xs font-medium uppercase tracking-wide text-red-700 dark:text-red-400">
+                  Top Risk
+                </p>
+                <p className="mt-1 text-sm font-medium text-foreground">
+                  {memory.recentFailures[0].title}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {memory.recentFailures[0].recommendedNextAction}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Biggest pattern */}
+        {memory.biggestPattern && (
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Detected Pattern
+            </p>
+            <p className="mt-1 text-sm font-medium text-foreground">{memory.biggestPattern}</p>
+          </div>
+        )}
+
+        {/* Top learning signal */}
+        {memory.topLearning && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-950/10">
+            <p className="text-xs font-medium uppercase tracking-wide text-blue-700 dark:text-blue-400">
+              Today&apos;s Learning Signal
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-foreground">{memory.topLearning}</p>
           </div>
         )}
       </section>

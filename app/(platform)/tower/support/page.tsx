@@ -354,6 +354,97 @@ export default async function SupportCenterPage() {
         </div>
       </section>
 
+      {/* Support Learning */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-foreground">Support Learning</h2>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="border-b border-border bg-muted/30 px-4 py-2.5">
+            <p className="text-xs text-muted-foreground">
+              Patterns derived from current ticket snapshot — historical trend tracking requires a
+              persistence layer
+            </p>
+          </div>
+          <div className="divide-y divide-border">
+            {(() => {
+              const insights: Array<{ label: string; value: string; note: string }> = []
+
+              if (stats.totalOpen > 0) {
+                insights.push({
+                  label: 'Active Ticket Load',
+                  value: `${stats.totalOpen} open`,
+                  note:
+                    stats.awaitingFounder > 0
+                      ? `${stats.awaitingFounder} blocked on founder approval — clearing backlog improves resolution time`
+                      : 'No founder-blocking tickets',
+                })
+              }
+
+              if (stats.autoResolved > 0) {
+                const resolutionRate =
+                  stats.totalOpen + stats.autoResolved > 0
+                    ? Math.round(
+                        (stats.autoResolved / (stats.totalOpen + stats.autoResolved)) * 100
+                      )
+                    : 0
+                insights.push({
+                  label: 'AI Resolution Rate',
+                  value: `${resolutionRate}%`,
+                  note: `${stats.autoResolved} auto-resolved — target ≥70% AI resolution`,
+                })
+              }
+
+              const urgentCount = tickets.filter(
+                (t) =>
+                  t.priority === 'critical' && t.status !== 'ai-resolved' && t.status !== 'closed'
+              ).length
+              if (urgentCount > 0) {
+                insights.push({
+                  label: 'Urgent Open Tickets',
+                  value: `${urgentCount}`,
+                  note: 'Urgent tickets unresolved — customer churn risk increases with each hour',
+                })
+              }
+
+              const aiResolved = tickets.filter((t) => t.status === 'ai-resolved').length
+              if (aiResolved > 0) {
+                insights.push({
+                  label: 'AI-Resolved Tickets',
+                  value: `${aiResolved}`,
+                  note: 'Items resolved autonomously without founder intervention',
+                })
+              }
+
+              if (insights.length === 0) {
+                insights.push({
+                  label: 'Ticket Volume',
+                  value: 'No tickets',
+                  note: 'No support tickets in current snapshot',
+                })
+              }
+
+              return insights.map((insight, i) => (
+                <div key={i} className="flex items-start gap-4 px-4 py-3">
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-foreground">{insight.label}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{insight.note}</p>
+                  </div>
+                  <p className="flex-shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                    {insight.value}
+                  </p>
+                </div>
+              ))
+            })()}
+          </div>
+          <div className="border-t border-border bg-muted/20 px-4 py-2">
+            <p className="text-xs text-muted-foreground">
+              <Link href="/tower/company-memory" className="hover:text-foreground">
+                Full support insights in Company Memory →
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Philosophy + flow */}
       <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-4">
         <p className="text-xs font-medium text-foreground">How support resolution works</p>

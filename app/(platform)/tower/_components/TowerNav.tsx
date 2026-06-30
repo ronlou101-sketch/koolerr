@@ -10,6 +10,7 @@ const NAV = [
       { href: '/tower', label: 'Overview' },
       { href: '/tower/morning-brief', label: 'Morning Brief' },
       { href: '/tower/company-os', label: 'Company OS' },
+      { href: '/tower/company-memory', label: 'Company Memory' },
       { href: '/tower/business-brain', label: 'Business Brain' },
       { href: '/tower/agents', label: 'Agent Registry' },
       { href: '/tower/approvals', label: 'Approvals' },

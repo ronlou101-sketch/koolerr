@@ -12,7 +12,9 @@ import {
   buildLearningSignals,
 } from './brain-data'
 import { buildCompanyOSData } from '../company-os/company-os-data'
+import { buildCompanyMemoryData } from '../company-memory/company-memory-data'
 import type { BrainScore, ObjectiveStatus, CompanyScores } from './brain-data'
+import type { BusinessPattern, LearningObjective } from '../company-memory/company-memory-data'
 
 export const dynamic = 'force-dynamic'
 
@@ -156,6 +158,15 @@ export default async function BusinessBrainPage() {
 
   // Company OS — mission orchestration layer
   const os = buildCompanyOSData(executiveData, supportData, workforceData, agentTasks)
+
+  // Company Memory — institutional memory derived from same data sources
+  const memory = buildCompanyMemoryData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
 
   const briefTime = new Date(generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -797,6 +808,143 @@ export default async function BusinessBrainPage() {
           </div>
         </div>
       </section>
+
+      {/* Business Intelligence Score */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Business Intelligence Score</h2>
+          <Link
+            href="/tower/company-memory"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full memory engine →
+          </Link>
+        </div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="border-b border-border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Overall Intelligence Score
+                </p>
+                <p
+                  className={`mt-0.5 text-3xl font-semibold tabular-nums ${scoreColor(memory.intelligenceScore.overall)}`}
+                >
+                  {memory.intelligenceScore.overall}
+                </p>
+              </div>
+              <div className="h-2 w-28 overflow-hidden rounded-full bg-muted">
+                <div
+                  className={`h-full rounded-full ${scoreBg(memory.intelligenceScore.overall)}`}
+                  style={{ width: `${memory.intelligenceScore.overall}%` }}
+                />
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">{memory.intelligenceScore.note}</p>
+          </div>
+          <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4">
+            {[
+              { label: 'Platform', value: memory.intelligenceScore.platformHealth },
+              { label: 'Revenue', value: memory.intelligenceScore.revenueHealth },
+              { label: 'Support', value: memory.intelligenceScore.supportHealth },
+              { label: 'Growth', value: memory.intelligenceScore.growthHealth },
+              { label: 'Execution', value: memory.intelligenceScore.executionHealth },
+              { label: 'Automation', value: memory.intelligenceScore.automationHealth },
+              { label: 'Learning', value: memory.intelligenceScore.learningProgress },
+              { label: 'Decisions', value: memory.intelligenceScore.founderDecisionBacklog },
+            ].map(({ label, value }) => (
+              <div key={label} className="px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className={`text-base font-semibold tabular-nums ${scoreColor(value)}`}>
+                  {value}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pattern Detection */}
+      {memory.patterns.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">
+            Pattern Detection{' '}
+            <span className="ml-1 font-normal text-muted-foreground">
+              ({memory.patterns.length})
+            </span>
+          </h2>
+          <div className="space-y-2">
+            {memory.patterns.map((pat: BusinessPattern) => (
+              <div key={pat.id} className="rounded-lg border border-border bg-card p-4">
+                <div className="flex flex-wrap items-start gap-2">
+                  <p className="flex-1 text-sm font-medium text-foreground">{pat.title}</p>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      pat.impact === 'positive'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'
+                        : pat.impact === 'negative'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                          : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {pat.impact}
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    {pat.frequency}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{pat.pattern}</p>
+                <p className="mt-2 text-xs text-foreground">
+                  <span className="font-medium">Action: </span>
+                  {pat.recommendation}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Learning Objectives */}
+      {memory.learningObjectives.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Learning Objectives</h2>
+          <div className="space-y-2">
+            {memory.learningObjectives.map((obj: LearningObjective) => (
+              <div
+                key={obj.id}
+                className={`rounded-lg border bg-card p-3 ${
+                  obj.priority === 'critical'
+                    ? 'border-red-200 dark:border-red-900'
+                    : obj.priority === 'high'
+                      ? 'border-amber-200 dark:border-amber-900'
+                      : 'border-border'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-xs font-medium text-foreground">{obj.objective}</p>
+                  <span
+                    className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${
+                      obj.priority === 'critical'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                        : obj.priority === 'high'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                          : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {obj.priority}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">Target: {obj.targetState}</p>
+                {obj.blockedBy && (
+                  <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    ⚠ {obj.blockedBy}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Philosophy note */}
       <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-4">

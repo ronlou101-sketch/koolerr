@@ -231,6 +231,25 @@ export default async function AgentRegistryPage() {
                   <p className="mt-0.5 text-xs font-medium text-muted-foreground">No history</p>
                 </div>
 
+                <div>
+                  <p className="text-xs text-muted-foreground">Learning score</p>
+                  <p
+                    className={`mt-0.5 text-xs font-medium ${
+                      util && util.avgConfidence >= 80
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : util && util.avgConfidence >= 65
+                          ? 'text-amber-700 dark:text-amber-400'
+                          : util && util.avgConfidence > 0
+                            ? 'text-red-700 dark:text-red-400'
+                            : 'text-muted-foreground'
+                    }`}
+                  >
+                    {util && util.avgConfidence > 0
+                      ? `${Math.min(100, Math.round(util.avgConfidence * 0.8 + (util.totalJobs > 0 ? 20 : 0)))}`
+                      : '—'}
+                  </p>
+                </div>
+
                 {agent.lastRecommendation && (
                   <div className="flex-1">
                     <p className="text-xs text-muted-foreground">Last recommendation</p>

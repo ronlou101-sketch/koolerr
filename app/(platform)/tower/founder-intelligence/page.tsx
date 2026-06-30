@@ -6,6 +6,7 @@ import { buildAgentTasks } from '../agents/agent-tasks'
 import { buildExecutionJobs } from '../execution/execution-data'
 import { buildBrainScores, buildBrainObjectives } from '../business-brain/brain-data'
 import { buildCompanyOSData } from '../company-os/company-os-data'
+import { buildCompanyMemoryData } from '../company-memory/company-memory-data'
 import type { ActionPriority } from '../executive/executive-data'
 
 export const dynamic = 'force-dynamic'
@@ -36,6 +37,13 @@ export default async function FounderIntelligencePage() {
   const scores = buildBrainScores(executiveData, supportData, workforceData)
   const objectives = buildBrainObjectives(executiveData, supportData, workforceData)
   const os = buildCompanyOSData(executiveData, supportData, workforceData, agentTasks)
+  const memory = buildCompanyMemoryData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
 
   const briefTime = new Date(executiveData.generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -571,6 +579,106 @@ export default async function FounderIntelligencePage() {
         <p className="text-xs text-muted-foreground">
           <Link href="/tower/business-brain" className="hover:text-foreground">
             Full Business Brain →
+          </Link>
+        </p>
+      </section>
+
+      {/* Decision Effectiveness */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-foreground">Decision Effectiveness</h2>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Intelligence Score
+            </p>
+            <p
+              className={`mt-2 text-2xl font-semibold tabular-nums ${
+                memory.intelligenceScore.overall >= 70
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : memory.intelligenceScore.overall >= 45
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : 'text-red-700 dark:text-red-400'
+              }`}
+            >
+              {memory.intelligenceScore.overall}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Composite platform signal — updates on load
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Patterns Detected
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+              {memory.patterns.length}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {memory.patterns.filter((p) => p.impact === 'negative').length} negative,{' '}
+              {memory.patterns.filter((p) => p.impact === 'positive').length} positive
+            </p>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Learning Objectives
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+              {memory.learningObjectives.length}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {
+                memory.learningObjectives.filter(
+                  (o) => o.priority === 'critical' || o.priority === 'high'
+                ).length
+              }{' '}
+              critical / high priority
+            </p>
+          </div>
+        </div>
+
+        {memory.recentWins.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/10">
+            <div className="border-b border-emerald-200 bg-emerald-100/50 px-4 py-2 dark:border-emerald-900 dark:bg-emerald-950/20">
+              <p className="text-xs font-medium text-emerald-900 dark:text-emerald-300">
+                Recent Wins
+              </p>
+            </div>
+            <div className="divide-y divide-emerald-100 dark:divide-emerald-900/30">
+              {memory.recentWins.slice(0, 3).map((win) => (
+                <div key={win.id} className="px-4 py-2.5">
+                  <p className="text-xs font-medium text-foreground">{win.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{win.summary}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {memory.recentFailures.length > 0 && (
+          <div className="overflow-hidden rounded-lg border border-red-200 bg-red-50/50 dark:border-red-900 dark:bg-red-950/10">
+            <div className="border-b border-red-200 bg-red-100/50 px-4 py-2 dark:border-red-900 dark:bg-red-950/20">
+              <p className="text-xs font-medium text-red-900 dark:text-red-300">
+                Active Failures to Address
+              </p>
+            </div>
+            <div className="divide-y divide-red-100 dark:divide-red-900/30">
+              {memory.recentFailures.slice(0, 3).map((fail) => (
+                <div key={fail.id} className="px-4 py-2.5">
+                  <p className="text-xs font-medium text-foreground">{fail.title}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {fail.recommendedNextAction}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground">
+          Decision outcome tracking requires a{' '}
+          <code className="rounded bg-muted px-1 font-mono text-xs">founder_decisions</code> table.{' '}
+          <Link href="/tower/company-memory" className="hover:text-foreground">
+            Full Company Memory →
           </Link>
         </p>
       </section>

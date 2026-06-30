@@ -925,6 +925,125 @@ export default async function CTOOperationsCenterPage() {
           </div>
         )}
       </section>
+
+      {/* Recurring Engineering Issues */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-foreground">Recurring Engineering Issues</h2>
+        {(() => {
+          const failedWorkforces = workforceData.workforces.filter(
+            (w) => w.health === 'critical' || w.health === 'warning' || w.failedRuns > 0
+          )
+          const blockedTasks = allTasks.filter((t) => t.requiresApproval)
+          const openHighTickets = supportData.tickets.filter(
+            (t) =>
+              (t.priority === 'critical' || t.priority === 'high') &&
+              t.status !== 'ai-resolved' &&
+              t.status !== 'closed'
+          )
+
+          const issues: Array<{
+            title: string
+            description: string
+            severity: 'critical' | 'high' | 'medium'
+            action: string
+          }> = []
+
+          if (failedWorkforces.length > 0) {
+            const names = failedWorkforces
+              .slice(0, 3)
+              .map((w) => w.workforceName)
+              .join(', ')
+            issues.push({
+              title: `${failedWorkforces.length} workforce${failedWorkforces.length !== 1 ? 's' : ''} with failures`,
+              description: `${names}${failedWorkforces.length > 3 ? ` +${failedWorkforces.length - 3} more` : ''} have recorded failed runs`,
+              severity: failedWorkforces.some((w) => w.health === 'critical') ? 'critical' : 'high',
+              action: 'Review workforce health and last error logs',
+            })
+          }
+
+          if (blockedTasks.length > 0) {
+            issues.push({
+              title: `${blockedTasks.length} agent task${blockedTasks.length !== 1 ? 's' : ''} awaiting approval`,
+              description: 'Agents cannot proceed without founder sign-off',
+              severity: blockedTasks.length > 5 ? 'high' : 'medium',
+              action: 'Clear approval queue to unblock execution',
+            })
+          }
+
+          if (openHighTickets.length > 0) {
+            issues.push({
+              title: `${openHighTickets.length} high-priority support ticket${openHighTickets.length !== 1 ? 's' : ''} unresolved`,
+              description: 'Open urgent/high tickets indicate recurring customer-facing issues',
+              severity: openHighTickets.some((t) => t.priority === 'critical') ? 'high' : 'medium',
+              action: 'Prioritize resolution to prevent churn signals',
+            })
+          }
+
+          if (workforceData.totalRunsAllWorkforces === 0) {
+            issues.push({
+              title: 'No workforce runs recorded',
+              description:
+                'Automation is not yet generating activity — workforces may need configuration',
+              severity: 'medium',
+              action: 'Verify workforce configuration and trigger initial engagement runs',
+            })
+          }
+
+          if (issues.length === 0) {
+            return (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-5 dark:border-emerald-800 dark:bg-emerald-950/20">
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400">
+                  No recurring issues detected
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Platform signals are clean in the current snapshot
+                </p>
+              </div>
+            )
+          }
+
+          return (
+            <div className="space-y-2">
+              {issues.map((issue, i) => (
+                <div
+                  key={i}
+                  className={`rounded-lg border bg-card p-4 ${
+                    issue.severity === 'critical'
+                      ? 'border-red-200 dark:border-red-800'
+                      : issue.severity === 'high'
+                        ? 'border-amber-200 dark:border-amber-800'
+                        : 'border-border'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <p className="flex-1 text-sm font-medium text-foreground">{issue.title}</p>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        issue.severity === 'critical'
+                          ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                          : issue.severity === 'high'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
+                      }`}
+                    >
+                      {issue.severity}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{issue.description}</p>
+                  <p className="mt-1.5 text-xs font-medium text-foreground">
+                    Action: {issue.action}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
+        <p className="text-xs text-muted-foreground">
+          <Link href="/tower/company-memory" className="hover:text-foreground">
+            Full engineering insights in Company Memory →
+          </Link>
+        </p>
+      </section>
     </div>
   )
 }
