@@ -1,5 +1,10 @@
 import Link from 'next/link'
 import { getExecutionData } from './execution-data'
+import { getExecutiveData } from '../executive/executive-data'
+import { getSupportData } from '../support/support-data'
+import { getWorkforceStatusData } from '../workforce-status/workforce-data'
+import { buildAgentTasks } from '../agents/agent-tasks'
+import { buildOptimizationData } from '../optimization/optimization-data'
 import type { ExecutionStage, ExecutionJob } from './execution-data'
 
 export const dynamic = 'force-dynamic'
@@ -139,7 +144,25 @@ function JobCard({ job }: { job: ExecutionJob }) {
 }
 
 export default async function ExecutionEnginePage() {
-  const { jobs, metrics, agentUtilization, generatedAt } = await getExecutionData()
+  const [
+    { jobs, metrics, agentUtilization, generatedAt },
+    executiveData,
+    supportData,
+    workforceData,
+  ] = await Promise.all([
+    getExecutionData(),
+    getExecutiveData(),
+    getSupportData(),
+    getWorkforceStatusData(),
+  ])
+  const agentTasks = buildAgentTasks(executiveData)
+  const optimization = buildOptimizationData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    jobs
+  )
 
   const briefTime = new Date(generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -499,6 +522,80 @@ export default async function ExecutionEnginePage() {
           </div>
         </div>
       </section>
+
+      {/* Optimization Recommendations — approval-only routing */}
+      {optimization.topOpportunities.filter((r) => r.requiresFounderApproval).length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">
+              Optimization Recommendations
+              <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                Approval Required
+              </span>
+            </h2>
+            <Link
+              href="/tower/optimization"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Optimization Center →
+            </Link>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            High-value improvements identified by the Self-Optimization Engine that require founder
+            approval before execution.
+          </p>
+          <div className="space-y-2">
+            {optimization.topOpportunities
+              .filter((r) => r.requiresFounderApproval)
+              .slice(0, 4)
+              .map((rec) => (
+                <div
+                  key={rec.id}
+                  className={`rounded-lg border bg-card p-4 ${
+                    rec.priority === 'critical'
+                      ? 'border-red-200 dark:border-red-800'
+                      : 'border-amber-200 dark:border-amber-800'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <p className="text-sm font-medium text-foreground">{rec.title}</p>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          rec.priority === 'critical'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                        }`}
+                      >
+                        {rec.priority}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                        {rec.suggestedAgent}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">{rec.description}</p>
+                  <div className="mt-2 flex flex-wrap gap-x-4 text-xs text-muted-foreground">
+                    <span>ROI: {rec.estimatedROI}</span>
+                    <span>Time saved: {rec.estimatedTimeSaved}</span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-foreground">
+                    <span className="font-medium">Next: </span>
+                    {rec.recommendedNextStep}
+                  </p>
+                  <div className="mt-2">
+                    <Link
+                      href="/tower/approvals"
+                      className="text-xs font-medium text-amber-700 hover:underline dark:text-amber-400"
+                    >
+                      Approve in approval queue →
+                    </Link>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </section>
+      )}
 
       {/* Architecture note */}
       <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-4">

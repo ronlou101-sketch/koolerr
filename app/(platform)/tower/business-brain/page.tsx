@@ -13,6 +13,7 @@ import {
 } from './brain-data'
 import { buildCompanyOSData } from '../company-os/company-os-data'
 import { buildCompanyMemoryData } from '../company-memory/company-memory-data'
+import { buildOptimizationData } from '../optimization/optimization-data'
 import type { BrainScore, ObjectiveStatus, CompanyScores } from './brain-data'
 import type { BusinessPattern, LearningObjective } from '../company-memory/company-memory-data'
 
@@ -161,6 +162,15 @@ export default async function BusinessBrainPage() {
 
   // Company Memory — institutional memory derived from same data sources
   const memory = buildCompanyMemoryData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
+
+  // Optimization Engine — self-improvement recommendations
+  const optimization = buildOptimizationData(
     executiveData,
     supportData,
     workforceData,
@@ -805,6 +815,74 @@ export default async function BusinessBrainPage() {
               your preferences and adjusts its recommendations. Requires a founder decisions
               persistence table.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Optimization Score */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Optimization Score</h2>
+          <Link
+            href="/tower/optimization"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Self-Optimization Center →
+          </Link>
+        </div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Optimization Score
+              </p>
+              <p
+                className={`mt-0.5 text-3xl font-semibold tabular-nums ${scoreColor(optimization.optimizationScore)}`}
+              >
+                {optimization.optimizationScore}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {optimization.predictedCompanyImprovement}
+              </p>
+            </div>
+            <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">
+              <div
+                className={`h-full rounded-full ${scoreBg(optimization.optimizationScore)}`}
+                style={{ width: `${optimization.optimizationScore}%` }}
+              />
+            </div>
+          </div>
+
+          {optimization.highestROIRecommendation && (
+            <div className="border-t border-border px-4 py-3">
+              <p className="text-xs font-medium text-muted-foreground">Top Recommendation</p>
+              <p className="mt-0.5 text-xs font-medium text-foreground">
+                {optimization.highestROIRecommendation.title}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {optimization.highestROIRecommendation.recommendedNextStep}
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 divide-x divide-y divide-border border-t border-border sm:grid-cols-4">
+            {[
+              { label: 'Daily Goal', value: optimization.dailyImprovementGoal },
+              { label: 'Time Recoverable', value: optimization.founderTimeSaved },
+              {
+                label: 'Most Loaded Agent',
+                value: optimization.mostOverloadedAgent ?? 'Balanced',
+              },
+              {
+                label: 'Underutilized Agent',
+                value: optimization.mostUnderutilizedAgent ?? 'None',
+              },
+            ].map(({ label, value }) => (
+              <div key={label} className="px-3 py-2.5">
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="mt-0.5 line-clamp-2 text-xs font-medium text-foreground">{value}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

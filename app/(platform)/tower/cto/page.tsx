@@ -8,6 +8,8 @@ import {
   buildAgentUtilization,
 } from '../execution/execution-data'
 import { getWorkforceStatusData } from '../workforce-status/workforce-data'
+import { buildOptimizationData } from '../optimization/optimization-data'
+import { getExecutiveData } from '../executive/executive-data'
 import type { IssueSeverity } from './cto-data'
 import type { TaskPriority } from '../agents/agent-tasks'
 
@@ -43,17 +45,25 @@ const PRIORITY_BADGE: Record<string, string> = {
 }
 
 export default async function CTOOperationsCenterPage() {
-  const [data, { tasks: allTasks }, supportData, workforceData] = await Promise.all([
+  const [data, { tasks: allTasks }, supportData, workforceData, executiveData] = await Promise.all([
     getCTOData(),
     getAgentTasks(),
     getSupportData(),
     getWorkforceStatusData(),
+    getExecutiveData(),
   ])
   const { platformIssues, maintenance, technicalDebt, pendingDecisions, generatedAt } = data
 
   const execJobs = buildExecutionJobs(allTasks, supportData.tickets, data.generatedAt)
   const execMetrics = buildExecutionMetrics(execJobs)
   const agentUtil = buildAgentUtilization(execJobs)
+  const optimization = buildOptimizationData(
+    executiveData,
+    supportData,
+    workforceData,
+    allTasks,
+    execJobs
+  )
 
   // Mission Health (Phase 9 — inline derivation from existing task data)
   const MISSION_DEPS_CTO: Record<string, string[]> = {
@@ -1043,6 +1053,122 @@ export default async function CTOOperationsCenterPage() {
             Full engineering insights in Company Memory →
           </Link>
         </p>
+      </section>
+
+      {/* Engineering Optimization */}
+      {optimization.engineeringImprovements.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">Engineering Optimization</h2>
+            <Link
+              href="/tower/optimization"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Full Optimization Center →
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {optimization.engineeringImprovements.slice(0, 4).map((rec) => (
+              <div
+                key={rec.id}
+                className={`rounded-lg border bg-card p-4 ${
+                  rec.priority === 'critical'
+                    ? 'border-red-200 dark:border-red-800'
+                    : rec.priority === 'high'
+                      ? 'border-amber-200 dark:border-amber-800'
+                      : 'border-border'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground">{rec.title}</p>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      rec.priority === 'critical'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                        : rec.priority === 'high'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
+                    }`}
+                  >
+                    {rec.priority}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{rec.description}</p>
+                <p className="mt-1.5 text-xs text-foreground">
+                  <span className="font-medium">Next: </span>
+                  {rec.recommendedNextStep}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  ROI: {rec.estimatedROI} · Agent: {rec.suggestedAgent}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* AI Workforce Utilization */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-foreground">AI Workforce Utilization</h2>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Agent
+                </th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Efficiency
+                </th>
+                <th className="hidden px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground sm:table-cell">
+                  Capacity
+                </th>
+                <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Workload
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {optimization.agentEfficiency.map((agent) => (
+                <tr key={agent.agentId}>
+                  <td className="px-4 py-2.5">
+                    <p className="text-xs font-medium text-foreground">{agent.agentName}</p>
+                    <p className="text-xs text-muted-foreground">{agent.domain}</p>
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <span
+                      className={`text-xs font-semibold ${
+                        agent.currentEfficiency >= 70
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : agent.currentEfficiency >= 45
+                            ? 'text-amber-700 dark:text-amber-400'
+                            : 'text-red-700 dark:text-red-400'
+                      }`}
+                    >
+                      {agent.currentEfficiency}
+                    </span>
+                  </td>
+                  <td className="hidden px-4 py-2.5 text-right text-xs text-muted-foreground sm:table-cell">
+                    {agent.estimatedCapacity}%
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        agent.recommendedWorkload === 'increase'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'
+                          : agent.recommendedWorkload === 'reduce'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                            : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {agent.recommendedWorkload}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   )

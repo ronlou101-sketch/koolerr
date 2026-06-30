@@ -7,6 +7,7 @@ import { buildExecutionJobs } from '../execution/execution-data'
 import { buildBrainScores, buildBrainObjectives } from '../business-brain/brain-data'
 import { buildCompanyOSData } from '../company-os/company-os-data'
 import { buildCompanyMemoryData } from '../company-memory/company-memory-data'
+import { buildOptimizationData } from '../optimization/optimization-data'
 import type { ActionPriority } from '../executive/executive-data'
 
 export const dynamic = 'force-dynamic'
@@ -38,6 +39,13 @@ export default async function FounderIntelligencePage() {
   const objectives = buildBrainObjectives(executiveData, supportData, workforceData)
   const os = buildCompanyOSData(executiveData, supportData, workforceData, agentTasks)
   const memory = buildCompanyMemoryData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
+  const optimization = buildOptimizationData(
     executiveData,
     supportData,
     workforceData,
@@ -681,6 +689,82 @@ export default async function FounderIntelligencePage() {
             Full Company Memory →
           </Link>
         </p>
+      </section>
+
+      {/* Founder Productivity */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Founder Productivity</h2>
+          <Link
+            href="/tower/optimization"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Full Optimization Center →
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Time Recoverable', value: optimization.founderTimeSaved },
+            {
+              label: 'Strategic Focus Score',
+              value: `${optimization.optimizationScore}/100`,
+            },
+            {
+              label: 'Delegation Ops',
+              value: String(optimization.delegationOpportunities.length),
+            },
+            {
+              label: 'Approval Reduction Ops',
+              value: String(
+                optimization.timeSavings.filter(
+                  (r) => r.id.includes('approval') || r.id.includes('delegation')
+                ).length
+              ),
+            },
+          ].map(({ label, value }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-3">
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className="mt-1 line-clamp-2 text-sm font-semibold text-foreground">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        {optimization.delegationOpportunities.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-foreground">Delegation Opportunities</p>
+            {optimization.delegationOpportunities.slice(0, 3).map((rec) => (
+              <div key={rec.id} className="rounded-lg border border-border bg-card p-3">
+                <p className="text-xs font-medium text-foreground">{rec.title}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {rec.estimatedTimeSaved} · {rec.suggestedAgent}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{rec.recommendedNextStep}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {optimization.highestROIRecommendation && (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-900 dark:bg-emerald-950/10">
+            <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+              Highest ROI Action Available
+            </p>
+            <p className="mt-1 text-sm font-medium text-foreground">
+              {optimization.highestROIRecommendation.title}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {optimization.highestROIRecommendation.recommendedNextStep}
+            </p>
+            {optimization.highestROIRecommendation.requiresFounderApproval && (
+              <Link
+                href="/tower/approvals"
+                className="mt-1.5 inline-block text-xs font-medium text-foreground underline underline-offset-2 hover:no-underline"
+              >
+                Requires approval →
+              </Link>
+            )}
+          </div>
+        )}
       </section>
     </div>
   )

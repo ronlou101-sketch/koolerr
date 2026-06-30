@@ -1,7 +1,10 @@
 import Link from 'next/link'
 import { getAgentRegistry } from './agent-registry'
 import { getSupportData } from '../support/support-data'
+import { getExecutiveData } from '../executive/executive-data'
+import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import { buildExecutionJobs, buildAgentUtilization } from '../execution/execution-data'
+import { buildOptimizationData } from '../optimization/optimization-data'
 import type { AgentStatus, AgentHealth } from './agent-registry'
 
 export const dynamic = 'force-dynamic'
@@ -52,14 +55,25 @@ function timeAgo(iso: string): string {
 }
 
 export default async function AgentRegistryPage() {
-  const [{ agents, agentTasks, generatedAt }, supportData] = await Promise.all([
-    getAgentRegistry(),
-    getSupportData(),
-  ])
+  const [{ agents, agentTasks, generatedAt }, supportData, executiveData, workforceData] =
+    await Promise.all([
+      getAgentRegistry(),
+      getSupportData(),
+      getExecutiveData(),
+      getWorkforceStatusData(),
+    ])
 
   const execJobs = buildExecutionJobs(agentTasks, supportData.tickets, generatedAt)
   const utilization = buildAgentUtilization(execJobs)
   const utilizationByAgentId = new Map(utilization.map((u) => [u.agentId, u]))
+  const optimization = buildOptimizationData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
+  const efficiencyByAgentId = new Map(optimization.agentEfficiency.map((e) => [e.agentId, e]))
 
   const generatedTime = new Date(generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -148,6 +162,7 @@ export default async function AgentRegistryPage() {
         {agents.map((agent) => {
           const statusCfg = STATUS_CONFIG[agent.status]
           const util = utilizationByAgentId.get(agent.id)
+          const efficiency = efficiencyByAgentId.get(agent.id)
           return (
             <div key={agent.id} className="rounded-lg border border-border bg-card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -259,6 +274,90 @@ export default async function AgentRegistryPage() {
                   </div>
                 )}
               </div>
+
+              {/* Optimization Intelligence */}
+              {efficiency && (
+                <div className="mt-4 rounded-lg border border-border/50 bg-muted/20 p-3">
+                  <div className="mb-2 flex flex-wrap items-center gap-x-6 gap-y-1">
+                    <div>
+                      <span className="text-xs text-muted-foreground">Efficiency: </span>
+                      <span
+                        className={`text-xs font-semibold ${
+                          efficiency.currentEfficiency >= 70
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : efficiency.currentEfficiency >= 45
+                              ? 'text-amber-700 dark:text-amber-400'
+                              : 'text-red-700 dark:text-red-400'
+                        }`}
+                      >
+                        {efficiency.currentEfficiency}/100
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Capacity: </span>
+                      <span className="text-xs font-medium text-foreground">
+                        {efficiency.estimatedCapacity}%
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Workload: </span>
+                      <span
+                        className={`text-xs font-medium ${
+                          efficiency.recommendedWorkload === 'increase'
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : efficiency.recommendedWorkload === 'reduce'
+                              ? 'text-amber-700 dark:text-amber-400'
+                              : 'text-muted-foreground'
+                        }`}
+                      >
+                        {efficiency.recommendedWorkload}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground">Trend: </span>
+                      <span
+                        className={`text-xs font-medium ${
+                          efficiency.improvementTrend === 'improving'
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : efficiency.improvementTrend === 'declining'
+                              ? 'text-red-700 dark:text-red-400'
+                              : 'text-muted-foreground'
+                        }`}
+                      >
+                        {efficiency.improvementTrend}
+                      </span>
+                    </div>
+                  </div>
+                  {efficiency.optimizationSuggestions.length > 0 && (
+                    <div className="mt-2">
+                      <p className="mb-1 text-xs font-medium text-muted-foreground">
+                        Optimization suggestions
+                      </p>
+                      <ul className="space-y-0.5">
+                        {efficiency.optimizationSuggestions.slice(0, 2).map((s, i) => (
+                          <li key={i} className="text-xs text-foreground">
+                            · {s}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {efficiency.delegationOpportunities.length > 0 && (
+                    <div className="mt-2">
+                      <p className="mb-1 text-xs font-medium text-muted-foreground">
+                        Delegation opportunities
+                      </p>
+                      <ul className="space-y-0.5">
+                        {efficiency.delegationOpportunities.slice(0, 2).map((d, i) => (
+                          <li key={i} className="text-xs text-muted-foreground">
+                            · {d}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Action links */}
               <div className="mt-3 flex items-center gap-4">

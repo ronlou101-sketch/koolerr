@@ -12,6 +12,7 @@ const NAV = [
       { href: '/tower/company-os', label: 'Company OS' },
       { href: '/tower/company-memory', label: 'Company Memory' },
       { href: '/tower/business-brain', label: 'Business Brain' },
+      { href: '/tower/optimization', label: 'Optimization' },
       { href: '/tower/agents', label: 'Agent Registry' },
       { href: '/tower/approvals', label: 'Approvals' },
     ],

@@ -1,6 +1,11 @@
 import Link from 'next/link'
 import { getSupportData } from './support-data'
 import type { TicketStatus, TicketPriority, SupportAgent } from './support-data'
+import { getExecutiveData } from '../executive/executive-data'
+import { getWorkforceStatusData } from '../workforce-status/workforce-data'
+import { buildAgentTasks } from '../agents/agent-tasks'
+import { buildExecutionJobs } from '../execution/execution-data'
+import { buildOptimizationData } from '../optimization/optimization-data'
 
 export const dynamic = 'force-dynamic'
 
@@ -69,7 +74,21 @@ function timeAgo(iso: string): string {
 }
 
 export default async function SupportCenterPage() {
-  const { tickets, agents, stats, generatedAt } = await getSupportData()
+  const [supportData, executiveData, workforceData] = await Promise.all([
+    getSupportData(),
+    getExecutiveData(),
+    getWorkforceStatusData(),
+  ])
+  const { tickets, agents, stats, generatedAt } = supportData
+  const agentTasks = buildAgentTasks(executiveData)
+  const execJobs = buildExecutionJobs(agentTasks, tickets, generatedAt)
+  const optimization = buildOptimizationData(
+    executiveData,
+    supportData,
+    workforceData,
+    agentTasks,
+    execJobs
+  )
 
   const briefTime = new Date(generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -442,6 +461,159 @@ export default async function SupportCenterPage() {
               </Link>
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Support Optimization */}
+      {optimization.supportImprovements.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">Support Optimization</h2>
+            <Link
+              href="/tower/optimization"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Optimization Center →
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {optimization.supportImprovements.slice(0, 4).map((rec) => (
+              <div
+                key={rec.id}
+                className={`rounded-lg border bg-card p-4 ${
+                  rec.priority === 'critical'
+                    ? 'border-red-200 dark:border-red-800'
+                    : rec.priority === 'high'
+                      ? 'border-amber-200 dark:border-amber-800'
+                      : 'border-border'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <p className="text-sm font-medium text-foreground">{rec.title}</p>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      rec.priority === 'critical'
+                        ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                        : rec.priority === 'high'
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300'
+                    }`}
+                  >
+                    {rec.priority}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{rec.description}</p>
+                <p className="mt-1.5 text-xs text-foreground">
+                  <span className="font-medium">Next: </span>
+                  {rec.recommendedNextStep}
+                </p>
+                <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-muted-foreground">
+                  <span>Impact: {rec.businessImpact}</span>
+                  <span>Time saved: {rec.estimatedTimeSaved}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Support Automation Opportunities */}
+      {optimization.automationCandidates.filter(
+        (r) => r.category === 'support' || r.category === 'automation' || r.category === 'knowledge'
+      ).length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">
+            Support Automation Opportunities
+          </h2>
+          <div className="space-y-2">
+            {optimization.automationCandidates
+              .filter(
+                (r) =>
+                  r.category === 'support' ||
+                  r.category === 'automation' ||
+                  r.category === 'knowledge'
+              )
+              .slice(0, 3)
+              .map((rec) => (
+                <div
+                  key={rec.id}
+                  className="flex items-start justify-between gap-4 rounded-lg border border-border bg-card px-4 py-3"
+                >
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-foreground">{rec.title}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {rec.recommendedNextStep}
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 text-right">
+                    <p className="text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                      {rec.estimatedTimeSaved}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{rec.estimatedROI}</p>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </section>
+      )}
+
+      {/* Resolution Trend */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-foreground">Resolution Intelligence</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            {
+              label: 'AI Resolution Rate',
+              value: stats.aiResolutionPct !== null ? `${stats.aiResolutionPct}%` : '—',
+              note: 'Target ≥70%',
+              color:
+                stats.aiResolutionPct !== null && stats.aiResolutionPct >= 70
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : 'text-amber-700 dark:text-amber-400',
+            },
+            {
+              label: 'Escalation Rate',
+              value:
+                stats.totalOpen + stats.autoResolved > 0
+                  ? `${Math.round((stats.escalations / (stats.totalOpen + stats.autoResolved)) * 100)}%`
+                  : '0%',
+              note: 'Target <20%',
+              color:
+                stats.escalations === 0
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : stats.escalations <= 2
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : 'text-red-700 dark:text-red-400',
+            },
+            {
+              label: 'Founder Blocks',
+              value: String(stats.awaitingFounder),
+              note: stats.awaitingFounder > 0 ? 'Needs approval' : 'Queue clear',
+              color:
+                stats.awaitingFounder > 0
+                  ? 'text-amber-700 dark:text-amber-400'
+                  : 'text-emerald-700 dark:text-emerald-400',
+            },
+            {
+              label: 'Optimization Score',
+              value: `${optimization.optimizationScore}/100`,
+              note: optimization.dailyImprovementGoal,
+              color:
+                optimization.optimizationScore >= 70
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : optimization.optimizationScore >= 45
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : 'text-red-700 dark:text-red-400',
+            },
+          ].map(({ label, value, note, color }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p className={`mt-2 text-xl font-semibold tabular-nums ${color}`}>{value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{note}</p>
+            </div>
+          ))}
         </div>
       </section>
 
