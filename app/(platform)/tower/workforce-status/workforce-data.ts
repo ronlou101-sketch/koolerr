@@ -28,13 +28,13 @@ export interface WorkforceStatusData {
   generatedAt: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function buildStatus(
   wfId: string,
   wfName: string,
   wfFunction: string,
   wfStatus: string,
   orgId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   runsByWorkforce: Map<string, any[]>,
   workflowByRunId: Map<string, string>,
   lastErrorByWorkflowId: Map<string, string>
