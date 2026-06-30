@@ -5,23 +5,14 @@
     "AI SEO Workforce",
     "Public Marketing Website",
     "Brand & Visual Identity",
-    "Tower Control — Command Center",
-    "Tower Control — Executive Intelligence",
-    "Tower Control — Autonomous Operations",
-    "Tower Control — Agent Execution Framework",
-    "Tower Control — Autonomous Support System",
-    "Tower Control — Autonomous Execution Engine",
-    "Tower Control — Business Brain",
-    "Tower Control — Founder Intelligence",
-    "Tower Control — Company Operating System",
-    "Tower Control — Company Memory",
-    "Tower Control — Self-Optimization Engine",
-    "Tower Control — Predictive Intelligence Engine"
+    "Tower Control v1"
   ],
   "current": ["Stripe Integration", "Launch Readiness"],
   "remaining": [
     "AI Integrations (HeyGen, Higgsfield)",
     "Customer Onboarding",
+    "Koolerr Academy",
+    "Internal Dogfooding",
     "Beta Launch",
     "Public Launch"
   ]
