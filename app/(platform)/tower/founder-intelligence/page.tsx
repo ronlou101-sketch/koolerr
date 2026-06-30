@@ -5,6 +5,7 @@ import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import { buildAgentTasks } from '../agents/agent-tasks'
 import { buildExecutionJobs } from '../execution/execution-data'
 import { buildBrainScores, buildBrainObjectives } from '../business-brain/brain-data'
+import { buildCompanyOSData } from '../company-os/company-os-data'
 import type { ActionPriority } from '../executive/executive-data'
 
 export const dynamic = 'force-dynamic'
@@ -34,6 +35,7 @@ export default async function FounderIntelligencePage() {
   const execJobs = buildExecutionJobs(agentTasks, supportData.tickets, executiveData.generatedAt)
   const scores = buildBrainScores(executiveData, supportData, workforceData)
   const objectives = buildBrainObjectives(executiveData, supportData, workforceData)
+  const os = buildCompanyOSData(executiveData, supportData, workforceData, agentTasks)
 
   const briefTime = new Date(executiveData.generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -63,6 +65,23 @@ export default async function FounderIntelligencePage() {
     (o) =>
       o.id === 'increase-satisfaction' || o.id === 'reduce-churn' || o.id === 'reduce-support-load'
   )
+
+  // Phase 9: Decision classification
+  const criticalDecisions = os.missionsByState.awaiting_founder.filter(
+    (m) => m.priority === 'critical' || m.priority === 'high'
+  )
+  const delegatedDecisions = os.missions.filter(
+    (m) => !m.requiresFounderApproval && (m.state === 'executing' || m.state === 'planning')
+  )
+  const avgAgentConfidence =
+    os.agentWorkloads.filter((w) => w.avgConfidence > 0).length > 0
+      ? Math.round(
+          os.agentWorkloads
+            .filter((w) => w.avgConfidence > 0)
+            .reduce((s, w) => s + w.avgConfidence, 0) /
+            os.agentWorkloads.filter((w) => w.avgConfidence > 0).length
+        )
+      : 0
 
   return (
     <div className="space-y-10">
@@ -289,6 +308,200 @@ export default async function FounderIntelligencePage() {
               )}
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Critical Decisions */}
+      {criticalDecisions.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">
+            Critical Decisions{' '}
+            <span className="ml-1 font-normal text-muted-foreground">
+              ({criticalDecisions.length})
+            </span>
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            High-impact decisions requiring immediate founder action — agents cannot proceed until
+            resolved
+          </p>
+          <div className="space-y-2">
+            {criticalDecisions.map((m) => (
+              <div
+                key={m.id}
+                className={`rounded-lg border bg-card p-4 ${
+                  m.priority === 'critical'
+                    ? 'border-red-200 dark:border-red-800'
+                    : 'border-amber-200 dark:border-amber-800'
+                }`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_BADGE[m.priority]}`}
+                    >
+                      {m.priority}
+                    </span>
+                    <span className="text-xs text-muted-foreground">{m.agentName}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{m.confidence}% confidence</span>
+                </div>
+                <p className="mt-2 text-xs font-medium text-foreground">{m.title}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{m.description}</p>
+                <p className="mt-2 text-xs">
+                  <span className="font-medium text-foreground">Business impact: </span>
+                  <span className="text-muted-foreground">{m.businessImpact}</span>
+                </p>
+                <Link
+                  href="/tower/approvals"
+                  className="mt-2 inline-block text-xs font-medium text-foreground hover:underline"
+                >
+                  Approve in queue →
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Delegated Decisions */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">
+            Delegated Decisions{' '}
+            <span className="ml-1 font-normal text-muted-foreground">
+              ({delegatedDecisions.length})
+            </span>
+          </h2>
+          <Link
+            href="/tower/company-os"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Company OS →
+          </Link>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Missions the Business Brain is executing without founder sign-off
+        </p>
+        {delegatedDecisions.length === 0 ? (
+          <div className="rounded-lg border border-border bg-card px-4 py-4 text-center">
+            <p className="text-xs text-muted-foreground">
+              No missions in autonomous execution — all are awaiting approval or queued
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="divide-y divide-border">
+              {delegatedDecisions.slice(0, 6).map((m) => (
+                <div key={m.id} className="flex items-start gap-3 px-4 py-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">
+                        {m.priority}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{m.agentName}</span>
+                    </div>
+                    <p className="mt-1 line-clamp-1 text-xs font-medium text-foreground">
+                      {m.title}
+                    </p>
+                  </div>
+                  <span className="flex-shrink-0 text-xs font-medium text-muted-foreground">
+                    {m.confidence}%
+                  </span>
+                </div>
+              ))}
+              {delegatedDecisions.length > 6 && (
+                <div className="px-4 py-2.5">
+                  <p className="text-xs text-muted-foreground">
+                    +{delegatedDecisions.length - 6} more delegated
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Recommendation Confidence */}
+      {avgAgentConfidence > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Recommendation Confidence</h2>
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-muted/40">
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Agent
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Missions
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Confidence
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground sm:table-cell">
+                    Awaiting You
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {os.agentWorkloads.map((wl) => (
+                  <tr key={wl.agentId}>
+                    <td className="px-4 py-3 text-xs font-medium text-foreground">
+                      {wl.agentName}
+                    </td>
+                    <td className="px-4 py-3 text-right text-xs tabular-nums text-muted-foreground">
+                      {wl.totalMissions}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span
+                        className={`text-xs font-medium ${
+                          wl.avgConfidence >= 80
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : wl.avgConfidence >= 65
+                              ? 'text-amber-700 dark:text-amber-400'
+                              : wl.avgConfidence > 0
+                                ? 'text-red-700 dark:text-red-400'
+                                : 'text-muted-foreground'
+                        }`}
+                      >
+                        {wl.avgConfidence > 0 ? `${wl.avgConfidence}%` : '—'}
+                      </span>
+                    </td>
+                    <td className="hidden px-4 py-3 text-right sm:table-cell">
+                      <span
+                        className={`text-xs ${wl.awaitingFounder > 0 ? 'font-medium text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}
+                      >
+                        {wl.awaitingFounder > 0 ? wl.awaitingFounder : '—'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="border-t border-border bg-muted/20 px-4 py-2.5">
+              <p className="text-xs text-muted-foreground">
+                System average:{' '}
+                <span className="font-medium text-foreground">{avgAgentConfidence}%</span>{' '}
+                confidence across all agents
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Completed Decisions */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-foreground">Completed Decisions</h2>
+        <div className="rounded-lg border border-dashed border-border bg-card px-4 py-4">
+          <p className="text-sm font-medium text-foreground">No completion history available</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Decision outcomes are not yet persisted. Once a{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+              founder_decisions
+            </code>{' '}
+            table is added, this section will show: decisions approved, decisions rejected,
+            time-to-decision, and outcome tracking.
+          </p>
         </div>
       </section>
 

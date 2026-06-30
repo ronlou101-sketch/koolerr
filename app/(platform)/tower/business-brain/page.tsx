@@ -1,5 +1,17 @@
 import Link from 'next/link'
-import { getBrainData } from './brain-data'
+import { getExecutiveData } from '../executive/executive-data'
+import { getSupportData } from '../support/support-data'
+import { getWorkforceStatusData } from '../workforce-status/workforce-data'
+import { buildAgentTasks } from '../agents/agent-tasks'
+import { buildExecutionJobs } from '../execution/execution-data'
+import {
+  buildBrainScores,
+  buildBrainReasoning,
+  buildBrainObjectives,
+  buildBrainCoordination,
+  buildLearningSignals,
+} from './brain-data'
+import { buildCompanyOSData } from '../company-os/company-os-data'
 import type { BrainScore, ObjectiveStatus, CompanyScores } from './brain-data'
 
 export const dynamic = 'force-dynamic'
@@ -126,8 +138,24 @@ function scoresAsArray(scores: CompanyScores) {
 }
 
 export default async function BusinessBrainPage() {
-  const { scores, reasoning, objectives, agentCoordination, learningSignals, generatedAt } =
-    await getBrainData()
+  const [executiveData, supportData, workforceData] = await Promise.all([
+    getExecutiveData(),
+    getSupportData(),
+    getWorkforceStatusData(),
+  ])
+
+  const agentTasks = buildAgentTasks(executiveData)
+  const execJobs = buildExecutionJobs(agentTasks, supportData.tickets, executiveData.generatedAt)
+
+  const scores = buildBrainScores(executiveData, supportData, workforceData)
+  const reasoning = buildBrainReasoning(executiveData, scores)
+  const objectives = buildBrainObjectives(executiveData, supportData, workforceData)
+  const agentCoordination = buildBrainCoordination(agentTasks, execJobs)
+  const learningSignals = buildLearningSignals(executiveData, workforceData, supportData)
+  const generatedAt = executiveData.generatedAt
+
+  // Company OS — mission orchestration layer
+  const os = buildCompanyOSData(executiveData, supportData, workforceData, agentTasks)
 
   const briefTime = new Date(generatedAt).toLocaleTimeString('en-US', {
     hour: '2-digit',
@@ -169,6 +197,79 @@ export default async function BusinessBrainPage() {
         </div>
         <p className="text-xs text-muted-foreground">Generated {briefTime} · Refreshes on load</p>
       </div>
+
+      {/* Current Company Objective */}
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Current Company Objective
+        </p>
+        <p className="mt-1.5 text-base font-semibold text-foreground">{os.companyObjective}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Derived from live platform signals ·{' '}
+          <Link
+            href="/tower/company-os"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Company OS →
+          </Link>
+        </p>
+      </div>
+
+      {/* Strategic Priorities (top missions) */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">
+            Strategic Priorities{' '}
+            <span className="ml-1 font-normal text-muted-foreground">
+              ({os.totalMissions} active missions)
+            </span>
+          </h2>
+          <Link
+            href="/tower/company-os"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            All missions →
+          </Link>
+        </div>
+        {os.topPriorities.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No active missions</p>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="divide-y divide-border">
+              {os.topPriorities.map((mission, i) => (
+                <div key={mission.id} className="flex items-start gap-3 px-4 py-3">
+                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${
+                          mission.priority === 'critical'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300'
+                            : mission.priority === 'high'
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+                              : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {mission.priority}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{mission.agentName}</span>
+                    </div>
+                    <p className="mt-1 line-clamp-1 text-xs font-medium text-foreground">
+                      {mission.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{mission.businessImpact}</p>
+                  </div>
+                  <span className="flex-shrink-0 text-xs font-medium text-muted-foreground">
+                    {mission.confidence}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Overall + subscores */}
       <div className="space-y-3">
@@ -436,6 +537,227 @@ export default async function BusinessBrainPage() {
                 review queue
               </Link>
             </p>
+          </div>
+        )}
+      </section>
+
+      {/* Mission Distribution */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-foreground">Mission Distribution</h2>
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+          {(
+            [
+              { label: 'Executing', count: os.stateCounts.executing, color: 'bg-blue-500' },
+              { label: 'Planning', count: os.stateCounts.planning, color: 'bg-emerald-500' },
+              { label: 'Awaiting', count: os.stateCounts.awaiting_founder, color: 'bg-amber-400' },
+              { label: 'Blocked', count: os.stateCounts.blocked, color: 'bg-red-500' },
+              { label: 'Queued', count: os.stateCounts.queued, color: 'bg-muted-foreground/30' },
+              { label: 'Total', count: os.totalMissions, color: 'bg-foreground/20' },
+            ] as const
+          ).map(({ label, count, color }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-3 text-center">
+              <div className={`mx-auto h-1.5 w-12 rounded-full ${color} mb-2`} />
+              <p className="text-lg font-semibold tabular-nums text-foreground">{count}</p>
+              <p className="text-xs text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Decision Confidence */}
+        {os.totalMissions > 0 && (
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+            <div className="flex-1">
+              <p className="text-xs font-medium text-muted-foreground">Decision Confidence</p>
+              <p className="text-xs text-muted-foreground">
+                Average confidence across all {os.totalMissions} active missions
+              </p>
+            </div>
+            <span
+              className={`text-2xl font-semibold tabular-nums ${(() => {
+                const avg = Math.round(
+                  os.missions.reduce((s, m) => s + m.confidence, 0) / os.missions.length
+                )
+                return avg >= 80
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : avg >= 65
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : 'text-red-700 dark:text-red-400'
+              })()}`}
+            >
+              {Math.round(os.missions.reduce((s, m) => s + m.confidence, 0) / os.missions.length)}%
+            </span>
+          </div>
+        )}
+      </section>
+
+      {/* Dependency Graph (summary) */}
+      {os.missionsByState.blocked.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Dependency Graph</h2>
+          <p className="text-xs text-muted-foreground">
+            Missions that cannot proceed until upstream work is resolved
+          </p>
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border bg-muted/40">
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Blocked Mission
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground sm:table-cell">
+                    Agent
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Waiting On
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {os.missionsByState.blocked.map((m) => (
+                  <tr key={m.id}>
+                    <td className="px-4 py-3">
+                      <p className="line-clamp-1 text-xs font-medium text-foreground">{m.title}</p>
+                    </td>
+                    <td className="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell">
+                      {m.agentName}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-red-700 dark:text-red-400">
+                      {m.dependencies.length > 0
+                        ? m.dependencies.join(', ')
+                        : 'Dependency resolution pending'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Risk Forecast + Business Forecast */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Risk Forecast</h2>
+          <div className="space-y-2">
+            {os.missions
+              .filter((m) => m.priority === 'critical' || m.priority === 'high')
+              .slice(0, 3).length === 0 ? (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
+                <p className="text-xs font-medium text-emerald-800 dark:text-emerald-400">
+                  No critical risks detected
+                </p>
+              </div>
+            ) : (
+              os.missions
+                .filter((m) => m.priority === 'critical' || m.priority === 'high')
+                .slice(0, 3)
+                .map((m) => (
+                  <div
+                    key={m.id}
+                    className="rounded-lg border border-amber-200 bg-card p-3 dark:border-amber-800"
+                  >
+                    <p className="line-clamp-1 text-xs font-medium text-foreground">{m.title}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{m.businessImpact}</p>
+                  </div>
+                ))
+            )}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Business Forecast</h2>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Growth trajectory</span>
+                <span
+                  className={`text-xs font-medium ${scores.growth.score >= 60 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}
+                >
+                  {scores.growth.score >= 70
+                    ? 'Positive'
+                    : scores.growth.score >= 45
+                      ? 'Neutral'
+                      : 'Negative'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Revenue health</span>
+                <span
+                  className={`text-xs font-medium ${scores.financial.score >= 60 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}
+                >
+                  {scores.financial.score >= 70
+                    ? 'Strong'
+                    : scores.financial.score >= 45
+                      ? 'Building'
+                      : 'At risk'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">AI automation</span>
+                <span
+                  className={`text-xs font-medium ${scores.aiEfficiency.score >= 60 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}
+                >
+                  {scores.aiEfficiency.score >= 70
+                    ? 'Operational'
+                    : scores.aiEfficiency.score >= 45
+                      ? 'Starting'
+                      : 'Not active'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Customer success</span>
+                <span
+                  className={`text-xs font-medium ${scores.customerSuccess.score >= 60 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}
+                >
+                  {scores.customerSuccess.score >= 70
+                    ? 'Healthy'
+                    : scores.customerSuccess.score >= 45
+                      ? 'Watch'
+                      : 'At risk'}
+                </span>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">{reasoning.estimatedImpact}</p>
+          </div>
+        </section>
+      </div>
+
+      {/* Execution Timeline */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Execution Timeline</h2>
+          <Link href="/tower/audit" className="text-xs text-muted-foreground hover:text-foreground">
+            Full audit log →
+          </Link>
+        </div>
+        {os.systemTimeline.length === 0 ? (
+          <div className="rounded-lg border border-border bg-card px-4 py-6 text-center">
+            <p className="text-sm text-muted-foreground">No recent platform events</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="divide-y divide-border">
+              {os.systemTimeline.slice(0, 8).map((event, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                  <span
+                    className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${
+                      event.outcome === 'success'
+                        ? 'bg-emerald-500'
+                        : event.outcome === 'error'
+                          ? 'bg-red-500'
+                          : 'bg-muted-foreground/30'
+                    }`}
+                  />
+                  <p className="flex-1 font-mono text-xs text-foreground">{event.action}</p>
+                  <span className="flex-shrink-0 text-xs text-muted-foreground">
+                    {new Date(event.occurredAt).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </section>

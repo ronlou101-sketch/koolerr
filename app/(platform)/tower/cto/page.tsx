@@ -7,6 +7,7 @@ import {
   buildExecutionMetrics,
   buildAgentUtilization,
 } from '../execution/execution-data'
+import { getWorkforceStatusData } from '../workforce-status/workforce-data'
 import type { IssueSeverity } from './cto-data'
 import type { TaskPriority } from '../agents/agent-tasks'
 
@@ -42,16 +43,47 @@ const PRIORITY_BADGE: Record<string, string> = {
 }
 
 export default async function CTOOperationsCenterPage() {
-  const [data, { tasks: allTasks }, supportData] = await Promise.all([
+  const [data, { tasks: allTasks }, supportData, workforceData] = await Promise.all([
     getCTOData(),
     getAgentTasks(),
     getSupportData(),
+    getWorkforceStatusData(),
   ])
   const { platformIssues, maintenance, technicalDebt, pendingDecisions, generatedAt } = data
 
   const execJobs = buildExecutionJobs(allTasks, supportData.tickets, data.generatedAt)
   const execMetrics = buildExecutionMetrics(execJobs)
   const agentUtil = buildAgentUtilization(execJobs)
+
+  // Mission Health (Phase 9 — inline derivation from existing task data)
+  const MISSION_DEPS_CTO: Record<string, string[]> = {
+    'cs-first-customer': ['cfo-stripe-not-configured'],
+    'cs-onboarding-not-configured': ['cs-first-customer'],
+    'cs-health-scores-not-configured': ['cs-first-customer'],
+    'cmo-crm-not-configured': ['cs-first-customer'],
+    'content-feedback-not-configured': ['cs-first-customer'],
+  }
+  const taskIds = new Set(allTasks.map((t) => t.id))
+  const blockedMissions = allTasks.filter((t) => {
+    if (t.requiresApproval) return false
+    const deps = MISSION_DEPS_CTO[t.id] ?? []
+    return deps.some((dep) => taskIds.has(dep))
+  })
+  const executingMissions = allTasks.filter((t) => !t.requiresApproval && t.priority === 'critical')
+  const planningMissions = allTasks.filter((t) => !t.requiresApproval && t.priority === 'high')
+  const awaitingFounderCount = allTasks.filter((t) => t.requiresApproval).length
+  const avgSystemConfidence =
+    execJobs.length > 0
+      ? Math.round(execJobs.reduce((s, j) => s + j.confidenceScore, 0) / execJobs.length)
+      : 0
+  const wfSuccessRate =
+    workforceData.totalRunsAllWorkforces > 0
+      ? Math.round(
+          (workforceData.workforces.reduce((s, w) => s + w.completedRuns, 0) /
+            workforceData.totalRunsAllWorkforces) *
+            100
+        )
+      : null
 
   // Business Brain cross-agent intelligence (derived from existing data)
   const tasksByAgent = new Map<string, typeof allTasks>()
@@ -493,6 +525,119 @@ export default async function CTOOperationsCenterPage() {
               </ul>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Mission Health */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Mission Health</h2>
+          <Link
+            href="/tower/company-os"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Company OS →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+          {[
+            {
+              label: 'Executing',
+              value: executingMissions.length,
+              color: 'text-blue-700 dark:text-blue-400',
+            },
+            { label: 'Planning', value: planningMissions.length, color: 'text-foreground' },
+            {
+              label: 'Awaiting Founder',
+              value: awaitingFounderCount,
+              color:
+                awaitingFounderCount > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-foreground',
+            },
+            {
+              label: 'Blocked',
+              value: blockedMissions.length,
+              color:
+                blockedMissions.length > 0 ? 'text-red-700 dark:text-red-400' : 'text-foreground',
+            },
+            {
+              label: 'Avg Confidence',
+              value: avgSystemConfidence > 0 ? `${avgSystemConfidence}%` : '—',
+              color:
+                avgSystemConfidence >= 80
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : avgSystemConfidence >= 60
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : 'text-foreground',
+            },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p className={`mt-2 text-xl font-semibold tabular-nums ${color}`}>{value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Blocked Dependencies */}
+        {blockedMissions.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Blocked Dependencies
+            </p>
+            {blockedMissions.map((task) => (
+              <div
+                key={task.id}
+                className="flex items-start gap-3 rounded-lg border border-red-200 bg-card p-3 dark:border-red-800"
+              >
+                <div className="flex-1">
+                  <p className="line-clamp-1 text-xs font-medium text-foreground">
+                    {task.description}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{task.agentName}</p>
+                </div>
+                <span className="flex-shrink-0 rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/50 dark:text-red-300">
+                  Blocked
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Retry Queue */}
+        <div className="rounded-lg border border-dashed border-border bg-card px-4 py-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Retry Queue
+            </p>
+            <span className="text-xs text-muted-foreground">0 items</span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            No missions currently in retry — retry tracking requires execution history persistence
+          </p>
+        </div>
+
+        {/* System Efficiency */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[
+            {
+              label: 'Avg Mission Confidence',
+              value: avgSystemConfidence > 0 ? `${avgSystemConfidence}%` : 'No data',
+            },
+            {
+              label: 'AI Workforce Success',
+              value: wfSuccessRate !== null ? `${wfSuccessRate}%` : 'No runs',
+            },
+            { label: 'Completion Rate', value: 'Requires history' },
+          ].map(({ label, value }) => (
+            <div key={label} className="rounded-lg border border-border bg-card p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
+              <p className="mt-2 text-sm font-medium text-foreground">{value}</p>
+            </div>
+          ))}
         </div>
       </section>
 

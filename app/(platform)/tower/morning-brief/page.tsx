@@ -9,6 +9,7 @@ import {
   buildBrainReasoning,
   buildBrainObjectives,
 } from '../business-brain/brain-data'
+import { buildCompanyOSData } from '../company-os/company-os-data'
 import { TowerExecutiveSummary } from '../_components/TowerExecutiveSummary'
 import { TowerActionQueue } from '../_components/TowerActionQueue'
 import type { HealthStatus } from '../executive/executive-data'
@@ -102,6 +103,14 @@ export default async function MorningBriefPage() {
   )
   const topThreeTasks = agentTasks.slice(0, 3)
 
+  // Company OS
+  const os = buildCompanyOSData(data, supportData, workforceData, agentTasks)
+  const topMission = os.topPriorities[0] ?? null
+  const mostLoadedAgent = [...os.agentWorkloads].sort(
+    (a, b) => b.totalMissions - a.totalMissions
+  )[0]
+  const biggestBottleneck = os.conflicts[0] ?? null
+
   // Workforce summary
   const wfHealthy = workforceData.workforces.filter((w) => w.health === 'healthy').length
   const wfWarning = workforceData.workforces.filter((w) => w.health === 'warning').length
@@ -127,6 +136,145 @@ export default async function MorningBriefPage() {
         </div>
         <p className="text-xs text-muted-foreground">Generated {briefTime} · Refreshes on load</p>
       </div>
+
+      {/* Company OS — daily orchestration summary */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Company Operating System</h2>
+          <Link
+            href="/tower/company-os"
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Mission control →
+          </Link>
+        </div>
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          {/* Objective */}
+          <div className="border-b border-border px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Company Objective
+            </p>
+            <p className="mt-1 text-sm font-medium text-foreground">{os.companyObjective}</p>
+          </div>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-2 divide-x divide-border border-b border-border sm:grid-cols-4">
+            {[
+              {
+                label: "Today's Top Mission",
+                value: topMission ? topMission.agentName : 'No active missions',
+                sub: topMission ? topMission.priority : null,
+              },
+              {
+                label: 'Highest Risk',
+                value:
+                  os.missionsByState.awaiting_founder.length > 0
+                    ? `${os.missionsByState.awaiting_founder.length} awaiting approval`
+                    : os.missionsByState.blocked.length > 0
+                      ? `${os.missionsByState.blocked.length} missions blocked`
+                      : 'No critical risks',
+                sub: null,
+              },
+              {
+                label: 'Most Loaded Agent',
+                value: mostLoadedAgent?.agentName ?? '—',
+                sub: mostLoadedAgent ? `${mostLoadedAgent.totalMissions} missions` : null,
+              },
+              {
+                label: 'Biggest Bottleneck',
+                value: biggestBottleneck
+                  ? 'Conflict detected'
+                  : os.stateCounts.awaiting_founder > 0
+                    ? 'Awaiting approval'
+                    : 'No bottlenecks',
+                sub: null,
+              },
+            ].map(({ label, value, sub }) => (
+              <div key={label} className="p-3">
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="mt-1 line-clamp-1 text-xs font-medium text-foreground">{value}</p>
+                {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+              </div>
+            ))}
+          </div>
+
+          {/* Revenue + Growth Watch */}
+          <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Revenue Watch
+              </p>
+              {!os.revenueWatch.stripeConnected ? (
+                <p className="text-xs text-red-700 dark:text-red-400">Stripe not connected</p>
+              ) : (
+                <div className="flex flex-wrap gap-x-6 gap-y-1">
+                  {[
+                    { label: 'Active', value: os.revenueWatch.active },
+                    { label: 'Trialing', value: os.revenueWatch.trialing },
+                    {
+                      label: 'Past Due',
+                      value: os.revenueWatch.pastDue,
+                      warn: os.revenueWatch.pastDue > 0,
+                    },
+                  ].map(({ label, value, warn }) => (
+                    <div key={label}>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                      <p
+                        className={`text-sm font-semibold ${warn ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}
+                      >
+                        {value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Growth Watch
+              </p>
+              <div className="flex flex-wrap gap-x-6 gap-y-1">
+                <div>
+                  <p className="text-xs text-muted-foreground">Organizations</p>
+                  <p className="text-sm font-semibold text-foreground">{os.growthWatch.orgCount}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">New Orgs (24h)</p>
+                  <p
+                    className={`text-sm font-semibold ${os.growthWatch.newOrgs24h > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}`}
+                  >
+                    {os.growthWatch.newOrgs24h > 0 ? `+${os.growthWatch.newOrgs24h}` : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recommended Founder Actions */}
+          {os.missionsByState.awaiting_founder.length > 0 && (
+            <div className="border-t border-border p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Recommended Founder Actions ({os.missionsByState.awaiting_founder.length})
+                </p>
+                <Link href="/tower/approvals" className="text-xs text-foreground hover:underline">
+                  Review all →
+                </Link>
+              </div>
+              <div className="space-y-1.5">
+                {os.missionsByState.awaiting_founder.slice(0, 3).map((m) => (
+                  <div key={m.id} className="flex items-start gap-2">
+                    <span className="mt-px inline-flex flex-shrink-0 items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                      {m.priority}
+                    </span>
+                    <p className="line-clamp-1 text-xs text-foreground">{m.title}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Business Brain Summary */}
       <section className="space-y-3">
