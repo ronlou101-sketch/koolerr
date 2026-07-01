@@ -58,9 +58,10 @@ export const PROVIDER_REGISTRY: Record<ProviderId, Provider> = {
       'AI spokesperson video generation — produces on-brand video content with AI avatars',
     departments: ['video'],
     capabilities: ['video-generation'],
-    status: 'not-configured',
+    // Derived at module load time so health checks reflect actual env state.
+    status: process.env.HEYGEN_API_KEY ? 'active' : 'not-configured',
     supportedTasks: ['spokesperson-video', 'product-explainer', 'marketing-video', 'avatar-video'],
-    configuredInEnv: false,
+    configuredInEnv: !!process.env.HEYGEN_API_KEY,
   },
 
   higgsfield: {
