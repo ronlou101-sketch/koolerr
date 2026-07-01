@@ -11,7 +11,8 @@
     "Strategy Department (OpenAI)",
     "Creative Department",
     "Video Production Department",
-    "Publishing Department"
+    "Publishing Department",
+    "Approval Department"
   ],
   "current": [
     "Stripe Integration",

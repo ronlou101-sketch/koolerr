@@ -134,6 +134,28 @@ export {
   getVideoProductionDepartmentHealth,
 } from './video-production'
 
+// ─── Approval Department ─────────────────────────────────────────────────────
+export type {
+  ApprovalOutcome,
+  ApprovalDecision,
+  ApprovalJob,
+  ApprovalJobStatus,
+  ApprovalError,
+  ApprovalErrorCode,
+  ApprovalRequest,
+  ApprovalDepartmentHealth,
+  ApprovalProviderReadiness,
+  ApprovalProviderStatus,
+  IApprovalDepartmentService,
+} from './approval'
+export {
+  ApprovalDepartmentService,
+  approvalDepartment,
+  buildApprovalPrompt,
+  parseApprovalDecision,
+  getApprovalDepartmentHealth,
+} from './approval'
+
 // ─── Publishing Department ────────────────────────────────────────────────────
 export type {
   SupportedPlatform,
