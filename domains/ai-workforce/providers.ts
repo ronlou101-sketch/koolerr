@@ -70,9 +70,10 @@ export const PROVIDER_REGISTRY: Record<ProviderId, Provider> = {
     description: 'AI creative video production — cinematic and brand video generation',
     departments: ['video', 'creative'],
     capabilities: ['video-generation', 'image-generation'],
-    status: 'not-configured',
+    // Derived at module load time so health checks reflect actual env state.
+    status: process.env.HIGGSFIELD_API_KEY ? 'active' : 'not-configured',
     supportedTasks: ['cinematic-video', 'creative-video', 'brand-video', 'social-content'],
-    configuredInEnv: false,
+    configuredInEnv: !!process.env.HIGGSFIELD_API_KEY,
   },
 
   elevenlabs: {
