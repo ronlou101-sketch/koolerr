@@ -7,19 +7,20 @@
     "Brand & Visual Identity",
     "Tower Control v1",
     "AI Workforce Foundation",
-    "Research Department (Manus)",
-    "Strategy Department (OpenAI)",
+    "Research Department",
+    "Strategy Department",
     "Creative Department",
     "Video Production Department",
     "Publishing Department",
     "Approval Department",
     "Delivery Department",
-    "Customer Onboarding"
+    "AI Workforce Integration (End-to-End)",
+    "Customer Onboarding Pipeline"
   ],
   "current": [
     "Stripe Integration",
     "Launch Readiness",
-    "AI Integrations (Manus, HeyGen, Higgsfield, ElevenLabs)"
+    "Live Provider Integrations (OpenAI, Manus, Anthropic, HeyGen, Higgsfield, ElevenLabs)"
   ],
   "remaining": ["Koolerr Academy", "Internal Dogfooding", "Beta Launch", "Public Launch"]
 }
