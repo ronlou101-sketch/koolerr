@@ -1,5 +1,6 @@
 'use server'
 
+import { after } from 'next/server'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { businessBrainService } from '@/domains/business-brain'
 import { workforceEngineService } from '@/domains/workforce-engine'
@@ -192,14 +193,16 @@ export async function triggerAIWorkforce(): Promise<{
 
   const engagementRunId = runResult.value.id
 
-  void runAIWorkforcePipeline(
-    {
-      tenantId: tid,
-      organizationId: ctx.organizationId,
-      workforceId: workforce.id,
-      engagementRunId,
-    },
-    profile
+  after(() =>
+    runAIWorkforcePipeline(
+      {
+        tenantId: tid,
+        organizationId: ctx.organizationId,
+        workforceId: workforce.id,
+        engagementRunId,
+      },
+      profile
+    )
   )
 
   return { success: true, engagementRunId }

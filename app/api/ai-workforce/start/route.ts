@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { buildBusinessProfileFromMemories } from '@/infrastructure/ai-workforce/build-profile'
 import { runAIWorkforcePipeline } from '@/infrastructure/ai-workforce/pipeline'
 import { env } from '@/shared/config/env'
 import type { TenantId } from '@/shared/types'
+
+// Extend execution window so Vercel keeps the function alive for the full pipeline.
+// after() registers the pipeline with the execution context before the response is sent,
+// preventing the function from being torn down before the background work completes.
+export const maxDuration = 300
 
 /**
  * POST /api/ai-workforce/start
@@ -52,9 +57,11 @@ export async function POST() {
 
   const engagementRunId = runResult.value.id
 
-  void runAIWorkforcePipeline(
-    { tenantId, organizationId: ctx.organizationId, workforceId: workforce.id, engagementRunId },
-    profile
+  after(() =>
+    runAIWorkforcePipeline(
+      { tenantId, organizationId: ctx.organizationId, workforceId: workforce.id, engagementRunId },
+      profile
+    )
   )
 
   return NextResponse.json({ engagementRunId }, { status: 202 })
