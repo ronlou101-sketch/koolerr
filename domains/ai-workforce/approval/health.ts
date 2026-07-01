@@ -43,8 +43,9 @@ export function getApprovalDepartmentHealth(): ApprovalDepartmentHealth {
 
   const configuredCount = [primaryConfigured, anthropicConfigured].filter(Boolean).length
 
-  const overall: ApprovalProviderReadiness =
-    configuredCount === 0 ? 'not-configured' : configuredCount === 2 ? 'ready' : 'not-configured'
+  // overall aligns with readyForApproval: the department can run when the primary is up.
+  // A missing fallback is not a blocking condition — it degrades resilience, not capability.
+  const overall: ApprovalProviderReadiness = primaryConfigured ? 'ready' : 'not-configured'
 
   return {
     overall,

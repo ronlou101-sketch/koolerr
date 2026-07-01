@@ -43,8 +43,9 @@ export function getPublishingDepartmentHealth(): PublishingDepartmentHealth {
 
   const configuredCount = [primaryConfigured, anthropicConfigured].filter(Boolean).length
 
-  const overall: PublishingProviderReadiness =
-    configuredCount === 0 ? 'not-configured' : configuredCount === 2 ? 'ready' : 'not-configured'
+  // overall aligns with readyForPublishing: the department can run when the primary is up.
+  // A missing fallback is not a blocking condition — it degrades resilience, not capability.
+  const overall: PublishingProviderReadiness = primaryConfigured ? 'ready' : 'not-configured'
 
   return {
     overall,
