@@ -32,6 +32,11 @@ export async function GET(
   if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { runId } = await params
+
+  if (!/^run_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(runId)) {
+    return NextResponse.json({ error: 'Invalid run ID' }, { status: 400 })
+  }
+
   const engagementRunId = runId as EngagementRunId
 
   const [runResult, memoriesResult] = await Promise.all([
