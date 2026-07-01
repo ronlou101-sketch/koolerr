@@ -36,15 +36,16 @@ export async function GET(
 
   const [runResult, memoriesResult] = await Promise.all([
     workforceEngineService.getEngagementRun(engagementRunId, ctx.organizationId),
-    businessBrainService.listAllMemories(ctx.organizationId),
+    businessBrainService.queryMemory({
+      organizationId: ctx.organizationId,
+      relevanceScope: [runId],
+    }),
   ])
 
   const run = runResult.ok ? runResult.value : null
-  const allMemories = memoriesResult.ok ? memoriesResult.value : []
+  const allMemories = memoriesResult.ok ? memoriesResult.value.memories : []
 
-  const progressMemories = allMemories.filter(
-    (m) => m.source === 'ai-workforce-pipeline' && m.relevanceScope.includes(runId)
-  )
+  const progressMemories = allMemories.filter((m) => m.source === 'ai-workforce-pipeline')
 
   const stepStatus: Partial<
     Record<PipelineStep, { status: StepStatus; timestamp?: string; error?: string | null }>
