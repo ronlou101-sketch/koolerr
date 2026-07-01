@@ -37,6 +37,7 @@ import { env } from '@/shared/config/env'
 import { createSessionServerClient } from '@/shared/lib/supabase-session'
 import { identityService } from '@/domains/identity'
 import { bootstrapPlatform, isPlatformBootstrapped } from '@/infrastructure/platform'
+import { logger } from '@/shared/lib/logger'
 
 /**
  * Resolve a PlatformContext from the current request's Supabase Auth session.
@@ -68,7 +69,7 @@ export async function getRequestPlatformContext(
   } = await supabase.auth.getUser()
 
   if (!authUser?.email) {
-    console.log('[RESOLVE] null: no auth session', getUserError?.message ?? '(no error)')
+    logger.debug('resolve: no auth session', { reason: getUserError?.message ?? '(no error)' })
     return null
   }
 
@@ -76,18 +77,14 @@ export async function getRequestPlatformContext(
 
   const userResult = await identityService.getUserByEmail(authUser.email, tenantId)
   if (!userResult.ok) {
-    console.log(
-      `[RESOLVE] null: platform user not found — email=${authUser.email} tenantId=${tenantId} reason=${userResult.error.message}`
-    )
+    logger.warn('resolve: platform user not found', { tenantId, reason: userResult.error.message })
     return null
   }
   const user = userResult.value
 
   const membershipsResult = await identityService.getMemberships(user.id)
   if (!membershipsResult.ok || membershipsResult.value.length === 0) {
-    console.log(
-      `[RESOLVE] null: no memberships — userId=${user.id} ok=${membershipsResult.ok} count=${membershipsResult.ok ? membershipsResult.value.length : 'error'}`
-    )
+    logger.warn('resolve: no memberships', { userId: user.id })
     return null
   }
   const memberships = membershipsResult.value
@@ -95,7 +92,7 @@ export async function getRequestPlatformContext(
   const resolvedOrgId = organizationId ?? memberships[0].organizationId
   const membership = memberships.find((m) => m.organizationId === resolvedOrgId)
   if (!membership) {
-    console.log(`[RESOLVE] null: membership not found for org=${resolvedOrgId}`)
+    logger.debug('resolve: membership not found', { organizationId: resolvedOrgId })
     return null
   }
 

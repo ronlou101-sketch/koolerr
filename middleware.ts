@@ -28,6 +28,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '@/shared/config/env'
+import { logger } from '@/shared/lib/logger'
 
 /** Paths that do not require an authenticated session. */
 const PUBLIC_PATHS: string[] = [
@@ -100,15 +101,16 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (!user && !isPublicPath(path)) {
-    console.log(
-      `[MW] unauthenticated request to ${path} (${getUserError?.message ?? 'no user'}) → redirect /login`
-    )
+    logger.debug('unauthenticated request redirected to login', {
+      path,
+      reason: getUserError?.message ?? 'no user',
+    })
     const loginUrl = new URL('/login', request.nextUrl.origin)
     return NextResponse.redirect(loginUrl)
   }
 
   if (user) {
-    console.log(`[MW] authenticated request — user=${user.id} path=${path}`)
+    logger.debug('authenticated request', { userId: user.id, path })
   }
 
   return supabaseResponse
