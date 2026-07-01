@@ -91,3 +91,24 @@ export {
   buildStrategyPrompt,
   parseStrategyBrief,
 } from './strategy'
+
+// ─── Creative Department ──────────────────────────────────────────────────────
+export type {
+  CreativeBrief,
+  CreativeJob,
+  CreativeJobStatus,
+  CreativeError,
+  CreativeErrorCode,
+  CreativeRequest,
+  CreativeDepartmentHealth,
+  CreativeProviderReadiness,
+  CreativeProviderStatus,
+  ICreativeDepartmentService,
+} from './creative'
+export {
+  CreativeDepartmentService,
+  creativeDepartment,
+  buildCreativePrompt,
+  parseCreativeBrief,
+  getCreativeDepartmentHealth,
+} from './creative'

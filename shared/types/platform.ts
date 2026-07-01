@@ -288,7 +288,15 @@ export interface TrustRule {
 // See FOUNDATION_001 §2.12 and §6.
 // ---------------------------------------------------------------------------
 
-export type ModelProvider = 'anthropic' | 'openai' | 'google' | 'mistral' | 'manus'
+export type ModelProvider =
+  | 'anthropic'
+  | 'openai'
+  | 'google'
+  | 'mistral'
+  | 'manus'
+  | 'heygen'
+  | 'higgsfield'
+  | 'elevenlabs'
 
 export interface ModelRequest {
   organizationId: OrganizationId

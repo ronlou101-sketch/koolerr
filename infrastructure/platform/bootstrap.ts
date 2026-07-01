@@ -24,6 +24,9 @@ import { _registerProvider, _registerUsageSink, modelGateway } from '@/shared/mo
 import { AnthropicAdapter } from '@/shared/model-gateway/anthropic-adapter'
 import { ManusAdapter } from '@/shared/model-gateway/manus-adapter'
 import { OpenAIAdapter } from '@/shared/model-gateway/openai-adapter'
+import { HeyGenAdapter } from '@/shared/model-gateway/heygen-adapter'
+import { HiggsfieldAdapter } from '@/shared/model-gateway/higgsfield-adapter'
+import { ElevenLabsAdapter } from '@/shared/model-gateway/elevenlabs-adapter'
 import { logger } from '@/shared/lib/logger'
 
 import { SupabaseBillingRepository } from '@/domains/billing/supabase-repository'
@@ -214,6 +217,35 @@ export async function bootstrapPlatform(): Promise<PlatformBootstrapResult> {
       '[PLATFORM] OPENAI_API_KEY not set — OpenAI provider is not available. ' +
         'Set OPENAI_API_KEY to enable the AI Workforce Strategy Department.'
     )
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5d. Register creative / media provider adapters (Phase 4 plug-in points).
+  //     These adapters are registered when API keys are present but their
+  //     invoke() methods will throw until Phase 4 video generation is wired.
+  //     Registration now means bootstrap output already surfaces their status.
+  // ---------------------------------------------------------------------------
+  if (process.env.HEYGEN_API_KEY) {
+    _registerProvider(new HeyGenAdapter())
+    logger.info('[PLATFORM] HeyGen provider adapter registered')
+  } else {
+    logger.warn('[PLATFORM] HEYGEN_API_KEY not set — HeyGen video generation not available.')
+  }
+
+  if (process.env.HIGGSFIELD_API_KEY) {
+    _registerProvider(new HiggsfieldAdapter())
+    logger.info('[PLATFORM] Higgsfield provider adapter registered')
+  } else {
+    logger.warn(
+      '[PLATFORM] HIGGSFIELD_API_KEY not set — Higgsfield creative generation not available.'
+    )
+  }
+
+  if (process.env.ELEVENLABS_API_KEY) {
+    _registerProvider(new ElevenLabsAdapter())
+    logger.info('[PLATFORM] ElevenLabs provider adapter registered')
+  } else {
+    logger.warn('[PLATFORM] ELEVENLABS_API_KEY not set — ElevenLabs voice synthesis not available.')
   }
 
   bootstrapped = true
