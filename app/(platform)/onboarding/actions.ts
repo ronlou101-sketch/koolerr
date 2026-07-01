@@ -2,16 +2,18 @@
 
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { businessBrainService } from '@/domains/business-brain'
+import { workforceEngineService } from '@/domains/workforce-engine'
+import { runAIWorkforcePipeline } from '@/infrastructure/ai-workforce/pipeline'
+import { buildBusinessProfileFromMemories } from '@/infrastructure/ai-workforce/build-profile'
 import { env } from '@/shared/config/env'
 import type { TenantId } from '@/shared/types'
 
 /**
  * Business Brain onboarding server actions.
  *
- * Each action saves one category of structured Business Memory.
- * Called sequentially by the onboarding wizard as the customer completes each step.
- * All writes go through businessBrainService.storeMemory() — the only approved
- * path for writing to the Business Brain from outside the Workforce Engine.
+ * saveCompanyIdentity / saveBrandVoice / saveProduct — original 3-step wizard.
+ * saveBusinessProfile — comprehensive AI Workforce wizard (single call, all sections).
+ * triggerAIWorkforce  — creates an engagement run and starts the 7-department pipeline.
  */
 
 function tenantId(): TenantId {
@@ -96,4 +98,109 @@ export async function saveProduct(data: {
 
   if (!result.ok) return { success: false, error: result.error.message }
   return { success: true }
+}
+
+// ---------------------------------------------------------------------------
+// AI Workforce Onboarding — comprehensive wizard actions
+// ---------------------------------------------------------------------------
+
+export interface CustomerProfile {
+  businessName: string
+  businessCategory: string
+  industry: string
+  location: string
+  website?: string
+  primaryService: string
+  additionalServices?: string
+  serviceArea?: string
+  targetAudience: string
+  idealCustomer?: string
+  brandVoice: string
+  brandPersonality?: string
+  competitiveAdvantages?: string
+  businessGoals: string
+  preferredPlatforms: string[]
+  facebookUrl?: string
+  instagramUrl?: string
+  tiktokUrl?: string
+  youtubeUrl?: string
+  linkedinUrl?: string
+  googleBusinessUrl?: string
+  contactEmail?: string
+  contactPhone?: string
+  logoUrl?: string
+  additionalNotes?: string
+}
+
+export async function saveBusinessProfile(
+  data: CustomerProfile
+): Promise<{ success: boolean; error?: string }> {
+  const ctx = await getRequestPlatformContext()
+  if (!ctx) return { success: false, error: 'Not authenticated' }
+
+  const result = await businessBrainService.storeMemory({
+    tenantId: tenantId(),
+    organizationId: ctx.organizationId,
+    memory: {
+      organizationId: ctx.organizationId,
+      type: 'company_identity',
+      content: { ...data },
+      source: 'ai-workforce-wizard',
+      relevanceScope: ['all', 'ai-workforce'],
+    },
+  })
+
+  if (!result.ok) return { success: false, error: result.error.message }
+  return { success: true }
+}
+
+export async function triggerAIWorkforce(): Promise<{
+  success: boolean
+  engagementRunId?: string
+  error?: string
+}> {
+  const ctx = await getRequestPlatformContext()
+  if (!ctx) return { success: false, error: 'Not authenticated' }
+
+  const profile = await buildBusinessProfileFromMemories(ctx.organizationId)
+  if (!profile || !profile.businessName) {
+    return { success: false, error: 'Business profile not found. Complete the wizard first.' }
+  }
+
+  const workforcesResult = await workforceEngineService.listWorkforces(ctx.organizationId)
+  if (!workforcesResult.ok) {
+    return { success: false, error: 'Failed to retrieve workforces' }
+  }
+
+  const workforce = workforcesResult.value.find((w) => w.businessFunction === 'Content Marketing')
+  if (!workforce) {
+    return { success: false, error: 'No workforce found for this organization' }
+  }
+
+  const tid = tenantId()
+  const runResult = await workforceEngineService.triggerEngagementRun({
+    tenantId: tid,
+    workforceId: workforce.id,
+    organizationId: ctx.organizationId,
+    objective: `AI Workforce: Full content production for ${profile.businessName}`,
+    context: { type: 'ai-workforce-pipeline', businessName: profile.businessName },
+  })
+
+  if (!runResult.ok) {
+    return { success: false, error: 'Failed to create engagement run' }
+  }
+
+  const engagementRunId = runResult.value.id
+
+  void runAIWorkforcePipeline(
+    {
+      tenantId: tid,
+      organizationId: ctx.organizationId,
+      workforceId: workforce.id,
+      engagementRunId,
+    },
+    profile
+  )
+
+  return { success: true, engagementRunId }
 }

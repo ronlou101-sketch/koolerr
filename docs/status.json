@@ -13,18 +13,13 @@
     "Video Production Department",
     "Publishing Department",
     "Approval Department",
-    "Delivery Department"
+    "Delivery Department",
+    "Customer Onboarding"
   ],
   "current": [
     "Stripe Integration",
     "Launch Readiness",
     "AI Integrations (Manus, HeyGen, Higgsfield, ElevenLabs)"
   ],
-  "remaining": [
-    "Customer Onboarding",
-    "Koolerr Academy",
-    "Internal Dogfooding",
-    "Beta Launch",
-    "Public Launch"
-  ]
+  "remaining": ["Koolerr Academy", "Internal Dogfooding", "Beta Launch", "Public Launch"]
 }

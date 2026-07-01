@@ -6,6 +6,7 @@ import { businessBrainService } from '@/domains/business-brain'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
 import { approvalWorkflowService } from '@/shared/approval'
+import { AIWorkforceProgress } from './_components/AIWorkforceProgress'
 
 /**
  * Dashboard — the primary authenticated landing page. Updated for Phase 2.
@@ -42,9 +43,15 @@ const STATUS_COLORS = {
   failed: 'text-destructive',
 } as const
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ai_run?: string }>
+}) {
   const ctx = await getRequestPlatformContext()
   if (!ctx) redirect('/login?error=account_error')
+
+  const { ai_run: aiRunId } = await searchParams
 
   // Fetch all dashboard data in parallel.
   const [orgResult, brainResult, runsResult, pendingResult, workforcesResult, approvalsResult] =
@@ -80,6 +87,9 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-semibold text-foreground">{orgName}</h1>
         <p className="mt-1 text-sm text-muted-foreground">Your workforce is standing by.</p>
       </div>
+
+      {/* AI Workforce live progress — shown when a run was just triggered */}
+      {aiRunId && <AIWorkforceProgress runId={aiRunId} />}
 
       {/* Stat cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
