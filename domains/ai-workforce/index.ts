@@ -133,3 +133,26 @@ export {
   parseVideoProductionBrief,
   getVideoProductionDepartmentHealth,
 } from './video-production'
+
+// ─── Publishing Department ────────────────────────────────────────────────────
+export type {
+  SupportedPlatform,
+  PublishingPackage,
+  PublishingJob,
+  PublishingJobStatus,
+  PublishingError,
+  PublishingErrorCode,
+  PublishingRequest,
+  PublishingDepartmentHealth,
+  PublishingProviderReadiness,
+  PublishingProviderStatus,
+  IPublishingDepartmentService,
+} from './publishing'
+export {
+  SUPPORTED_PLATFORMS,
+  PublishingDepartmentService,
+  publishingDepartment,
+  buildPublishingPrompt,
+  parsePublishingPackages,
+  getPublishingDepartmentHealth,
+} from './publishing'
