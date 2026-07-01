@@ -112,3 +112,24 @@ export {
   parseCreativeBrief,
   getCreativeDepartmentHealth,
 } from './creative'
+
+// ─── Video Production Department ─────────────────────────────────────────────
+export type {
+  VideoProductionBrief,
+  VideoProductionJob,
+  VideoProductionJobStatus,
+  VideoProductionError,
+  VideoProductionErrorCode,
+  VideoProductionRequest,
+  VideoProductionDepartmentHealth,
+  VideoProductionProviderReadiness,
+  VideoProductionProviderStatus,
+  IVideoProductionDepartmentService,
+} from './video-production'
+export {
+  VideoProductionDepartmentService,
+  videoProductionDepartment,
+  buildVideoProductionPrompt,
+  parseVideoProductionBrief,
+  getVideoProductionDepartmentHealth,
+} from './video-production'
