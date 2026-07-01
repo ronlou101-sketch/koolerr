@@ -82,9 +82,10 @@ export const PROVIDER_REGISTRY: Record<ProviderId, Provider> = {
     description: 'AI voice synthesis — human-quality voice audio for any content format',
     departments: ['voice'],
     capabilities: ['voice-synthesis', 'audio-generation'],
-    status: 'not-configured',
+    // Derived at module load time so health checks reflect actual env state.
+    status: process.env.ELEVENLABS_API_KEY ? 'active' : 'not-configured',
     supportedTasks: ['voiceover', 'narration', 'podcast-audio', 'video-voiceover', 'brand-voice'],
-    configuredInEnv: false,
+    configuredInEnv: !!process.env.ELEVENLABS_API_KEY,
   },
 }
 
