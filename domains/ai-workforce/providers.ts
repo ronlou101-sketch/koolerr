@@ -38,7 +38,8 @@ export const PROVIDER_REGISTRY: Record<ProviderId, Provider> = {
       'summarization',
       'code-generation',
     ],
-    status: 'not-configured',
+    // Derived at module load time so health checks reflect actual env state.
+    status: process.env.OPENAI_API_KEY ? 'active' : 'not-configured',
     supportedTasks: [
       'content-strategy',
       'copy-generation',
@@ -46,7 +47,7 @@ export const PROVIDER_REGISTRY: Record<ProviderId, Provider> = {
       'brief-synthesis',
       'editorial-review',
     ],
-    configuredInEnv: false,
+    configuredInEnv: !!process.env.OPENAI_API_KEY,
   },
 
   heygen: {
