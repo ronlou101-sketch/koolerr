@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 
 interface StepState {
   step: string
@@ -71,6 +71,7 @@ function StatusDot({ status }: { status: StepState['status'] }) {
 export function AIWorkforceProgress({ runId }: { runId: string }) {
   const [status, setStatus] = useState<PipelineStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const poll = useCallback(async () => {
     try {
@@ -81,6 +82,12 @@ export function AIWorkforceProgress({ runId }: { runId: string }) {
       }
       const data = (await res.json()) as PipelineStatus
       setStatus(data)
+      if (data.isComplete || data.isFailed) {
+        if (intervalRef.current !== null) {
+          clearInterval(intervalRef.current)
+          intervalRef.current = null
+        }
+      }
     } catch {
       setError('Connection error')
     }
@@ -88,10 +95,15 @@ export function AIWorkforceProgress({ runId }: { runId: string }) {
 
   useEffect(() => {
     void poll()
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       void poll()
     }, 4000)
-    return () => clearInterval(interval)
+    return () => {
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
   }, [poll])
 
   if (error) {
