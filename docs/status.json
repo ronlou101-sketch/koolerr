@@ -12,7 +12,8 @@
     "Creative Department",
     "Video Production Department",
     "Publishing Department",
-    "Approval Department"
+    "Approval Department",
+    "Delivery Department"
   ],
   "current": [
     "Stripe Integration",

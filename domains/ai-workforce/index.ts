@@ -134,6 +134,28 @@ export {
   getVideoProductionDepartmentHealth,
 } from './video-production'
 
+// ─── Delivery Department ─────────────────────────────────────────────────────
+export type {
+  DeliveryStatus,
+  DeliveryPackage,
+  DeliveryJob,
+  DeliveryJobStatus,
+  DeliveryError,
+  DeliveryErrorCode,
+  DeliveryRequest,
+  DeliveryDepartmentHealth,
+  DeliveryProviderReadiness,
+  DeliveryProviderStatus,
+  IDeliveryDepartmentService,
+} from './delivery'
+export {
+  DeliveryDepartmentService,
+  deliveryDepartment,
+  buildDeliveryPrompt,
+  parseDeliveryPackage,
+  getDeliveryDepartmentHealth,
+} from './delivery'
+
 // ─── Approval Department ─────────────────────────────────────────────────────
 export type {
   ApprovalOutcome,
