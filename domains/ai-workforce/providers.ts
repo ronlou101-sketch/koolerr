@@ -14,7 +14,8 @@ export const PROVIDER_REGISTRY: Record<ProviderId, Provider> = {
       'summarization',
       'content-strategy',
     ],
-    status: 'not-configured',
+    // Derived at module load time so health checks reflect actual env state.
+    status: process.env.MANUS_API_KEY ? 'active' : 'not-configured',
     supportedTasks: [
       'market-research',
       'competitive-analysis',
@@ -22,7 +23,7 @@ export const PROVIDER_REGISTRY: Record<ProviderId, Provider> = {
       'trend-analysis',
       'customer-insight-synthesis',
     ],
-    configuredInEnv: false,
+    configuredInEnv: !!process.env.MANUS_API_KEY,
   },
 
   openai: {
