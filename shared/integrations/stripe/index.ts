@@ -19,8 +19,18 @@ import { logger } from '@/shared/lib/logger'
 const STRIPE_API = 'https://api.stripe.com/v1'
 
 function stripeHeaders(): HeadersInit {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) {
+    // Belt-and-suspenders: every public function guards with an early return before
+    // calling here. This throw catches any future caller that forgets that guard,
+    // preventing "Bearer undefined" from being sent silently to the Stripe API.
+    throw new Error(
+      '[STRIPE] stripeHeaders() called without STRIPE_SECRET_KEY. ' +
+        'Every call site must guard with an early return before invoking this function.'
+    )
+  }
   return {
-    Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+    Authorization: `Bearer ${key}`,
     'Content-Type': 'application/x-www-form-urlencoded',
     'Stripe-Version': '2023-10-16',
   }
