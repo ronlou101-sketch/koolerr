@@ -11,6 +11,9 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
+    // console.error is a guaranteed signal in Vercel logs regardless of logger state.
+    // Replace with Sentry.captureException(error) once SENTRY_DSN is configured (M5).
+    console.error('[GLOBAL_ERROR]', error)
     logger.error('Unhandled global error', { message: error.message, digest: error.digest })
   }, [error])
 
