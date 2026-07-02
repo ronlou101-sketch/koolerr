@@ -244,6 +244,12 @@ export async function updateStripeSubscriptionMetadata(
 export async function verifyStripeWebhook(payload: string, sigHeader: string): Promise<boolean> {
   const secret = process.env.STRIPE_WEBHOOK_SECRET
   if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        '[STRIPE] STRIPE_WEBHOOK_SECRET is not set. ' +
+          'Webhook verification requires this key in production.'
+      )
+    }
     logger.warn('[STRIPE_VERIFY] STRIPE_WEBHOOK_SECRET is not set — rejecting webhook')
     return false
   }

@@ -221,9 +221,17 @@ describe('verifyStripeWebhook', () => {
     vi.restoreAllMocks()
   })
 
-  it('returns false when STRIPE_WEBHOOK_SECRET is not set', async () => {
+  it('returns false when STRIPE_WEBHOOK_SECRET is not set (non-production)', async () => {
     const result = await verifyStripeWebhook('payload', 't=1,v1=abc')
     expect(result).toBe(false)
+  })
+
+  it('throws in production when STRIPE_WEBHOOK_SECRET is not set', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    await expect(verifyStripeWebhook('payload', 't=1,v1=abc')).rejects.toThrow(
+      'STRIPE_WEBHOOK_SECRET is not set'
+    )
+    vi.unstubAllEnvs()
   })
 
   it('returns false when the Stripe-Signature header has no timestamp', async () => {
