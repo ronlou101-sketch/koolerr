@@ -2,6 +2,7 @@
 
 import { createSessionServerClient } from '@/shared/lib/supabase-session'
 import { provisionPlatformAccount } from '@/infrastructure/auth'
+import { logger } from '@/shared/lib/logger'
 
 /**
  * Server Action: create the platform account records for a newly registered user.
@@ -30,7 +31,7 @@ export async function provision(
     return await provisionPlatformAccount(authUser.email, organizationName, authUser.id)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('[PROVISION] uncaught exception —', msg)
+    logger.error('provision: uncaught exception', { message: msg })
     return { success: false, error: msg }
   }
 }
