@@ -1,5 +1,16 @@
 import type { Provider, ProviderId, DepartmentId } from './types'
 
+/**
+ * PROVIDER_REGISTRY evaluates `configuredInEnv` and `status` once at module
+ * load time by reading process.env at import. This is intentional for Vercel
+ * serverless deployments where each invocation starts a fresh process and env
+ * vars are set before any module is imported.
+ *
+ * Implication: if env vars are rotated at runtime without a process restart
+ * (e.g. via a secrets-manager side-car in a long-lived server), the registry
+ * will not reflect the change until the process is restarted. This is not a
+ * concern for the current Vercel deployment model.
+ */
 export const PROVIDER_REGISTRY: Record<ProviderId, Provider> = {
   manus: {
     id: 'manus',
