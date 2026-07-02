@@ -7,9 +7,6 @@ import { saveBusinessProfile, triggerAIWorkforce, type CustomerProfile } from '.
 // ── Step definition ─────────────────────────────────────────────────────────
 
 type Step =
-  | 'company'
-  | 'brand'
-  | 'product'
   | 'business-info'
   | 'services'
   | 'audience'
@@ -18,7 +15,6 @@ type Step =
   | 'presence'
   | 'review'
   | 'launching'
-  | 'done'
 
 const WIZARD_STEPS: Step[] = [
   'business-info',
@@ -32,9 +28,6 @@ const WIZARD_STEPS: Step[] = [
 ]
 
 const STEP_LABELS: Record<Step, string> = {
-  company: 'Your Company',
-  brand: 'Brand Voice',
-  product: 'What You Offer',
   'business-info': 'Business Info',
   services: 'Services',
   audience: 'Your Audience',
@@ -43,7 +36,6 @@ const STEP_LABELS: Record<Step, string> = {
   presence: 'Online Presence',
   review: 'Review & Launch',
   launching: 'Launching',
-  done: 'Ready',
 }
 
 const VOICE_OPTIONS = [
