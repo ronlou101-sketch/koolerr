@@ -177,32 +177,38 @@ export default function OnboardingPage() {
     setError(null)
     setStep('launching')
 
-    const profile = buildProfile()
+    try {
+      const profile = buildProfile()
 
-    // Save comprehensive profile to Brain
-    const saveResult = await saveBusinessProfile(profile)
-    if (!saveResult.success) {
-      setError(saveResult.error ?? 'Failed to save profile')
+      // Save comprehensive profile to Brain
+      const saveResult = await saveBusinessProfile(profile)
+      if (!saveResult.success) {
+        setError(saveResult.error ?? 'Failed to save profile')
+        setStep('review')
+        setLoading(false)
+        return
+      }
+
+      // Trigger AI Workforce pipeline
+      const triggerResult = await triggerAIWorkforce()
+      setLoading(false)
+
+      if (!triggerResult.success) {
+        setError(triggerResult.error ?? 'Failed to start AI Workforce')
+        setStep('review')
+        return
+      }
+
+      router.push(
+        triggerResult.engagementRunId
+          ? `/dashboard?ai_run=${triggerResult.engagementRunId}`
+          : '/dashboard'
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
       setStep('review')
       setLoading(false)
-      return
     }
-
-    // Trigger AI Workforce pipeline
-    const triggerResult = await triggerAIWorkforce()
-    setLoading(false)
-
-    if (!triggerResult.success) {
-      setError(triggerResult.error ?? 'Failed to start AI Workforce')
-      setStep('review')
-      return
-    }
-
-    router.push(
-      triggerResult.engagementRunId
-        ? `/dashboard?ai_run=${triggerResult.engagementRunId}`
-        : '/dashboard'
-    )
   }
 
   // ── Progress bar ───────────────────────────────────────────────────────────
