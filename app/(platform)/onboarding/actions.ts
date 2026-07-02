@@ -11,7 +11,6 @@ import { env } from '@/shared/config/env'
 /**
  * Business Brain onboarding server actions.
  *
- * saveCompanyIdentity / saveBrandVoice / saveProduct — original 3-step wizard.
  * saveBusinessProfile — comprehensive AI Workforce wizard (single call, all sections).
  * triggerAIWorkforce  — creates an engagement run and starts the 7-department pipeline.
  */
@@ -19,90 +18,6 @@ import { env } from '@/shared/config/env'
 function tenantId() {
   return env.platform.tenantId()
 }
-
-export async function saveCompanyIdentity(data: {
-  description: string
-  mission: string
-}): Promise<{ success: boolean; error?: string }> {
-  const ctx = await getRequestPlatformContext()
-  if (!ctx) return { success: false, error: 'Not authenticated' }
-
-  const result = await businessBrainService.storeMemory({
-    tenantId: tenantId(),
-    organizationId: ctx.organizationId,
-    memory: {
-      organizationId: ctx.organizationId,
-      type: 'company_identity',
-      content: {
-        description: data.description.trim(),
-        mission: data.mission.trim(),
-      },
-      source: 'onboarding',
-      relevanceScope: ['all'],
-    },
-  })
-
-  if (!result.ok) return { success: false, error: result.error.message }
-  return { success: true }
-}
-
-export async function saveBrandVoice(data: {
-  tone: string
-  audience: string
-  guidelines: string
-}): Promise<{ success: boolean; error?: string }> {
-  const ctx = await getRequestPlatformContext()
-  if (!ctx) return { success: false, error: 'Not authenticated' }
-
-  const result = await businessBrainService.storeMemory({
-    tenantId: tenantId(),
-    organizationId: ctx.organizationId,
-    memory: {
-      organizationId: ctx.organizationId,
-      type: 'brand',
-      content: {
-        tone: data.tone,
-        targetAudience: data.audience.trim(),
-        writingGuidelines: data.guidelines.trim() || undefined,
-      },
-      source: 'onboarding',
-      relevanceScope: ['all', 'content_marketing'],
-    },
-  })
-
-  if (!result.ok) return { success: false, error: result.error.message }
-  return { success: true }
-}
-
-export async function saveProduct(data: {
-  name: string
-  description: string
-}): Promise<{ success: boolean; error?: string }> {
-  const ctx = await getRequestPlatformContext()
-  if (!ctx) return { success: false, error: 'Not authenticated' }
-
-  const result = await businessBrainService.storeMemory({
-    tenantId: tenantId(),
-    organizationId: ctx.organizationId,
-    memory: {
-      organizationId: ctx.organizationId,
-      type: 'product',
-      content: {
-        name: data.name.trim(),
-        description: data.description.trim(),
-      },
-      source: 'onboarding',
-      relevanceScope: ['all'],
-    },
-  })
-
-  if (!result.ok) return { success: false, error: result.error.message }
-  return { success: true }
-}
-
-// ---------------------------------------------------------------------------
-// AI Workforce Onboarding — comprehensive wizard actions
-// ---------------------------------------------------------------------------
 
 export interface CustomerProfile {
   businessName: string
