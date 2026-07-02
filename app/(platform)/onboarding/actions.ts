@@ -138,6 +138,13 @@ export async function saveBusinessProfile(
   const ctx = await getRequestPlatformContext()
   if (!ctx) return { success: false, error: 'Not authenticated' }
 
+  if (!data.businessName?.trim()) {
+    return { success: false, error: 'businessName is required' }
+  }
+  if (!data.businessCategory?.trim()) {
+    return { success: false, error: 'businessCategory is required' }
+  }
+
   const result = await businessBrainService.storeMemory({
     tenantId: tenantId(),
     organizationId: ctx.organizationId,
