@@ -32,7 +32,12 @@ function stripeHeaders(): HeadersInit {
   return {
     Authorization: `Bearer ${key}`,
     'Content-Type': 'application/x-www-form-urlencoded',
-    'Stripe-Version': '2023-10-16',
+    // Pinned Stripe API version. Stripe deprecates old versions on an ~18-month
+    // rolling schedule. Before each major release cycle, verify this value in the
+    // Stripe Dashboard (Developers → API versions) and follow the migration guide
+    // at https://stripe.com/docs/upgrades before bumping it.
+    // Last reviewed: 2026-07-02. Updated from 2023-10-16 → 2024-06-20.
+    'Stripe-Version': '2024-06-20',
   }
 }
 
