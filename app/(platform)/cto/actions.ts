@@ -5,7 +5,6 @@ import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { executeCTOEngagementRun, seedCTOContext } from '@/infrastructure/cto-workforce'
 import { CTO_BUSINESS_FUNCTION } from '@/infrastructure/cto-workforce'
-import type { WorkforceId } from '@/shared/types'
 
 export async function triggerCTORunAction(formData: FormData) {
   const ctx = await getRequestPlatformContext()
@@ -22,7 +21,7 @@ export async function triggerCTORunAction(formData: FormData) {
   )
   if (!ctoWorkforce) return
 
-  const result = await executeCTOEngagementRun(ctx, ctoWorkforce.id as WorkforceId, objective)
+  const result = await executeCTOEngagementRun(ctx, ctoWorkforce.id, objective)
 
   redirect(`/deliverables/${result.deliverableId}`)
 }

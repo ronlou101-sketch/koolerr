@@ -4,7 +4,6 @@ import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { executeCTOEngagementRun } from '@/infrastructure/cto-workforce'
 import { PlatformErrorCode } from '@/shared/types'
-import type { WorkforceId } from '@/shared/types'
 import { CTO_BUSINESS_FUNCTION } from '@/infrastructure/cto-workforce'
 
 /**
@@ -66,7 +65,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await executeCTOEngagementRun(ctx, ctoWorkforce.id as WorkforceId, objective)
+    const result = await executeCTOEngagementRun(ctx, ctoWorkforce.id, objective)
     return NextResponse.json(result, { status: 201 })
   } catch (error) {
     const isBillingError =

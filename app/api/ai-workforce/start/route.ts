@@ -4,7 +4,6 @@ import { workforceEngineService } from '@/domains/workforce-engine'
 import { buildBusinessProfileFromMemories } from '@/infrastructure/ai-workforce/build-profile'
 import { runAIWorkforcePipeline } from '@/infrastructure/ai-workforce/pipeline'
 import { env } from '@/shared/config/env'
-import type { TenantId } from '@/shared/types'
 
 // Extend execution window so Vercel keeps the function alive for the full pipeline.
 // after() registers the pipeline with the execution context before the response is sent,
@@ -58,7 +57,7 @@ export async function POST() {
     }
   }
 
-  const tenantId = env.platform.tenantId() as TenantId
+  const tenantId = env.platform.tenantId()
   const runResult = await workforceEngineService.triggerEngagementRun({
     tenantId,
     workforceId: workforce.id,

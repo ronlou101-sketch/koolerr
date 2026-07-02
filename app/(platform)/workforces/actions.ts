@@ -3,7 +3,8 @@
 import { redirect } from 'next/navigation'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
-import type { DigitalEmployeeId, WorkforceId, WorkforceStatus } from '@/shared/types'
+import { asDigitalEmployeeId, asWorkforceId } from '@/shared/types'
+import type { WorkforceStatus } from '@/shared/types'
 
 export async function updateWorkforceGoalsAction(formData: FormData) {
   const ctx = await getRequestPlatformContext()
@@ -27,7 +28,7 @@ export async function updateWorkforceGoalsAction(formData: FormData) {
 
   await workforceEngineService.updateWorkforce({
     tenantId: ctx.tenantId,
-    workforceId: workforceId as WorkforceId,
+    workforceId: asWorkforceId(workforceId),
     organizationId: ctx.organizationId,
     goals,
     status,
@@ -54,7 +55,7 @@ export async function updateDigitalEmployeeAction(formData: FormData) {
 
   await workforceEngineService.updateDigitalEmployee({
     tenantId: ctx.tenantId,
-    digitalEmployeeId: digitalEmployeeId as DigitalEmployeeId,
+    digitalEmployeeId: asDigitalEmployeeId(digitalEmployeeId),
     organizationId: ctx.organizationId,
     responsibilities,
   })

@@ -1,3 +1,5 @@
+import { asTenantId } from '@/shared/types'
+
 /**
  * Environment Configuration
  *
@@ -70,8 +72,8 @@ export const env = {
      * Used in Phase 11+ to resolve a PlatformContext from an authenticated
      * Supabase Auth session. In Phase 1, each deployment is single-tenant.
      */
-    tenantId(): string {
-      return required('PLATFORM_TENANT_ID')
+    tenantId() {
+      return asTenantId(required('PLATFORM_TENANT_ID'))
     },
   },
 }

@@ -160,7 +160,7 @@ export async function POST(request: Request) {
   const stripeCustomerId = stripeSession.customer
   const stripeSubscriptionId = stripeSession.subscription
   const planId = stripeSession.metadata?.plan_id ?? 'build'
-  const tenantId = env.platform.tenantId() as TenantId
+  const tenantId = env.platform.tenantId()
 
   // Attempt provisioning with internal retry (3 attempts, 1-second backoff).
   const MAX_ATTEMPTS = 3

@@ -4,7 +4,6 @@ import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { executeContentEngagementRun } from '@/infrastructure/content-workforce'
 import { PlatformErrorCode } from '@/shared/types'
-import type { WorkforceId } from '@/shared/types'
 
 /**
  * POST /api/runs — Trigger a Content Engagement Run.
@@ -68,11 +67,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await executeContentEngagementRun(
-      ctx,
-      contentWorkforce.id as WorkforceId,
-      objective
-    )
+    const result = await executeContentEngagementRun(ctx, contentWorkforce.id, objective)
     return NextResponse.json(result, { status: 201 })
   } catch (error) {
     const isBillingError =

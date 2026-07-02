@@ -30,7 +30,7 @@
  * See docs/adr/ADR-005-authentication-pattern.md
  */
 
-import type { OrganizationId, TenantId } from '@/shared/types'
+import type { OrganizationId } from '@/shared/types'
 import { createPlatformContext } from '@/shared/context'
 import type { PlatformContext } from '@/shared/context'
 import { env } from '@/shared/config/env'
@@ -73,7 +73,7 @@ export async function getRequestPlatformContext(
     return null
   }
 
-  const tenantId = env.platform.tenantId() as TenantId
+  const tenantId = env.platform.tenantId()
 
   const userResult = await identityService.getUserByEmail(authUser.email, tenantId)
   if (!userResult.ok) {
@@ -132,7 +132,7 @@ export async function getApiKeyPlatformContext(
   if (!keyResult.ok) return null
   const apiKey = keyResult.value
 
-  const tenantId = env.platform.tenantId() as TenantId
+  const tenantId = env.platform.tenantId()
 
   return createPlatformContext({
     tenantId,

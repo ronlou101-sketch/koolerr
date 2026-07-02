@@ -7,7 +7,6 @@ import { workforceEngineService } from '@/domains/workforce-engine'
 import { runAIWorkforcePipeline } from '@/infrastructure/ai-workforce/pipeline'
 import { buildBusinessProfileFromMemories } from '@/infrastructure/ai-workforce/build-profile'
 import { env } from '@/shared/config/env'
-import type { TenantId } from '@/shared/types'
 
 /**
  * Business Brain onboarding server actions.
@@ -17,8 +16,8 @@ import type { TenantId } from '@/shared/types'
  * triggerAIWorkforce  — creates an engagement run and starts the 7-department pipeline.
  */
 
-function tenantId(): TenantId {
-  return env.platform.tenantId() as TenantId
+function tenantId() {
+  return env.platform.tenantId()
 }
 
 export async function saveCompanyIdentity(data: {

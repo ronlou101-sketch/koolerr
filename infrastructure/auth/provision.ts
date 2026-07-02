@@ -22,7 +22,6 @@
  * See docs/adr/ADR-005-authentication-pattern.md
  */
 
-import type { TenantId } from '@/shared/types'
 import { PlatformErrorCode } from '@/shared/types'
 import { env } from '@/shared/config/env'
 import { identityService } from '@/domains/identity'
@@ -63,7 +62,7 @@ export async function provisionPlatformAccount(
   // to their Supabase implementations before any domain calls are made.
   if (!isPlatformBootstrapped()) await bootstrapPlatform()
 
-  const tenantId = env.platform.tenantId() as TenantId
+  const tenantId = env.platform.tenantId()
   const name = organizationName.trim() || 'My Organization'
 
   // ------------------------------------------------------------------
