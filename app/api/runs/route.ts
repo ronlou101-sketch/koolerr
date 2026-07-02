@@ -53,6 +53,20 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const runsResult = await workforceEngineService.listEngagementRuns(ctx.organizationId)
+  if (runsResult.ok) {
+    const hasActiveRun = runsResult.value.some(
+      (r) =>
+        r.workforceId === contentWorkforce.id && (r.status === 'pending' || r.status === 'running')
+    )
+    if (hasActiveRun) {
+      return NextResponse.json(
+        { error: 'A run is already in progress for this workforce. Wait for it to complete.' },
+        { status: 429 }
+      )
+    }
+  }
+
   try {
     const result = await executeContentEngagementRun(
       ctx,

@@ -42,6 +42,22 @@ export async function POST() {
     return NextResponse.json({ error: 'No workforce found for this organization' }, { status: 404 })
   }
 
+  const runsResult = await workforceEngineService.listEngagementRuns(ctx.organizationId)
+  if (runsResult.ok) {
+    const hasActiveRun = runsResult.value.some(
+      (r) => r.workforceId === workforce.id && (r.status === 'pending' || r.status === 'running')
+    )
+    if (hasActiveRun) {
+      return NextResponse.json(
+        {
+          error:
+            'A pipeline run is already in progress. Wait for it to complete before starting a new one.',
+        },
+        { status: 429 }
+      )
+    }
+  }
+
   const tenantId = env.platform.tenantId() as TenantId
   const runResult = await workforceEngineService.triggerEngagementRun({
     tenantId,
