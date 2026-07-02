@@ -1,5 +1,35 @@
 import { createServerSupabaseClient } from '@/shared/lib/supabase-server'
 
+// Raw Supabase row shapes — typed at the query boundary; never exported
+interface FailedRunRow {
+  id: string
+  organization_id: string | null
+  objective: string | null
+  started_at: string | null
+  created_at: string | null
+}
+interface PastDueSubRow {
+  id: string
+  organization_id: string | null
+  plan_id: string | null
+  status: string
+  updated_at: string | null
+  created_at: string | null
+}
+interface AuditErrorRow {
+  id: string
+  organization_id: string | null
+  action: string
+  outcome: string
+  occurred_at: string
+}
+interface OrgRow {
+  id: string
+  name: string
+  status: string
+  created_at: string
+}
+
 export type TicketStatus =
   | 'new'
   | 'ai-reviewing'
@@ -82,14 +112,10 @@ const PRIORITY_ORDER: Record<TicketPriority, number> = {
 }
 
 function deriveTickets(p: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  failedRuns: any[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  pastDueSubs: any[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  auditErrors: any[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  orgs: any[]
+  failedRuns: FailedRunRow[]
+  pastDueSubs: PastDueSubRow[]
+  auditErrors: AuditErrorRow[]
+  orgs: OrgRow[]
   orgMap: Map<string, string>
   eightHoursAgo: string
   sevenDaysAgo: string
@@ -99,7 +125,7 @@ function deriveTickets(p: {
 
   // Technical tickets: failed AI Workforce runs
   for (const run of failedRuns) {
-    const orgName = orgMap.get(run.organization_id) ?? null
+    const orgName = run.organization_id != null ? (orgMap.get(run.organization_id) ?? null) : null
     tickets.push({
       id: `run-failure-${run.id}`,
       status: 'ai-reviewing',
@@ -115,14 +141,14 @@ function deriveTickets(p: {
         'Review run logs to identify error type. Re-trigger if transient; escalate to engineering if persistent.',
       resolutionSummary: null,
       sourceType: 'failed-run',
-      createdAt: run.created_at ?? run.started_at,
+      createdAt: run.created_at ?? run.started_at ?? new Date().toISOString(),
       requiresFounderApproval: false,
     })
   }
 
   // Billing tickets: past-due subscriptions
   for (const sub of pastDueSubs) {
-    const orgName = orgMap.get(sub.organization_id) ?? null
+    const orgName = sub.organization_id != null ? (orgMap.get(sub.organization_id) ?? null) : null
     tickets.push({
       id: `billing-past-due-${sub.id}`,
       status: 'requires-founder-decision',
@@ -138,14 +164,13 @@ function deriveTickets(p: {
         'Approve direct outreach to customer about payment failure. Review Stripe dunning settings.',
       resolutionSummary: null,
       sourceType: 'billing-issue',
-      createdAt: sub.updated_at ?? sub.created_at,
+      createdAt: sub.updated_at ?? sub.created_at ?? new Date().toISOString(),
       requiresFounderApproval: true,
     })
   }
 
   // Platform tickets: burst of audit errors grouped by organization
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const errorsByOrg = new Map<string, any[]>()
+  const errorsByOrg = new Map<string, AuditErrorRow[]>()
   for (const event of auditErrors) {
     const key = event.organization_id ?? 'system'
     const existing = errorsByOrg.get(key) ?? []
@@ -310,31 +335,27 @@ export async function getSupportData(): Promise<SupportData> {
         .limit(50),
     ])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const failedRuns: any[] =
+  const failedRuns: FailedRunRow[] =
     failedRunsResult.status === 'fulfilled' && !failedRunsResult.value.error
       ? (failedRunsResult.value.data ?? [])
       : []
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orgs: any[] =
+  const orgs: OrgRow[] =
     orgsResult.status === 'fulfilled' && !orgsResult.value.error
       ? (orgsResult.value.data ?? [])
       : []
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pastDueSubs: any[] =
+  const pastDueSubs: PastDueSubRow[] =
     pastDueSubsResult.status === 'fulfilled' && !pastDueSubsResult.value.error
       ? (pastDueSubsResult.value.data ?? [])
       : []
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const auditErrors: any[] =
+  const auditErrors: AuditErrorRow[] =
     auditErrorsResult.status === 'fulfilled' && !auditErrorsResult.value.error
       ? (auditErrorsResult.value.data ?? [])
       : []
 
-  const orgMap = new Map<string, string>(orgs.map((o) => [o.id, o.name as string]))
+  const orgMap = new Map<string, string>(orgs.map((o) => [o.id, o.name]))
 
   const tickets = deriveTickets({
     failedRuns,

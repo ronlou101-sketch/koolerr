@@ -2,6 +2,32 @@ import { createServerSupabaseClient } from '@/shared/lib/supabase-server'
 import { getPlatformHealth } from '../health/health-data'
 import type { PlatformHealthData } from '../health/health-data'
 
+// Raw Supabase row shapes — typed at the query boundary; never exported
+interface OrgRow {
+  id: string
+  status: string
+  created_at: string
+}
+interface UserRow {
+  id: string
+  created_at: string
+}
+interface SubRow {
+  status: string
+  plan_id: string
+  stripe_subscription_id: string | null
+}
+interface RunRow {
+  id: string
+  status: string
+}
+interface AuditEventRow {
+  action: string
+  outcome: string
+  actor_type: string
+  occurred_at: string
+}
+
 export type { PlatformHealthData }
 export type { HealthStatus } from '../health/health-data'
 
@@ -337,24 +363,21 @@ export async function getExecutiveData(): Promise<ExecutiveData> {
 
   const health = healthResult.status === 'fulfilled' ? healthResult.value : FALLBACK_HEALTH
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orgs: any[] =
+  const orgs: OrgRow[] =
     orgsResult.status === 'fulfilled' && !orgsResult.value.error
       ? (orgsResult.value.data ?? [])
       : []
   const orgsLast24h = orgs.filter((o) => o.created_at >= twentyFourHoursAgo).length
   const orgCount = orgs.filter((o) => o.status === 'active').length
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const users: any[] =
+  const users: UserRow[] =
     usersResult.status === 'fulfilled' && !usersResult.value.error
       ? (usersResult.value.data ?? [])
       : []
   const usersLast24h = users.filter((u) => u.created_at >= twentyFourHoursAgo).length
   const userCount = users.length
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const subs: any[] =
+  const subs: SubRow[] =
     subsResult.status === 'fulfilled' && !subsResult.value.error
       ? (subsResult.value.data ?? [])
       : []
@@ -369,16 +392,14 @@ export async function getExecutiveData(): Promise<ExecutiveData> {
     .map(([planId, count]) => ({ planId, count }))
     .sort((a, b) => b.count - a.count)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const runs: any[] =
+  const runs: RunRow[] =
     runsResult.status === 'fulfilled' && !runsResult.value.error
       ? (runsResult.value.data ?? [])
       : []
   const totalRuns = runs.length
   const failedRuns = runs.filter((r) => r.status === 'failed').length
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const auditEvents: any[] =
+  const auditEvents: AuditEventRow[] =
     auditResult.status === 'fulfilled' && !auditResult.value.error
       ? (auditResult.value.data ?? [])
       : []

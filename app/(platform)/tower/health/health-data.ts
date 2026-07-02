@@ -1,5 +1,36 @@
 import { createServerSupabaseClient } from '@/shared/lib/supabase-server'
 
+// Raw Supabase row shapes — one type per distinct select() call; never exported
+interface OrgIdStatusRow {
+  id: string
+  status: string
+}
+interface OrgDetailRow {
+  id: string
+  status: string
+  created_at: string
+}
+interface SubBillingRow {
+  status: string
+  stripe_subscription_id: string | null
+}
+interface SubPlanRow {
+  status: string
+  plan_id: string
+}
+interface RunRow {
+  status: string
+}
+interface AuditOutcomeRow {
+  outcome: string
+}
+interface AuditDetailRow {
+  action: string
+  outcome: string
+  actor_type: string
+  occurred_at: string
+}
+
 export type HealthStatus = 'healthy' | 'warning' | 'critical' | 'not-configured'
 
 export interface HealthMetric {
@@ -52,8 +83,7 @@ export async function getPlatformHealth(): Promise<PlatformHealthData> {
   let activeOrganizations: HealthMetric
 
   if (orgsResult.status === 'fulfilled' && !orgsResult.value.error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const orgs: any[] = orgsResult.value.data ?? []
+    const orgs: OrgIdStatusRow[] = orgsResult.value.data ?? []
     const active = orgs.filter((o) => o.status === 'active').length
     const total = orgs.length
     database = {
@@ -88,8 +118,7 @@ export async function getPlatformHealth(): Promise<PlatformHealthData> {
   let subscriptions: HealthMetric
   let billingHealth: HealthMetric
   if (subsResult.status === 'fulfilled' && !subsResult.value.error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const subs: any[] = subsResult.value.data ?? []
+    const subs: SubBillingRow[] = subsResult.value.data ?? []
     const active = subs.filter((s) => s.status === 'active').length
     const trialing = subs.filter((s) => s.status === 'trialing').length
     const pastDue = subs.filter((s) => s.status === 'past_due').length
@@ -116,8 +145,7 @@ export async function getPlatformHealth(): Promise<PlatformHealthData> {
   // Engagement Runs
   let engagementRuns: HealthMetric
   if (runsResult.status === 'fulfilled' && !runsResult.value.error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const runs: any[] = runsResult.value.data ?? []
+    const runs: RunRow[] = runsResult.value.data ?? []
     const total = runs.length
     const running = runs.filter((r) => r.status === 'running').length
     const failed = runs.filter((r) => r.status === 'failed').length
@@ -135,8 +163,7 @@ export async function getPlatformHealth(): Promise<PlatformHealthData> {
   // Audit Log (last 24h)
   let auditLog: HealthMetric
   if (auditResult.status === 'fulfilled' && !auditResult.value.error) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const events: any[] = auditResult.value.data ?? []
+    const events: AuditOutcomeRow[] = auditResult.value.data ?? []
     const total = events.length
     const errors = events.filter((e) => e.outcome === 'error').length
     auditLog = {
@@ -309,8 +336,7 @@ export async function getOrganizationsHealthDetail(): Promise<OrgHealthDetail> {
   if (error || !data) {
     return { active: 0, inactive: 0, recentlyCreated: 0, total: 0, overall: 'critical', fetchedAt }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const orgs: any[] = data
+  const orgs: OrgDetailRow[] = data
   const active = orgs.filter((o) => o.status === 'active').length
   const inactive = orgs.filter((o) => o.status !== 'active').length
   const recentlyCreated = orgs.filter((o) => o.created_at >= sevenDaysAgo).length
@@ -341,8 +367,7 @@ export async function getSubscriptionsHealthDetail(): Promise<SubscriptionHealth
       fetchedAt,
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const subs: any[] = data
+  const subs: SubPlanRow[] = data
   const active = subs.filter((s) => s.status === 'active').length
   const trialing = subs.filter((s) => s.status === 'trialing').length
   const pastDue = subs.filter((s) => s.status === 'past_due').length
@@ -378,8 +403,7 @@ export async function getBillingHealthDetail(): Promise<BillingHealthDetail> {
       fetchedAt,
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const subs: any[] = data
+  const subs: SubBillingRow[] = data
   const stripeConnected = subs.some((s) => s.stripe_subscription_id != null)
   const stripeActiveCount = subs.filter(
     (s) => s.stripe_subscription_id != null && s.status === 'active'
@@ -413,8 +437,7 @@ export async function getRunsHealthDetail(): Promise<RunsHealthDetail> {
       fetchedAt,
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const runs: any[] = data
+  const runs: RunRow[] = data
   const cnt = (s: string) => runs.filter((r) => r.status === s).length
   const failed = cnt('failed')
   return {
@@ -452,8 +475,7 @@ export async function getAuditHealthDetail(): Promise<AuditHealthDetail> {
       fetchedAt,
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const events: any[] = data
+  const events: AuditDetailRow[] = data
   const success24h = events.filter((e) => e.outcome === 'success').length
   const denied24h = events.filter((e) => e.outcome === 'denied').length
   const errors24h = events.filter((e) => e.outcome === 'error').length

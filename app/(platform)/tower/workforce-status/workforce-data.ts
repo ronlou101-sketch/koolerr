@@ -1,5 +1,37 @@
 import { createServerSupabaseClient } from '@/shared/lib/supabase-server'
 
+// Raw Supabase row shapes — typed at the query boundary; never exported
+interface WorkforceRow {
+  id: string
+  name: string
+  business_function: string
+  status: string
+  organization_id: string
+  created_at: string
+}
+interface EngagementRunRow {
+  id: string
+  workforce_id: string
+  organization_id: string
+  status: string
+  objective: string | null
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+interface WorkflowRow {
+  id: string
+  engagement_run_id: string
+  status: string
+  completed_at: string | null
+}
+interface WorkflowStepRow {
+  workflow_id: string
+  name: string
+  error: string | null
+  completed_at: string | null
+}
+
 export type WorkforceHealth = 'healthy' | 'warning' | 'critical' | 'not-configured'
 
 export interface WorkforceStatus {
@@ -34,24 +66,17 @@ function buildStatus(
   wfFunction: string,
   wfStatus: string,
   orgId: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  runsByWorkforce: Map<string, any[]>,
+  runsByWorkforce: Map<string, EngagementRunRow[]>,
   workflowByRunId: Map<string, string>,
   lastErrorByWorkflowId: Map<string, string>
 ): WorkforceStatus {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const runs: any[] = runsByWorkforce.get(wfId) ?? []
+  const runs: EngagementRunRow[] = runsByWorkforce.get(wfId) ?? []
   const totalRuns = runs.length
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const completedRuns = runs.filter((r: any) => r.status === 'completed').length
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const failedRuns = runs.filter((r: any) => r.status === 'failed').length
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pendingRuns = runs.filter((r: any) => r.status === 'pending').length
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const runningRuns = runs.filter((r: any) => r.status === 'running').length
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const awaitingRuns = runs.filter((r: any) => r.status === 'awaiting_approval').length
+  const completedRuns = runs.filter((r) => r.status === 'completed').length
+  const failedRuns = runs.filter((r) => r.status === 'failed').length
+  const pendingRuns = runs.filter((r) => r.status === 'pending').length
+  const runningRuns = runs.filter((r) => r.status === 'running').length
+  const awaitingRuns = runs.filter((r) => r.status === 'awaiting_approval').length
 
   const lastRun = runs[0] ?? null
   const lastRunAt = lastRun?.started_at ?? lastRun?.created_at ?? null
@@ -63,8 +88,7 @@ function buildStatus(
   }
 
   let lastError: string | null = null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lastFailedRun = runs.find((r: any) => r.status === 'failed')
+  const lastFailedRun = runs.find((r) => r.status === 'failed')
   if (lastFailedRun) {
     const workflowId = workflowByRunId.get(lastFailedRun.id)
     lastError = workflowId
@@ -128,26 +152,22 @@ export async function getWorkforceStatusData(): Promise<WorkforceStatusData> {
       .limit(200),
   ])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const workforces: any[] =
+  const workforces: WorkforceRow[] =
     workforcesResult.status === 'fulfilled' && !workforcesResult.value.error
       ? (workforcesResult.value.data ?? [])
       : []
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allRuns: any[] =
+  const allRuns: EngagementRunRow[] =
     runsResult.status === 'fulfilled' && !runsResult.value.error
       ? (runsResult.value.data ?? [])
       : []
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const allWorkflows: any[] =
+  const allWorkflows: WorkflowRow[] =
     workflowsResult.status === 'fulfilled' && !workflowsResult.value.error
       ? (workflowsResult.value.data ?? [])
       : []
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const errorSteps: any[] =
+  const errorSteps: WorkflowStepRow[] =
     stepsResult.status === 'fulfilled' && !stepsResult.value.error
       ? (stepsResult.value.data ?? [])
       : []
@@ -169,16 +189,14 @@ export async function getWorkforceStatusData(): Promise<WorkforceStatusData> {
   }
 
   // workforceId → runs (already ordered desc by created_at)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const runsByWorkforce = new Map<string, any[]>()
+  const runsByWorkforce = new Map<string, EngagementRunRow[]>()
   for (const run of allRuns) {
     const existing = runsByWorkforce.get(run.workforce_id) ?? []
     existing.push(run)
     runsByWorkforce.set(run.workforce_id, existing)
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result: WorkforceStatus[] = workforces.map((wf: any) =>
+  const result: WorkforceStatus[] = workforces.map((wf) =>
     buildStatus(
       wf.id,
       wf.name,
@@ -192,8 +210,7 @@ export async function getWorkforceStatusData(): Promise<WorkforceStatusData> {
   )
 
   // Include runs that reference a workforce_id not present in the workforces table
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const workforceIds = new Set(workforces.map((wf: any) => wf.id))
+  const workforceIds = new Set(workforces.map((wf) => wf.id))
   const orphanIds = new Set<string>()
   for (const run of allRuns) {
     if (run.workforce_id && !workforceIds.has(run.workforce_id)) {
