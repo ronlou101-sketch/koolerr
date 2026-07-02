@@ -39,15 +39,19 @@ export async function GET(
 
   const engagementRunId = runId as EngagementRunId
 
-  const [runResult, memoriesResult] = await Promise.all([
-    workforceEngineService.getEngagementRun(engagementRunId, ctx.organizationId),
-    businessBrainService.queryMemory({
-      organizationId: ctx.organizationId,
-      relevanceScope: [runId],
-    }),
-  ])
+  const runResult = await workforceEngineService.getEngagementRun(
+    engagementRunId,
+    ctx.organizationId
+  )
+  if (!runResult.ok) {
+    return NextResponse.json({ error: 'Run not found' }, { status: 404 })
+  }
+  const run = runResult.value
 
-  const run = runResult.ok ? runResult.value : null
+  const memoriesResult = await businessBrainService.queryMemory({
+    organizationId: ctx.organizationId,
+    relevanceScope: [runId],
+  })
   const allMemories = memoriesResult.ok ? memoriesResult.value.memories : []
 
   const progressMemories = allMemories.filter((m) => m.source === 'ai-workforce-pipeline')
@@ -91,13 +95,13 @@ export async function GET(
 
   return NextResponse.json({
     runId,
-    runStatus: run?.status ?? 'pending',
+    runStatus: run.status,
     steps,
     completedCount,
     totalSteps: PIPELINE_STEPS.length,
     currentStep,
     failedStep,
-    isComplete: run?.status === 'completed',
-    isFailed: run?.status === 'failed' || failedStep !== null,
+    isComplete: run.status === 'completed',
+    isFailed: run.status === 'failed' || failedStep !== null,
   })
 }

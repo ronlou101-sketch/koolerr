@@ -80,6 +80,20 @@ describe('GET /api/ai-workforce/status/[runId]', () => {
     expect(res.status).toBe(400)
   })
 
+  // ── Run not found ───────────────────────────────────────────────────────────
+
+  it('returns 404 and does not query memories when the run is not found', async () => {
+    vi.mocked(getRequestPlatformContext).mockResolvedValue(CTX)
+    vi.mocked(workforceEngineService.getEngagementRun).mockResolvedValue({
+      ok: false,
+      error: { code: 'NOT_FOUND', message: 'not found' } as any,
+    })
+
+    const res = await makeGet(VALID_RUN_ID)
+    expect(res.status).toBe(404)
+    expect(vi.mocked(businessBrainService.queryMemory)).not.toHaveBeenCalled()
+  })
+
   // ── Successful response ─────────────────────────────────────────────────────
 
   it('returns 200 with 7 steps in pending state when no memories exist', async () => {
