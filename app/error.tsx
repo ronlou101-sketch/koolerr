@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { logger } from '@/shared/lib/logger'
 
 export default function Error({
   error,
@@ -10,7 +11,7 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('[Error]', error)
+    logger.error('Unhandled client error', { message: error.message, digest: error.digest })
   }, [error])
 
   return (
