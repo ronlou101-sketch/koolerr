@@ -91,6 +91,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
             <Link href="/runs" className="text-sm text-muted-foreground hover:text-foreground">
               Runs
             </Link>
+            <Link href="/creative" className="text-sm text-muted-foreground hover:text-foreground">
+              Creative
+            </Link>
             <Link
               href="/workforces"
               className="text-sm text-muted-foreground hover:text-foreground"
