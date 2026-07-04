@@ -5,6 +5,8 @@ import {
 } from '@/domains/billing'
 import { _configureBusinessBrainRepository } from '@/domains/business-brain'
 import { _configureDeliverablesRepository } from '@/domains/deliverables'
+import { _configureDogfoodingRepository } from '@/domains/dogfooding'
+import { SupabaseDogfoodingRepository } from '@/domains/dogfooding/supabase-repository'
 import { _configureIdentityRepository } from '@/domains/identity'
 import { _configureWorkforceEngineRepository } from '@/domains/workforce-engine'
 import { _configureConsentRepository } from '@/shared/consent'
@@ -132,6 +134,7 @@ export async function bootstrapPlatform(): Promise<PlatformBootstrapResult> {
   _configureDeliverablesRepository(new SupabaseDeliverablesRepository(supabase))
   _configureBillingRepository(new SupabaseBillingRepository(supabase))
   _configureConsentRepository(new SupabaseConsentRepository(supabase, getTenantId))
+  _configureDogfoodingRepository(new SupabaseDogfoodingRepository(supabase))
 
   // ---------------------------------------------------------------------------
   // 3b. Wire the Supabase Audit Logger.

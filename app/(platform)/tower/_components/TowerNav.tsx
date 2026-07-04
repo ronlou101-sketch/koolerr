@@ -64,6 +64,15 @@ const NAV = [
     ],
   },
   {
+    section: 'Dogfooding',
+    items: [
+      { href: '/tower/dogfooding', label: 'Dashboard' },
+      { href: '/tower/dogfooding/objectives', label: 'Objectives' },
+      { href: '/tower/dogfooding/campaigns', label: 'Campaigns' },
+      { href: '/tower/dogfooding/settings', label: 'Settings' },
+    ],
+  },
+  {
     section: 'Support',
     items: [
       { href: '/tower/support', label: 'Support Center' },

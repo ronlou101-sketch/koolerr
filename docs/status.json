@@ -18,6 +18,16 @@
     "Customer Onboarding Pipeline",
     "Live Provider Integrations (OpenAI, Manus, Anthropic, HeyGen, Higgsfield, ElevenLabs)"
   ],
-  "current": ["Stripe Integration", "Launch Readiness", "Phase 4 Creative Media Output UI"],
-  "remaining": ["Koolerr Academy", "Internal Dogfooding", "Beta Launch", "Public Launch"]
+  "current": [
+    "Stripe Integration",
+    "Launch Readiness",
+    "Phase 4 Creative Media Output UI",
+    "Internal Dogfooding Phase 1 — Autonomous Marketing Department"
+  ],
+  "remaining": [
+    "Koolerr Academy",
+    "Internal Dogfooding Phase 2 — Meta Execution",
+    "Beta Launch",
+    "Public Launch"
+  ]
 }

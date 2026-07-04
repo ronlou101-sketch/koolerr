@@ -8,6 +8,7 @@ export type DepartmentId =
   | 'creative'
   | 'quality-assurance'
   | 'delivery'
+  | 'internal-marketing'
 
 export interface Department {
   id: DepartmentId

@@ -78,6 +78,17 @@ export const DEPARTMENT_REGISTRY: Record<DepartmentId, Department> = {
     inputFrom: ['quality-assurance'],
     outputTo: [],
   },
+
+  'internal-marketing': {
+    id: 'internal-marketing',
+    name: 'Internal Marketing Department',
+    description:
+      'Autonomous marketing department for Koolerr — 8 AI agents that plan and execute internal growth campaigns using the Koolerr platform itself',
+    mission: 'Grow Koolerr through autonomous, data-driven marketing campaigns',
+    pipelinePosition: 0,
+    inputFrom: [],
+    outputTo: [],
+  },
 }
 
 export function getDepartment(id: DepartmentId): Department {
