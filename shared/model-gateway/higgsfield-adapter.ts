@@ -33,7 +33,8 @@ const POLL_INTERVAL_MS = 3_000
 const POLL_TIMEOUT_MS = 300_000 // 5 minutes — generation is compute-intensive
 
 interface HiggsfieldResponse {
-  request_id?: string
+  id?: string // submit response field name
+  request_id?: string // poll response field name
   status?: string
   images?: Array<{ url: string }>
   video?: { url: string }
@@ -86,11 +87,10 @@ export class HiggsfieldAdapter implements IModelProviderAdapter {
 
     const submitJson = (await submitResponse.json()) as HiggsfieldResponse
 
-    if (!submitJson.request_id) {
+    const requestId = submitJson.request_id ?? submitJson.id
+    if (!requestId) {
       throw new Error('[HIGGSFIELD_ADAPTER] Submit response missing request_id')
     }
-
-    const requestId = submitJson.request_id
 
     if (submitJson.status === 'completed') {
       return {

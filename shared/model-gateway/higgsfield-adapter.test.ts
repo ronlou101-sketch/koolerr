@@ -106,7 +106,17 @@ describe('HiggsfieldAdapter', () => {
     await expect(new HiggsfieldAdapter().invoke(REQUEST)).rejects.toThrow('server error')
   })
 
-  it('throws on malformed response missing request_id', async () => {
+  it('accepts id as fallback when request_id is absent in submit response', async () => {
+    process.env.HIGGSFIELD_API_KEY = 'test_id:test_secret'
+    vi.stubGlobal(
+      'fetch',
+      makeFetch([ok({ id: 'req-id-fallback', status: 'completed', images: [{ url: ASSET_URL }] })])
+    )
+    const result = await new HiggsfieldAdapter().invoke(REQUEST)
+    expect(result.content).toBe(ASSET_URL)
+  })
+
+  it('throws on malformed response missing both request_id and id', async () => {
     process.env.HIGGSFIELD_API_KEY = 'test_id:test_secret'
     vi.stubGlobal('fetch', makeFetch([ok({})]))
     await expect(new HiggsfieldAdapter().invoke(REQUEST)).rejects.toThrow('request_id')
