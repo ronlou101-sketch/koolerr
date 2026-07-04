@@ -15,12 +15,9 @@
     "Approval Department",
     "Delivery Department",
     "AI Workforce Integration (End-to-End)",
-    "Customer Onboarding Pipeline"
-  ],
-  "current": [
-    "Stripe Integration",
-    "Launch Readiness",
+    "Customer Onboarding Pipeline",
     "Live Provider Integrations (OpenAI, Manus, Anthropic, HeyGen, Higgsfield, ElevenLabs)"
   ],
+  "current": ["Stripe Integration", "Launch Readiness"],
   "remaining": ["Koolerr Academy", "Internal Dogfooding", "Beta Launch", "Public Launch"]
 }
