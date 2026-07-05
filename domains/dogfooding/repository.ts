@@ -49,12 +49,14 @@ export interface IDogfoodingRepository {
     variant: Omit<AdCopyVariant, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<AdCopyVariant>
   listAdCopyVariants(campaignId: string, organizationId: OrganizationId): Promise<AdCopyVariant[]>
+  listAllCopyVariants(organizationId: OrganizationId): Promise<AdCopyVariant[]>
 
   // Creatives
   createCreative(
     creative: Omit<DogfoodingCreative, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<DogfoodingCreative>
   listCreatives(campaignId: string, organizationId: OrganizationId): Promise<DogfoodingCreative[]>
+  listAllCreatives(organizationId: OrganizationId): Promise<DogfoodingCreative[]>
 
   // Learnings
   createLearning(

@@ -145,6 +145,10 @@ export class InMemoryDogfoodingRepository implements IDogfoodingRepository {
     )
   }
 
+  async listAllCopyVariants(organizationId: OrganizationId): Promise<AdCopyVariant[]> {
+    return [...this.copyVariants.values()].filter((v) => v.organizationId === organizationId)
+  }
+
   async createCreative(
     creative: Omit<DogfoodingCreative, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<DogfoodingCreative> {
@@ -160,6 +164,10 @@ export class InMemoryDogfoodingRepository implements IDogfoodingRepository {
     return [...this.creatives.values()].filter(
       (cr) => cr.campaignId === campaignId && cr.organizationId === organizationId
     )
+  }
+
+  async listAllCreatives(organizationId: OrganizationId): Promise<DogfoodingCreative[]> {
+    return [...this.creatives.values()].filter((cr) => cr.organizationId === organizationId)
   }
 
   async createLearning(

@@ -339,6 +339,16 @@ export class SupabaseDogfoodingRepository implements IDogfoodingRepository {
     return ((data as Record<string, unknown>[]) ?? []).map(toVariant)
   }
 
+  async listAllCopyVariants(organizationId: OrganizationId): Promise<AdCopyVariant[]> {
+    const { data, error } = await this.supabase
+      .from('dogfooding_ad_copy_variants')
+      .select()
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false })
+    if (error) throw new Error(`[DOGFOODING_REPO] listAllCopyVariants: ${error.message}`)
+    return ((data as Record<string, unknown>[]) ?? []).map(toVariant)
+  }
+
   async createCreative(
     creative: Omit<DogfoodingCreative, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<DogfoodingCreative> {
@@ -371,6 +381,16 @@ export class SupabaseDogfoodingRepository implements IDogfoodingRepository {
       .eq('organization_id', organizationId)
       .order('created_at', { ascending: true })
     if (error) throw new Error(`[DOGFOODING_REPO] listCreatives: ${error.message}`)
+    return ((data as Record<string, unknown>[]) ?? []).map(toCreative)
+  }
+
+  async listAllCreatives(organizationId: OrganizationId): Promise<DogfoodingCreative[]> {
+    const { data, error } = await this.supabase
+      .from('dogfooding_creatives')
+      .select()
+      .eq('organization_id', organizationId)
+      .order('created_at', { ascending: false })
+    if (error) throw new Error(`[DOGFOODING_REPO] listAllCreatives: ${error.message}`)
     return ((data as Record<string, unknown>[]) ?? []).map(toCreative)
   }
 

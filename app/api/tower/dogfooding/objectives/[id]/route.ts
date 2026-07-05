@@ -30,9 +30,25 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     dogfoodingService.getMarketingPlan(id, ctx.organizationId),
   ])
 
+  const campaigns = campaignsResult.ok ? campaignsResult.value : []
+
+  const enrichedCampaigns = await Promise.all(
+    campaigns.map(async (c) => {
+      const [variantsResult, creativesResult] = await Promise.all([
+        dogfoodingService.listAdCopyVariants(c.id, ctx.organizationId),
+        dogfoodingService.listCreatives(c.id, ctx.organizationId),
+      ])
+      return {
+        ...c,
+        copyVariants: variantsResult.ok ? variantsResult.value : [],
+        creatives: creativesResult.ok ? creativesResult.value : [],
+      }
+    })
+  )
+
   return NextResponse.json({
     objective: objectiveResult.value,
-    campaigns: campaignsResult.ok ? campaignsResult.value : [],
+    campaigns: enrichedCampaigns,
     marketingPlan: planResult.ok ? planResult.value : null,
   })
 }

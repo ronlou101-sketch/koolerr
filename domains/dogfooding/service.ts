@@ -43,11 +43,13 @@ export interface IDogfoodingService {
     campaignId: string,
     organizationId: OrganizationId
   ): Promise<PlatformResult<AdCopyVariant[]>>
+  listAllCopyVariants(organizationId: OrganizationId): Promise<PlatformResult<AdCopyVariant[]>>
 
   listCreatives(
     campaignId: string,
     organizationId: OrganizationId
   ): Promise<PlatformResult<DogfoodingCreative[]>>
+  listAllCreatives(organizationId: OrganizationId): Promise<PlatformResult<DogfoodingCreative[]>>
 
   listLearnings(organizationId: OrganizationId): Promise<PlatformResult<DogfoodingLearning[]>>
 
@@ -161,12 +163,34 @@ class DogfoodingService implements IDogfoodingService {
     }
   }
 
+  async listAllCopyVariants(
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<AdCopyVariant[]>> {
+    try {
+      const variants = await _repo.listAllCopyVariants(organizationId)
+      return ok(variants)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
   async listCreatives(
     campaignId: string,
     organizationId: OrganizationId
   ): Promise<PlatformResult<DogfoodingCreative[]>> {
     try {
       const creatives = await _repo.listCreatives(campaignId, organizationId)
+      return ok(creatives)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listAllCreatives(
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<DogfoodingCreative[]>> {
+    try {
+      const creatives = await _repo.listAllCreatives(organizationId)
       return ok(creatives)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
