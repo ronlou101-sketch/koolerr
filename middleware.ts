@@ -44,6 +44,8 @@ const PUBLIC_PATHS: string[] = [
   '/support',
   // Stripe webhook: self-secured via HMAC signature — no session cookie
   '/api/webhooks/stripe',
+  // Temporary: dogfooding pipeline exec — token-gated, remove after smoke test
+  '/api/tower/dogfooding/exec',
   // Pre-auth checkout: unauthenticated users completing a Stripe checkout
   '/api/checkout/start',
   '/api/checkout/complete',
