@@ -299,6 +299,36 @@ function Step2({
   )
 }
 
+// ── Step 3 placeholder ────────────────────────────────────────────────────────
+
+function Step3({ onBack }: { onBack: () => void }) {
+  return (
+    <>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">Step 3</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">Coming soon.</p>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border pt-6">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </button>
+        <Link
+          href="/tower/dogfooding/objectives"
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          Cancel
+        </Link>
+      </div>
+    </>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function NewObjectivePage() {
@@ -353,24 +383,7 @@ export default function NewObjectivePage() {
         />
       )}
 
-      {step === 3 && (
-        <div className="flex items-center justify-between border-t border-border pt-6">
-          <button
-            type="button"
-            onClick={() => setStep(2)}
-            className="flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </button>
-          <Link
-            href="/tower/dogfooding/objectives"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Cancel
-          </Link>
-        </div>
-      )}
+      {step === 3 && <Step3 onBack={() => setStep(2)} />}
     </div>
   )
 }
