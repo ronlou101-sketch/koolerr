@@ -14,12 +14,13 @@ import {
   Sparkles,
   ChevronLeft,
   ChevronRight,
+  Search,
+  Check,
 } from 'lucide-react'
 
-type GoalOption = {
-  label: string
-  icon: React.ElementType
-}
+// ── Step 1 data ────────────────────────────────────────────────────────────────
+
+type GoalOption = { label: string; icon: React.ElementType }
 
 const GOAL_OPTIONS: GoalOption[] = [
   { label: 'Generate More Leads', icon: Users },
@@ -33,18 +34,279 @@ const GOAL_OPTIONS: GoalOption[] = [
   { label: 'Custom Goal', icon: Sparkles },
 ]
 
+// ── Step 2 data ────────────────────────────────────────────────────────────────
+
+const BUSINESS_TYPES: string[] = [
+  'HVAC',
+  'Plumbing',
+  'Electrical',
+  'Roofing',
+  'Landscaping',
+  'Pest Control',
+  'Cleaning',
+  'Garage Door',
+  'Locksmith',
+  'Pool Service',
+  'Pressure Washing',
+  'Painting',
+  'Flooring',
+  'Remodeling',
+  'Appliance Repair',
+  'Auto Repair',
+  'Roadside Assistance',
+  'Towing',
+  'Moving Company',
+  'Medical Spa',
+  'Dental Office',
+  'Chiropractic',
+  'Law Firm',
+  'Real Estate',
+  'Insurance',
+  'Accounting',
+  'Restaurant',
+  'Coffee Shop',
+  'Retail',
+  'Other',
+]
+
+// ── Wizard state ───────────────────────────────────────────────────────────────
+
 type WizardState = {
   goalType: string
+  businessType?: string
 }
 
-export default function NewObjectivePage() {
-  const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
-  const [_wizardState, setWizardState] = useState<WizardState | null>(null)
+// ── Progress bar ───────────────────────────────────────────────────────────────
 
-  function handleNext() {
+function ProgressBar({ step, total }: { step: number; total: number }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span className="font-medium text-foreground">
+          Step {step} of {total}
+        </span>
+        <span>AI Campaign Architect</span>
+      </div>
+      <div className="flex gap-1.5">
+        {Array.from({ length: total }).map((_, i) => (
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded-full transition-colors ${i < step ? 'bg-primary' : 'bg-border'}`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Step 1 ─────────────────────────────────────────────────────────────────────
+
+function Step1({
+  selected,
+  onSelect,
+  onNext,
+}: {
+  selected: string | null
+  onSelect: (v: string) => void
+  onNext: () => void
+}) {
+  return (
+    <>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">
+          What would you like to accomplish?
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Choose your primary marketing goal. We&apos;ll build the rest of your campaign around it.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {GOAL_OPTIONS.map(({ label, icon: Icon }) => {
+          const isSelected = selected === label
+          return (
+            <button
+              key={label}
+              type="button"
+              onClick={() => onSelect(label)}
+              className={`group flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-150 ${
+                isSelected
+                  ? 'bg-primary/8 border-primary shadow-sm ring-1 ring-primary'
+                  : 'hover:bg-primary/4 border-border bg-card hover:border-primary/40'
+              }`}
+            >
+              <div
+                className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                  isSelected
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+              </div>
+              <span
+                className={`text-sm font-medium leading-snug transition-colors ${isSelected ? 'text-primary' : 'text-foreground'}`}
+              >
+                {label}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border pt-6">
+        <button
+          type="button"
+          disabled
+          className="flex cursor-not-allowed items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground opacity-40"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/tower/dogfooding/objectives"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </Link>
+          <button
+            type="button"
+            disabled={!selected}
+            onClick={onNext}
+            className="flex items-center gap-1.5 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Step 2 ─────────────────────────────────────────────────────────────────────
+
+function Step2({
+  selected,
+  onSelect,
+  onBack,
+  onNext,
+}: {
+  selected: string | null
+  onSelect: (v: string) => void
+  onBack: () => void
+  onNext: () => void
+}) {
+  const [query, setQuery] = useState('')
+
+  const filtered = query.trim()
+    ? BUSINESS_TYPES.filter((b) => b.toLowerCase().includes(query.trim().toLowerCase()))
+    : BUSINESS_TYPES
+
+  return (
+    <>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">
+          What type of business do you own?
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          This helps Koolerr tailor every campaign to your industry.
+        </p>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search business types…"
+          className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+
+      {/* Business type list */}
+      <div className="max-h-72 overflow-y-auto rounded-xl border border-border">
+        {filtered.length === 0 ? (
+          <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+            No match — try a different search.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {filtered.map((business) => {
+              const isSelected = selected === business
+              return (
+                <li key={business}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(business)}
+                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors ${
+                      isSelected
+                        ? 'bg-primary/8 font-medium text-primary'
+                        : 'text-foreground hover:bg-muted/60'
+                    }`}
+                  >
+                    <span>{business}</span>
+                    {isSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border pt-6">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/tower/dogfooding/objectives"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </Link>
+          <button
+            type="button"
+            disabled={!selected}
+            onClick={onNext}
+            className="flex items-center gap-1.5 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
+
+export default function NewObjectivePage() {
+  const [step, setStep] = useState(1)
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
+  const [selectedBusiness, setSelectedBusiness] = useState<string | null>(null)
+  const [wizardState, setWizardState] = useState<Partial<WizardState>>({})
+
+  function advanceToStep2() {
     if (!selectedGoal) return
-    setWizardState({ goalType: selectedGoal })
-    // Step 2 will be built here
+    setWizardState((prev) => ({ ...prev, goalType: selectedGoal }))
+    setStep(2)
+  }
+
+  function advanceToStep3() {
+    if (!selectedBusiness) return
+    setWizardState((prev) => ({ ...prev, businessType: selectedBusiness }))
+    // Step 3 will be built here
   }
 
   return (
@@ -66,99 +328,20 @@ export default function NewObjectivePage() {
         <span className="text-foreground">New Campaign</span>
       </div>
 
-      {/* Progress indicator */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">Step 1 of 6</span>
-          <span>AI Campaign Architect</span>
-        </div>
-        <div className="flex gap-1.5">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                i === 0 ? 'bg-primary' : 'bg-border'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
+      <ProgressBar step={step} total={6} />
 
-      {/* Heading */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          What would you like to accomplish?
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Choose your primary marketing goal. We&apos;ll build the rest of your campaign around it.
-        </p>
-      </div>
+      {step === 1 && (
+        <Step1 selected={selectedGoal} onSelect={setSelectedGoal} onNext={advanceToStep2} />
+      )}
 
-      {/* Goal cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {GOAL_OPTIONS.map(({ label, icon: Icon }) => {
-          const isSelected = selectedGoal === label
-          return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => setSelectedGoal(label)}
-              className={`group flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-150 ${
-                isSelected
-                  ? 'bg-primary/8 border-primary shadow-sm ring-1 ring-primary'
-                  : 'hover:bg-primary/4 border-border bg-card hover:border-primary/40'
-              }`}
-            >
-              <div
-                className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                  isSelected
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-              </div>
-              <span
-                className={`text-sm font-medium leading-snug transition-colors ${
-                  isSelected ? 'text-primary' : 'text-foreground'
-                }`}
-              >
-                {label}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between border-t border-border pt-6">
-        <button
-          type="button"
-          disabled
-          className="flex cursor-not-allowed items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground opacity-40"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </button>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/tower/dogfooding/objectives"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Cancel
-          </Link>
-          <button
-            type="button"
-            disabled={!selectedGoal}
-            onClick={handleNext}
-            className="flex items-center gap-1.5 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Next
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+      {step === 2 && (
+        <Step2
+          selected={selectedBusiness}
+          onSelect={setSelectedBusiness}
+          onBack={() => setStep(1)}
+          onNext={advanceToStep3}
+        />
+      )}
     </div>
   )
 }
