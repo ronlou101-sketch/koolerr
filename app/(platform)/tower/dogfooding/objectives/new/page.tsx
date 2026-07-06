@@ -128,14 +128,15 @@ function Step1({
               key={label}
               type="button"
               onClick={() => onSelect(label)}
-              className={`group relative flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-150 ${
+              className={`group relative flex items-start gap-3 rounded-xl p-4 text-left transition-all duration-150 ${
                 isSelected
-                  ? 'bg-primary/8 border-primary shadow-sm ring-1 ring-primary'
+                  ? 'bg-primary/8 border-2 border-primary shadow-sm'
                   : primary
-                    ? 'hover:bg-primary/4 border-border bg-card shadow-sm hover:border-primary/40'
-                    : 'hover:bg-primary/4 border-border bg-card hover:border-primary/40'
+                    ? 'hover:bg-primary/4 border border-border bg-card shadow-sm hover:border-primary/40'
+                    : 'hover:bg-primary/4 border border-border bg-card hover:border-primary/40'
               }`}
             >
+              {isSelected && <Check className="absolute right-3 top-3 h-4 w-4 text-primary" />}
               <div
                 className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
                   isSelected
