@@ -316,7 +316,7 @@ export default function NewObjectivePage() {
   function advanceToStep3() {
     if (!selectedBusiness) return
     setWizardState((prev) => ({ ...prev, businessType: selectedBusiness }))
-    // Step 3 will be built here
+    setStep(3)
   }
 
   return (
@@ -351,6 +351,25 @@ export default function NewObjectivePage() {
           onBack={() => setStep(1)}
           onNext={advanceToStep3}
         />
+      )}
+
+      {step === 3 && (
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          <button
+            type="button"
+            onClick={() => setStep(2)}
+            className="flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back
+          </button>
+          <Link
+            href="/tower/dogfooding/objectives"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </Link>
+        </div>
       )}
     </div>
   )
