@@ -49,6 +49,8 @@ const PUBLIC_PATHS: string[] = [
   '/api/checkout/complete',
   '/api/checkout/set-password',
   '/checkout/success',
+  // TEMPORARY: one-shot dogfooding pipeline trigger — remove after pipeline run
+  '/api/tower/dogfooding/exec',
   // Password management
   '/forgot-password',
   '/reset-password',

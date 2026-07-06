@@ -13,8 +13,8 @@
 -- ── Objectives ────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_objectives (
-  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid        NOT NULL REFERENCES organizations(id),
+  id              text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id text        NOT NULL REFERENCES organizations(id),
   title           text        NOT NULL,
   description     text        NOT NULL,
   goal_type       text        NOT NULL CHECK (goal_type IN (
@@ -34,9 +34,9 @@ CREATE TABLE IF NOT EXISTS dogfooding_objectives (
 -- ── Marketing Plans ───────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_marketing_plans (
-  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id   uuid        NOT NULL REFERENCES organizations(id),
-  objective_id      uuid        NOT NULL REFERENCES dogfooding_objectives(id),
+  id                text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id   text        NOT NULL REFERENCES organizations(id),
+  objective_id      text        NOT NULL REFERENCES dogfooding_objectives(id),
   title             text        NOT NULL,
   executive_summary text        NOT NULL,
   target_audience   jsonb       NOT NULL DEFAULT '{}',
@@ -54,10 +54,10 @@ CREATE TABLE IF NOT EXISTS dogfooding_marketing_plans (
 -- ── Campaigns ─────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_campaigns (
-  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id   uuid        NOT NULL REFERENCES organizations(id),
-  objective_id      uuid        NOT NULL REFERENCES dogfooding_objectives(id),
-  plan_id           uuid        REFERENCES dogfooding_marketing_plans(id),
+  id                text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id   text        NOT NULL REFERENCES organizations(id),
+  objective_id      text        NOT NULL REFERENCES dogfooding_objectives(id),
+  plan_id           text        REFERENCES dogfooding_marketing_plans(id),
   name              text        NOT NULL,
   objective_summary text        NOT NULL,
   target_audience   jsonb       NOT NULL DEFAULT '{}',
@@ -77,9 +77,9 @@ CREATE TABLE IF NOT EXISTS dogfooding_campaigns (
 -- ── Ad Sets (Phase 2 Meta stub) ───────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_ad_sets (
-  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid        NOT NULL REFERENCES organizations(id),
-  campaign_id     uuid        NOT NULL REFERENCES dogfooding_campaigns(id),
+  id              text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id text        NOT NULL REFERENCES organizations(id),
+  campaign_id     text        NOT NULL REFERENCES dogfooding_campaigns(id),
   name            text        NOT NULL,
   targeting       jsonb       NOT NULL DEFAULT '{}',
   placement       text[]      NOT NULL DEFAULT '{}',
@@ -94,9 +94,9 @@ CREATE TABLE IF NOT EXISTS dogfooding_ad_sets (
 -- ── Creatives ─────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_creatives (
-  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid        NOT NULL REFERENCES organizations(id),
-  campaign_id     uuid        REFERENCES dogfooding_campaigns(id),
+  id              text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id text        NOT NULL REFERENCES organizations(id),
+  campaign_id     text        REFERENCES dogfooding_campaigns(id),
   type            text        NOT NULL CHECK (type IN ('image','video','carousel','story')),
   prompt          text        NOT NULL,
   asset_url       text,
@@ -112,9 +112,9 @@ CREATE TABLE IF NOT EXISTS dogfooding_creatives (
 -- ── Ad Copy Variants ──────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_ad_copy_variants (
-  id                uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id   uuid        NOT NULL REFERENCES organizations(id),
-  campaign_id       uuid        NOT NULL REFERENCES dogfooding_campaigns(id),
+  id                text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id   text        NOT NULL REFERENCES organizations(id),
+  campaign_id       text        NOT NULL REFERENCES dogfooding_campaigns(id),
   variant_name      text        NOT NULL,
   headline          text        NOT NULL,
   primary_text      text        NOT NULL,
@@ -130,12 +130,12 @@ CREATE TABLE IF NOT EXISTS dogfooding_ad_copy_variants (
 -- ── Ads (Phase 2 Meta stub) ───────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_ads (
-  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid        NOT NULL REFERENCES organizations(id),
-  ad_set_id       uuid        REFERENCES dogfooding_ad_sets(id),
-  campaign_id     uuid        REFERENCES dogfooding_campaigns(id),
-  creative_id     uuid        REFERENCES dogfooding_creatives(id),
-  copy_variant_id uuid        REFERENCES dogfooding_ad_copy_variants(id),
+  id              text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id text        NOT NULL REFERENCES organizations(id),
+  ad_set_id       text        REFERENCES dogfooding_ad_sets(id),
+  campaign_id     text        REFERENCES dogfooding_campaigns(id),
+  creative_id     text        REFERENCES dogfooding_creatives(id),
+  copy_variant_id text        REFERENCES dogfooding_ad_copy_variants(id),
   name            text        NOT NULL,
   status          text        NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','active','paused','archived')),
   meta_ad_id      text,
@@ -146,10 +146,10 @@ CREATE TABLE IF NOT EXISTS dogfooding_ads (
 -- ── Performance Snapshots (Phase 2 Meta polling) ──────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_performance_snapshots (
-  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid        NOT NULL REFERENCES organizations(id),
-  campaign_id     uuid        REFERENCES dogfooding_campaigns(id),
-  ad_id           uuid        REFERENCES dogfooding_ads(id),
+  id              text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id text        NOT NULL REFERENCES organizations(id),
+  campaign_id     text        REFERENCES dogfooding_campaigns(id),
+  ad_id           text        REFERENCES dogfooding_ads(id),
   snapshot_date   date        NOT NULL,
   impressions     bigint      NOT NULL DEFAULT 0,
   clicks          bigint      NOT NULL DEFAULT 0,
@@ -166,8 +166,8 @@ CREATE TABLE IF NOT EXISTS dogfooding_performance_snapshots (
 -- ── Meta Connections (Phase 2 OAuth) ──────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_meta_connections (
-  id               uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id  uuid        NOT NULL REFERENCES organizations(id) UNIQUE,
+  id               text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id  text        NOT NULL REFERENCES organizations(id) UNIQUE,
   ad_account_id    text,
   page_id          text,
   pixel_id         text,
@@ -182,10 +182,10 @@ CREATE TABLE IF NOT EXISTS dogfooding_meta_connections (
 -- ── Learnings ─────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_learnings (
-  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid        NOT NULL REFERENCES organizations(id),
-  campaign_id     uuid        REFERENCES dogfooding_campaigns(id),
-  objective_id    uuid        REFERENCES dogfooding_objectives(id),
+  id              text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id text        NOT NULL REFERENCES organizations(id),
+  campaign_id     text        REFERENCES dogfooding_campaigns(id),
+  objective_id    text        REFERENCES dogfooding_objectives(id),
   learning_type   text        NOT NULL CHECK (learning_type IN (
     'audience','creative','copy','channel','timing','budget','general'
   )),
@@ -200,10 +200,10 @@ CREATE TABLE IF NOT EXISTS dogfooding_learnings (
 -- ── Budget Ledger (Phase 2) ───────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS dogfooding_budget_ledger (
-  id              uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid        NOT NULL REFERENCES organizations(id),
-  objective_id    uuid        REFERENCES dogfooding_objectives(id),
-  campaign_id     uuid        REFERENCES dogfooding_campaigns(id),
+  id              text        PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  organization_id text        NOT NULL REFERENCES organizations(id),
+  objective_id    text        REFERENCES dogfooding_objectives(id),
+  campaign_id     text        REFERENCES dogfooding_campaigns(id),
   entry_type      text        NOT NULL CHECK (entry_type IN ('allocation','spend','refund','adjustment')),
   amount_cents    bigint      NOT NULL,
   description     text        NOT NULL,
@@ -238,8 +238,14 @@ CREATE INDEX IF NOT EXISTS idx_dogfooding_performance_snapshots_campaign
   ON dogfooding_performance_snapshots(campaign_id, snapshot_date);
 
 -- ── Updated-at triggers ───────────────────────────────────────────────────────
--- update_updated_at_column() was created in migration 006 (billing).
--- We reference it here; no need to recreate.
+
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 DO $$
 DECLARE t text;
