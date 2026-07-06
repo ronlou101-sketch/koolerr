@@ -212,10 +212,10 @@ function Step2({
     <>
       <div>
         <h1 className="text-2xl font-semibold text-foreground">
-          What type of business do you own?
+          What type of business do you have?
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          This helps Koolerr tailor every campaign to your industry.
+          Choose one. We&apos;ll personalize everything else.
         </p>
       </div>
 
@@ -223,10 +223,16 @@ function Step2({
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
+          autoFocus
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search business types…"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && filtered.length === 1) {
+              onSelect(filtered[0])
+            }
+          }}
+          placeholder="Search your business type…"
           className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
