@@ -95,9 +95,6 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
           />
         ))}
       </div>
-      {step === 1 && (
-        <p className="text-xs text-muted-foreground/70">This takes about 60 seconds.</p>
-      )}
     </div>
   )
 }
@@ -117,6 +114,7 @@ function Step1({
     <>
       <div>
         <h1 className="text-2xl font-semibold text-foreground">What&apos;s your goal?</h1>
+        <p className="mt-1 text-xs text-muted-foreground/70">This takes about 60 seconds.</p>
         <p className="mt-1.5 text-sm text-muted-foreground">
           Choose one. We&apos;ll handle the rest.
         </p>
@@ -138,11 +136,6 @@ function Step1({
                     : 'hover:bg-primary/4 border-border bg-card hover:border-primary/40'
               }`}
             >
-              {primary && !isSelected && (
-                <span className="absolute right-3 top-3 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                  Popular
-                </span>
-              )}
               <div
                 className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
                   isSelected
