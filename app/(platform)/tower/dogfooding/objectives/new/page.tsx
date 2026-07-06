@@ -20,18 +20,18 @@ import {
 
 // ── Step 1 data ────────────────────────────────────────────────────────────────
 
-type GoalOption = { label: string; icon: React.ElementType }
+type GoalOption = { label: string; icon: React.ElementType; primary?: boolean }
 
 const GOAL_OPTIONS: GoalOption[] = [
-  { label: 'Generate More Leads', icon: Users },
-  { label: 'Get More Phone Calls', icon: Phone },
-  { label: 'Book More Appointments', icon: CalendarCheck },
-  { label: 'Increase Brand Awareness', icon: Megaphone },
-  { label: 'Promote a Specific Service', icon: Wrench },
-  { label: 'Promote a Special Offer', icon: Tag },
-  { label: 'Increase Customer Retention', icon: HeartHandshake },
+  { label: 'More Leads', icon: Users, primary: true },
+  { label: 'More Calls', icon: Phone, primary: true },
+  { label: 'More Appointments', icon: CalendarCheck, primary: true },
+  { label: 'Brand Awareness', icon: Megaphone },
+  { label: 'Promote a Service', icon: Wrench },
+  { label: 'Special Offer', icon: Tag },
+  { label: 'Customer Retention', icon: HeartHandshake },
   { label: 'Seasonal Campaign', icon: Snowflake },
-  { label: 'Custom Goal', icon: Sparkles },
+  { label: 'Something Else', icon: Sparkles },
 ]
 
 // ── Step 2 data ────────────────────────────────────────────────────────────────
@@ -95,6 +95,9 @@ function ProgressBar({ step, total }: { step: number; total: number }) {
           />
         ))}
       </div>
+      {step === 1 && (
+        <p className="text-xs text-muted-foreground/70">This takes about 60 seconds.</p>
+      )}
     </div>
   )
 }
@@ -113,33 +116,40 @@ function Step1({
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          What would you like to accomplish?
-        </h1>
+        <h1 className="text-2xl font-semibold text-foreground">What&apos;s your goal?</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Choose your primary marketing goal. We&apos;ll build the rest of your campaign around it.
+          Choose one. We&apos;ll handle the rest.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {GOAL_OPTIONS.map(({ label, icon: Icon }) => {
+        {GOAL_OPTIONS.map(({ label, icon: Icon, primary }) => {
           const isSelected = selected === label
           return (
             <button
               key={label}
               type="button"
               onClick={() => onSelect(label)}
-              className={`group flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-150 ${
+              className={`group relative flex items-start gap-3 rounded-xl border p-4 text-left transition-all duration-150 ${
                 isSelected
                   ? 'bg-primary/8 border-primary shadow-sm ring-1 ring-primary'
-                  : 'hover:bg-primary/4 border-border bg-card hover:border-primary/40'
+                  : primary
+                    ? 'hover:bg-primary/4 border-border bg-card shadow-sm hover:border-primary/40'
+                    : 'hover:bg-primary/4 border-border bg-card hover:border-primary/40'
               }`}
             >
+              {primary && !isSelected && (
+                <span className="absolute right-3 top-3 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                  Popular
+                </span>
+              )}
               <div
                 className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
                   isSelected
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+                    : primary
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
                 }`}
               >
                 <Icon className="h-4 w-4" />
