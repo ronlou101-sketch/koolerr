@@ -56,8 +56,11 @@ const CACHE_DIR = join(process.cwd(), '.census-cache')
 if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR)
 
 // ── Gazetteer source configuration ────────────────────────────────────────────
-// Update GAZ_YEAR when the Census Bureau publishes a new annual release.
-// Place and county files are per-state; ZCTA file is national.
+// All three files are national. Update GAZ_YEAR for new annual releases.
+// Verified 2024 directory: https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2024_Gazetteer/
+//   2024_Gaz_place_national.zip    — places (12 cols: USPS GEOID ANSICODE NAME LSAD FUNCSTAT ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG)
+//   2024_Gaz_counties_national.zip — counties (10 cols: USPS GEOID ANSICODE NAME ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG)
+//   2024_Gaz_zcta_national.zip     — ZCTAs (7 cols: GEOID ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG)
 const GAZ_YEAR = 2024
 const GAZ_BASE = `https://www2.census.gov/geo/docs/maps-data/data/gazetteer/${GAZ_YEAR}_Gazetteer`
 
@@ -205,36 +208,29 @@ async function censusGet(url: string): Promise<string[][]> {
 async function seedPlaces() {
   console.log('\n── Seeding places (incorporated US cities) ──')
 
-  // Step 1: Download per-state Gazetteer files and build the coordinate map.
-  // Current Census format: one ZIP per state, e.g. 2024_gaz_place_06.zip (California)
+  // Step 1: Download the national places Gazetteer and build the coordinate map.
   // Columns: USPS GEOID ANSICODE NAME LSAD FUNCSTAT ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
+  //          [0]  [1]   [2]      [3]  [4]  [5]      [6]   [7]    [8]        [9]          [10]     [11]
+  const gazZip = join(CACHE_DIR, `${GAZ_YEAR}_Gaz_place_national.zip`)
+  const gazTxt = join(CACHE_DIR, `${GAZ_YEAR}_Gaz_place_national.txt`)
+  download(`${GAZ_BASE}/${GAZ_YEAR}_Gaz_place_national.zip`, gazZip)
+  unzipFirst(gazZip, gazTxt)
+
   const gazMap = new Map<
     string,
     { lat: number; lng: number; sqmi: number; name: string; abbr: string }
   >()
-
-  console.log(`  Downloading ${ALL_STATE_FIPS.length} per-state Gazetteer files…`)
-  for (const fips of ALL_STATE_FIPS) {
-    const gazZip = join(CACHE_DIR, `${GAZ_YEAR}_gaz_place_${fips}.zip`)
-    const gazTxt = join(CACHE_DIR, `${GAZ_YEAR}_gaz_place_${fips}.txt`)
-    try {
-      download(`${GAZ_BASE}/${GAZ_YEAR}_gaz_place_${fips}.zip`, gazZip)
-      unzipFirst(gazZip, gazTxt)
-      for (const cols of parseTsv(readFileSync(gazTxt, 'utf8')).slice(1)) {
-        if (cols.length < 12) continue
-        gazMap.set(cols[1], {
-          lat: parseFloat(cols[10]),
-          lng: parseFloat(cols[11]),
-          sqmi: parseFloat(cols[8]),
-          name: cols[3],
-          abbr: cols[0],
-        })
-      }
-    } catch (err) {
-      console.warn(`  Warning: Gazetteer unavailable for state ${fips} — ${(err as Error).message}`)
-    }
+  for (const cols of parseTsv(readFileSync(gazTxt, 'utf8')).slice(1)) {
+    if (cols.length < 12) continue
+    gazMap.set(cols[1], {
+      lat: parseFloat(cols[10]),
+      lng: parseFloat(cols[11]),
+      sqmi: parseFloat(cols[8]),
+      name: cols[3],
+      abbr: cols[0],
+    })
   }
-  console.log(`  Gazetteer: ${gazMap.size} places across ${ALL_STATE_FIPS.length} states`)
+  console.log(`  Gazetteer: ${gazMap.size} places`)
 
   // Step 2: Fetch Census population + ACS demographics per state, merge with Gazetteer.
   const rows: Record<string, unknown>[] = []
@@ -346,34 +342,27 @@ async function seedPlaces() {
 async function seedCounties() {
   console.log('\n── Seeding counties ──')
 
-  // Download per-state county Gazetteer files.
-  // Current Census format: one ZIP per state, e.g. 2024_gaz_county_06.zip (California)
+  // Download the national counties Gazetteer.
   // Columns: USPS GEOID ANSICODE NAME ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
+  //          [0]  [1]   [2]      [3]  [4]   [5]    [6]        [7]          [8]      [9]
+  const gazZip = join(CACHE_DIR, `${GAZ_YEAR}_Gaz_counties_national.zip`)
+  const gazTxt = join(CACHE_DIR, `${GAZ_YEAR}_Gaz_counties_national.txt`)
+  download(`${GAZ_BASE}/${GAZ_YEAR}_Gaz_counties_national.zip`, gazZip)
+  unzipFirst(gazZip, gazTxt)
+
   const gazMap = new Map<
     string,
     { lat: number; lng: number; sqmi: number; name: string; abbr: string }
   >()
-
-  console.log(`  Downloading ${ALL_STATE_FIPS.length} per-state county Gazetteer files…`)
-  for (const fips of ALL_STATE_FIPS) {
-    const gazZip = join(CACHE_DIR, `${GAZ_YEAR}_gaz_county_${fips}.zip`)
-    const gazTxt = join(CACHE_DIR, `${GAZ_YEAR}_gaz_county_${fips}.txt`)
-    try {
-      download(`${GAZ_BASE}/${GAZ_YEAR}_gaz_county_${fips}.zip`, gazZip)
-      unzipFirst(gazZip, gazTxt)
-      for (const cols of parseTsv(readFileSync(gazTxt, 'utf8')).slice(1)) {
-        if (cols.length < 10) continue
-        gazMap.set(cols[1], {
-          lat: parseFloat(cols[8]),
-          lng: parseFloat(cols[9]),
-          sqmi: parseFloat(cols[6]),
-          name: cols[3],
-          abbr: cols[0],
-        })
-      }
-    } catch (err) {
-      console.warn(`  Warning: Gazetteer unavailable for state ${fips} — ${(err as Error).message}`)
-    }
+  for (const cols of parseTsv(readFileSync(gazTxt, 'utf8')).slice(1)) {
+    if (cols.length < 10) continue
+    gazMap.set(cols[1], {
+      lat: parseFloat(cols[8]),
+      lng: parseFloat(cols[9]),
+      sqmi: parseFloat(cols[6]),
+      name: cols[3],
+      abbr: cols[0],
+    })
   }
 
   console.log(`  Gazetteer: ${gazMap.size} counties`)
@@ -445,23 +434,24 @@ async function seedCounties() {
 async function seedZips() {
   console.log('\n── Seeding ZIP codes (ZCTAs) ──')
 
-  // ZCTA Gazetteer is published as a single national file (ZIP codes cross state lines)
-  // Columns: GEOID ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
-  const gazZip = join(CACHE_DIR, `${GAZ_YEAR}_gaz_zcta_national.zip`)
-  const gazTxt = join(CACHE_DIR, `${GAZ_YEAR}_gaz_zcta_national.txt`)
-  download(`${GAZ_BASE}/${GAZ_YEAR}_gaz_zcta_national.zip`, gazZip)
+  // ZCTA Gazetteer: single national file (ZIP codes cross state lines).
+  // 2024 columns: GEOID ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
+  //               [0]   [1]   [2]    [3]        [4]          [5]      [6]
+  // Note: 2024 added ALAND/AWATER before ALAND_SQMI, shifting lat/lng from [3]/[4] to [5]/[6].
+  const gazZip = join(CACHE_DIR, `${GAZ_YEAR}_Gaz_zcta_national.zip`)
+  const gazTxt = join(CACHE_DIR, `${GAZ_YEAR}_Gaz_zcta_national.txt`)
+  download(`${GAZ_BASE}/${GAZ_YEAR}_Gaz_zcta_national.zip`, gazZip)
   unzipFirst(gazZip, gazTxt)
 
   const gazRows = parseTsv(readFileSync(gazTxt, 'utf8'))
-  // Cols: GEOID ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
   const gazMap = new Map<string, { lat: number; lng: number; sqmi: number }>()
   for (const cols of gazRows.slice(1)) {
-    if (cols.length < 5) continue
+    if (cols.length < 7) continue
     const zip = cols[0].padStart(5, '0')
     gazMap.set(zip, {
-      lat: parseFloat(cols[3]),
-      lng: parseFloat(cols[4]),
-      sqmi: parseFloat(cols[1]),
+      lat: parseFloat(cols[5]),
+      lng: parseFloat(cols[6]),
+      sqmi: parseFloat(cols[3]),
     })
   }
 
