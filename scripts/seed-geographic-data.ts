@@ -5,9 +5,9 @@
  * Run once to populate — re-run anytime to refresh from the latest Census release.
  *
  * Data sources:
- *   Census 2020 Decennial Census (DHC) — population, households
- *   ACS 5-Year 2022 — income, age, homeownership, home value
- *   Census Gazetteer Files 2020 — lat/lng, land area
+ *   Census Decennial Census (DHC) — population, households
+ *   ACS 5-Year — income, age, homeownership, home value
+ *   Census Gazetteer Files (per-state for places/counties, national for ZCTAs) — lat/lng, land area
  *
  * Usage:
  *   npx tsx scripts/seed-geographic-data.ts
@@ -22,7 +22,7 @@
  */
 
 import { execSync } from 'child_process'
-import { readFileSync, existsSync, mkdirSync } from 'fs'
+import { readFileSync, existsSync, mkdirSync, openSync, readSync, closeSync } from 'fs'
 import { join } from 'path'
 import { createClient } from '@supabase/supabase-js'
 
@@ -54,6 +54,12 @@ const db = createClient(SUPABASE_URL, SERVICE_KEY)
 
 const CACHE_DIR = join(process.cwd(), '.census-cache')
 if (!existsSync(CACHE_DIR)) mkdirSync(CACHE_DIR)
+
+// ── Gazetteer source configuration ────────────────────────────────────────────
+// Update GAZ_YEAR when the Census Bureau publishes a new annual release.
+// Place and county files are per-state; ZCTA file is national.
+const GAZ_YEAR = 2024
+const GAZ_BASE = `https://www2.census.gov/geo/docs/maps-data/data/gazetteer/${GAZ_YEAR}_Gazetteer`
 
 const args = process.argv.slice(2)
 const typeArg = args.find((a) => a.startsWith('--type='))?.split('=')[1]
@@ -118,13 +124,34 @@ const ALL_STATE_FIPS = Object.keys(FIPS_TO_ABBR).filter((f) => f !== '11') // ex
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
 
+function isValidZip(filePath: string): boolean {
+  try {
+    const buf = Buffer.alloc(4)
+    const fd = openSync(filePath, 'r')
+    readSync(fd, buf, 0, 4, 0)
+    closeSync(fd)
+    return buf[0] === 0x50 && buf[1] === 0x4b // ZIP magic bytes: PK
+  } catch {
+    return false
+  }
+}
+
 function download(url: string, dest: string): void {
   if (existsSync(dest)) {
-    console.log(`  ↩ cached ${dest}`)
-    return
+    if (isValidZip(dest)) {
+      console.log(`  ↩ cached`)
+      return
+    }
+    // Cached file is not a valid ZIP (e.g. an HTML error page from a previous run)
+    console.log(`  ↻ cached file invalid, re-downloading`)
+    execSync(`rm -f "${dest}"`, { stdio: 'inherit' })
   }
   console.log(`  ↓ ${url}`)
   execSync(`curl -sSL "${url}" -o "${dest}"`, { stdio: 'inherit' })
+  if (!isValidZip(dest)) {
+    execSync(`rm -f "${dest}"`, { stdio: 'inherit' })
+    throw new Error(`Download failed — server did not return a valid ZIP file: ${url}`)
+  }
 }
 
 function unzipFirst(zipPath: string, outputPath: string): void {
@@ -178,96 +205,39 @@ async function censusGet(url: string): Promise<string[][]> {
 async function seedPlaces() {
   console.log('\n── Seeding places (incorporated US cities) ──')
 
-  // Step 1: Download Gazetteer for lat/lng + area
-  const gazZip = join(CACHE_DIR, '2020_gaz_place_national.zip')
-  const gazTxt = join(CACHE_DIR, '2020_gaz_place_national.txt')
-  download(
-    'https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2020_Gazetteer/2020_gaz_place_national.zip',
-    gazZip
-  )
-  unzipFirst(gazZip, gazTxt)
-
-  const gazRows = parseTsv(readFileSync(gazTxt, 'utf8'))
+  // Step 1: Download per-state Gazetteer files and build the coordinate map.
+  // Current Census format: one ZIP per state, e.g. 2024_gaz_place_06.zip (California)
   // Columns: USPS GEOID ANSICODE NAME LSAD FUNCSTAT ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
-  const gazMap = new Map<string, { lat: number; lng: number; sqmi: number }>()
-  for (const cols of gazRows.slice(1)) {
-    if (cols.length < 12) continue
-    const geoid = cols[1]
-    gazMap.set(geoid, {
-      lat: parseFloat(cols[10]),
-      lng: parseFloat(cols[11]),
-      sqmi: parseFloat(cols[8]),
-    })
-  }
+  const gazMap = new Map<
+    string,
+    { lat: number; lng: number; sqmi: number; name: string; abbr: string }
+  >()
 
-  console.log(`  Gazetteer: ${gazMap.size} places`)
-
-  // Step 2: Fetch 2020 Census population + ACS income/age per state
-  const rows: Record<string, unknown>[] = []
-
+  console.log(`  Downloading ${ALL_STATE_FIPS.length} per-state Gazetteer files…`)
   for (const fips of ALL_STATE_FIPS) {
-    const abbr = FIPS_TO_ABBR[fips]
-    process.stdout.write(`  ${abbr} `)
-
-    // Population (2020 Decennial)
-    const popMap = new Map<string, { pop: number; hh: number }>()
+    const gazZip = join(CACHE_DIR, `${GAZ_YEAR}_gaz_place_${fips}.zip`)
+    const gazTxt = join(CACHE_DIR, `${GAZ_YEAR}_gaz_place_${fips}.txt`)
     try {
-      const popData = await censusGet(
-        `https://api.census.gov/data/2020/dec/dhc?get=NAME,P1_001N,H1_001N&for=place:*&in=state:${fips}&key=${CENSUS_KEY}`
-      )
-      for (const row of popData.slice(1)) {
-        // row: [NAME, P1_001N, H1_001N, state, place]
-        const geoid = fips + row[4] // state FIPS + place FIPS
-        popMap.set(geoid, { pop: parseInt(row[1]) || 0, hh: parseInt(row[2]) || 0 })
-      }
-    } catch {
-      process.stdout.write('(pop err) ')
-    }
-
-    // ACS income + age
-    const acsMap = new Map<string, { income: number; age: number }>()
-    try {
-      const acsData = await censusGet(
-        `https://api.census.gov/data/2022/acs/acs5?get=NAME,B19013_001E,B01002_001E&for=place:*&in=state:${fips}&key=${CENSUS_KEY}`
-      )
-      for (const row of acsData.slice(1)) {
-        const geoid = fips + row[4]
-        acsMap.set(geoid, {
-          income: parseInt(row[1]) > 0 ? parseInt(row[1]) : 0,
-          age: parseFloat(row[2]) > 0 ? parseFloat(row[2]) : 0,
+      download(`${GAZ_BASE}/${GAZ_YEAR}_gaz_place_${fips}.zip`, gazZip)
+      unzipFirst(gazZip, gazTxt)
+      for (const cols of parseTsv(readFileSync(gazTxt, 'utf8')).slice(1)) {
+        if (cols.length < 12) continue
+        gazMap.set(cols[1], {
+          lat: parseFloat(cols[10]),
+          lng: parseFloat(cols[11]),
+          sqmi: parseFloat(cols[8]),
+          name: cols[3],
+          abbr: cols[0],
         })
       }
-    } catch {
-      process.stdout.write('(acs err) ')
-    }
-
-    // Merge
-    for (const [geoid, pop] of popMap) {
-      if (pop.pop < 500) continue // skip very small places
-      const geo = gazMap.get(geoid)
-      if (!geo || isNaN(geo.lat)) continue
-
-      const acs = acsMap.get(geoid)
-      const nameParts = (popMap.get(geoid) as unknown as { name?: string }) ? undefined : undefined
-      // NAME comes from the census response — we need to re-parse it
-      rows.push({
-        name: '', // will be set below
-        state_abbr: abbr,
-        lat: geo.lat,
-        lng: geo.lng,
-        population: pop.pop,
-        households: pop.hh,
-        land_area_sq_miles: geo.sqmi,
-        median_household_income: acs?.income || null,
-        median_age: acs?.age || null,
-        data_source: 'Census DHC 2020 / ACS 5-Year 2022',
-        data_year: 2022,
-      })
+    } catch (err) {
+      console.warn(`  Warning: Gazetteer unavailable for state ${fips} — ${(err as Error).message}`)
     }
   }
+  console.log(`  Gazetteer: ${gazMap.size} places across ${ALL_STATE_FIPS.length} states`)
 
-  // The above approach needs the NAME from the census row — let's redo with correct parsing
-  const rows2: Record<string, unknown>[] = []
+  // Step 2: Fetch Census population + ACS demographics per state, merge with Gazetteer.
+  const rows: Record<string, unknown>[] = []
 
   for (const fips of ALL_STATE_FIPS) {
     const abbr = FIPS_TO_ABBR[fips]
@@ -278,7 +248,7 @@ async function seedPlaces() {
         `https://api.census.gov/data/2020/dec/dhc?get=NAME,P1_001N,H1_001N&for=place:*&in=state:${fips}&key=${CENSUS_KEY}`
       )
     } catch {
-      continue
+      continue // Census API unavailable for this state — Gazetteer fallback runs below
     }
 
     let acsRows: string[][] = []
@@ -308,7 +278,7 @@ async function seedPlaces() {
       const geo = gazMap.get(geoid)
       if (!geo || isNaN(geo.lat)) continue
 
-      // Strip state suffix from name: "Austin city, Texas" → "Austin"
+      // Strip state suffix: "Austin city, Texas" → "Austin"
       const name = fullName
         .replace(
           /\s+(city|town|village|CDP|borough|municipality|county|consolidated government|unified government),.*$/,
@@ -318,66 +288,57 @@ async function seedPlaces() {
 
       const acs = acsMap.get(geoid)
 
-      rows2.push({
+      rows.push({
         name,
         state_abbr: abbr,
         lat: geo.lat,
         lng: geo.lng,
         population: pop,
         households: parseInt(hhStr) || null,
-        land_area_sq_miles: geo.sqmi,
+        land_area_sq_miles: isNaN(geo.sqmi) ? null : geo.sqmi,
         median_household_income: acs?.income || null,
         median_age: acs?.age || null,
-        data_source: 'Census DHC 2020 / ACS 5-Year 2022',
+        data_source: `Census DHC 2020 / ACS 5-Year 2022 / Gazetteer ${GAZ_YEAR}`,
         data_year: 2022,
       })
     }
     process.stdout.write(`${abbr} `)
   }
 
-  // Gazetteer-only fallback: seed any state whose Census API calls failed.
-  // Ensures lat/lng is populated even when Census API is rate-limited.
-  const seededStates = new Set(rows2.map((r) => r.state_abbr as string))
-  const gazOnlyRows: Record<string, unknown>[] = []
-  // Re-parse gazetteer TSV for name + state (gazMap only stored coords)
+  // Gazetteer-only fallback: for states where Census API was unavailable,
+  // seed coordinates and name so the place at least appears in autocomplete.
+  const seededStates = new Set(rows.map((r) => r.state_abbr as string))
   if (seededStates.size < ALL_STATE_FIPS.length) {
-    const rawGazRows = parseTsv(readFileSync(gazTxt, 'utf8'))
-    for (const cols of rawGazRows.slice(1)) {
-      if (cols.length < 12) continue
-      const abbr = cols[0] // USPS
-      if (seededStates.has(abbr)) continue
-      const rawName = cols[3] // e.g. "Miami city"
-      const name = rawName
+    const gazOnlyRows: Record<string, unknown>[] = []
+    for (const [, geo] of gazMap) {
+      if (seededStates.has(geo.abbr) || isNaN(geo.lat) || isNaN(geo.lng)) continue
+      const name = geo.name
         .replace(
           /\s+(city|town|village|CDP|borough|municipality|county|consolidated government|unified government|metro government|urban county)$/i,
           ''
         )
         .trim()
       if (!name) continue
-      const lat = parseFloat(cols[10])
-      const lng = parseFloat(cols[11])
-      const sqmi = parseFloat(cols[8])
-      if (isNaN(lat) || isNaN(lng)) continue
       gazOnlyRows.push({
         name,
-        state_abbr: abbr,
-        lat,
-        lng,
-        land_area_sq_miles: isNaN(sqmi) ? null : sqmi,
-        data_source: 'Census Gazetteer 2020 (coordinates only)',
-        data_year: 2020,
+        state_abbr: geo.abbr,
+        lat: geo.lat,
+        lng: geo.lng,
+        land_area_sq_miles: isNaN(geo.sqmi) ? null : geo.sqmi,
+        data_source: `Census Gazetteer ${GAZ_YEAR} (coordinates only)`,
+        data_year: GAZ_YEAR,
       })
     }
     if (gazOnlyRows.length > 0) {
       console.log(
-        `  Gazetteer-only fallback: ${gazOnlyRows.length} places from ${ALL_STATE_FIPS.length - seededStates.size} states`
+        `\n  Gazetteer-only fallback: ${gazOnlyRows.length} places from ${ALL_STATE_FIPS.length - seededStates.size} states`
       )
       await upsertBatch('geographic_places', gazOnlyRows, 'name,state_abbr')
     }
   }
 
-  console.log(`\n  Upserting ${rows2.length} places…`)
-  await upsertBatch('geographic_places', rows2, 'name,state_abbr')
+  console.log(`\n  Upserting ${rows.length} places…`)
+  await upsertBatch('geographic_places', rows, 'name,state_abbr')
 }
 
 // ── COUNTIES ──────────────────────────────────────────────────────────────────
@@ -385,30 +346,34 @@ async function seedPlaces() {
 async function seedCounties() {
   console.log('\n── Seeding counties ──')
 
-  const gazZip = join(CACHE_DIR, '2020_gaz_counties_national.zip')
-  const gazTxt = join(CACHE_DIR, '2020_gaz_counties_national.txt')
-  download(
-    'https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2020_Gazetteer/2020_gaz_counties_national.zip',
-    gazZip
-  )
-  unzipFirst(gazZip, gazTxt)
-
-  const gazRows = parseTsv(readFileSync(gazTxt, 'utf8'))
-  // Cols: USPS GEOID ANSICODE NAME ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
+  // Download per-state county Gazetteer files.
+  // Current Census format: one ZIP per state, e.g. 2024_gaz_county_06.zip (California)
+  // Columns: USPS GEOID ANSICODE NAME ALAND AWATER ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
   const gazMap = new Map<
     string,
     { lat: number; lng: number; sqmi: number; name: string; abbr: string }
   >()
-  for (const cols of gazRows.slice(1)) {
-    if (cols.length < 10) continue
-    const geoid = cols[1]
-    gazMap.set(geoid, {
-      lat: parseFloat(cols[8]),
-      lng: parseFloat(cols[9]),
-      sqmi: parseFloat(cols[6]),
-      name: cols[3],
-      abbr: cols[0],
-    })
+
+  console.log(`  Downloading ${ALL_STATE_FIPS.length} per-state county Gazetteer files…`)
+  for (const fips of ALL_STATE_FIPS) {
+    const gazZip = join(CACHE_DIR, `${GAZ_YEAR}_gaz_county_${fips}.zip`)
+    const gazTxt = join(CACHE_DIR, `${GAZ_YEAR}_gaz_county_${fips}.txt`)
+    try {
+      download(`${GAZ_BASE}/${GAZ_YEAR}_gaz_county_${fips}.zip`, gazZip)
+      unzipFirst(gazZip, gazTxt)
+      for (const cols of parseTsv(readFileSync(gazTxt, 'utf8')).slice(1)) {
+        if (cols.length < 10) continue
+        gazMap.set(cols[1], {
+          lat: parseFloat(cols[8]),
+          lng: parseFloat(cols[9]),
+          sqmi: parseFloat(cols[6]),
+          name: cols[3],
+          abbr: cols[0],
+        })
+      }
+    } catch (err) {
+      console.warn(`  Warning: Gazetteer unavailable for state ${fips} — ${(err as Error).message}`)
+    }
   }
 
   console.log(`  Gazetteer: ${gazMap.size} counties`)
@@ -466,7 +431,7 @@ async function seedCounties() {
       median_household_income: acs?.income || null,
       median_age: acs?.age || null,
       median_home_value: acs?.homeVal || null,
-      data_source: 'Census DHC 2020 / ACS 5-Year 2022',
+      data_source: `Census DHC 2020 / ACS 5-Year 2022 / Gazetteer ${GAZ_YEAR}`,
       data_year: 2022,
     })
   }
@@ -480,12 +445,11 @@ async function seedCounties() {
 async function seedZips() {
   console.log('\n── Seeding ZIP codes (ZCTAs) ──')
 
-  const gazZip = join(CACHE_DIR, '2020_gaz_zcta_national.zip')
-  const gazTxt = join(CACHE_DIR, '2020_gaz_zcta_national.txt')
-  download(
-    'https://www2.census.gov/geo/docs/maps-data/data/gazetteer/2020_Gazetteer/2020_gaz_zcta_national.zip',
-    gazZip
-  )
+  // ZCTA Gazetteer is published as a single national file (ZIP codes cross state lines)
+  // Columns: GEOID ALAND_SQMI AWATER_SQMI INTPTLAT INTPTLONG
+  const gazZip = join(CACHE_DIR, `${GAZ_YEAR}_gaz_zcta_national.zip`)
+  const gazTxt = join(CACHE_DIR, `${GAZ_YEAR}_gaz_zcta_national.txt`)
+  download(`${GAZ_BASE}/${GAZ_YEAR}_gaz_zcta_national.zip`, gazZip)
   unzipFirst(gazZip, gazTxt)
 
   const gazRows = parseTsv(readFileSync(gazTxt, 'utf8'))
@@ -557,7 +521,7 @@ async function seedZips() {
       land_area_sq_miles: geo.sqmi,
       median_household_income: acs?.income || null,
       median_age: acs?.age || null,
-      data_source: 'Census DHC 2020 / ACS 5-Year 2022',
+      data_source: `Census DHC 2020 / ACS 5-Year 2022 / Gazetteer ${GAZ_YEAR}`,
       data_year: 2022,
     })
   }
@@ -609,7 +573,7 @@ async function seedStates() {
       homeownership_rate: homeownership,
       population: pop?.pop || null,
       households: pop?.hh || null,
-      data_source: 'Census DHC 2020 / ACS 5-Year 2022',
+      data_source: `Census DHC 2020 / ACS 5-Year 2022 / Gazetteer ${GAZ_YEAR}`,
       data_year: 2022,
     })
   }
