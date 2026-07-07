@@ -26,6 +26,12 @@ import { readFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 import { createClient } from '@supabase/supabase-js'
 
+// Supabase Realtime requires a WebSocket constructor even when realtime isn't used.
+// Node.js 20 lacks globalThis.WebSocket — provide a no-op stub so the client initializes.
+if (typeof (globalThis as Record<string, unknown>).WebSocket === 'undefined') {
+  ;(globalThis as Record<string, unknown>).WebSocket = class NoopWebSocket {}
+}
+
 // Parse .env.local manually (avoids dotenv dependency)
 function loadEnv(file: string) {
   if (!existsSync(file)) return
@@ -160,7 +166,11 @@ const CENSUS_KEY = process.env.CENSUS_API_KEY ?? 'DEMO_KEY'
 async function censusGet(url: string): Promise<string[][]> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Census API ${res.status}: ${url}`)
-  return res.json() as Promise<string[][]>
+  const text = await res.text()
+  if (text.trim().startsWith('<')) {
+    throw new Error(`Census API returned HTML (rate-limited or blocked)`)
+  }
+  return JSON.parse(text) as string[][]
 }
 
 // ── PLACES (incorporated cities) ──────────────────────────────────────────────
@@ -325,6 +335,47 @@ async function seedPlaces() {
     process.stdout.write(`${abbr} `)
   }
 
+  // Gazetteer-only fallback: seed any state whose Census API calls failed.
+  // Ensures lat/lng is populated even when Census API is rate-limited.
+  const seededStates = new Set(rows2.map((r) => r.state_abbr as string))
+  const gazOnlyRows: Record<string, unknown>[] = []
+  // Re-parse gazetteer TSV for name + state (gazMap only stored coords)
+  if (seededStates.size < ALL_STATE_FIPS.length) {
+    const rawGazRows = parseTsv(readFileSync(gazTxt, 'utf8'))
+    for (const cols of rawGazRows.slice(1)) {
+      if (cols.length < 12) continue
+      const abbr = cols[0] // USPS
+      if (seededStates.has(abbr)) continue
+      const rawName = cols[3] // e.g. "Miami city"
+      const name = rawName
+        .replace(
+          /\s+(city|town|village|CDP|borough|municipality|county|consolidated government|unified government|metro government|urban county)$/i,
+          ''
+        )
+        .trim()
+      if (!name) continue
+      const lat = parseFloat(cols[10])
+      const lng = parseFloat(cols[11])
+      const sqmi = parseFloat(cols[8])
+      if (isNaN(lat) || isNaN(lng)) continue
+      gazOnlyRows.push({
+        name,
+        state_abbr: abbr,
+        lat,
+        lng,
+        land_area_sq_miles: isNaN(sqmi) ? null : sqmi,
+        data_source: 'Census Gazetteer 2020 (coordinates only)',
+        data_year: 2020,
+      })
+    }
+    if (gazOnlyRows.length > 0) {
+      console.log(
+        `  Gazetteer-only fallback: ${gazOnlyRows.length} places from ${ALL_STATE_FIPS.length - seededStates.size} states`
+      )
+      await upsertBatch('geographic_places', gazOnlyRows, 'name,state_abbr')
+    }
+  }
+
   console.log(`\n  Upserting ${rows2.length} places…`)
   await upsertBatch('geographic_places', rows2, 'name,state_abbr')
 }
@@ -362,28 +413,38 @@ async function seedCounties() {
 
   console.log(`  Gazetteer: ${gazMap.size} counties`)
 
-  // Population
-  const popRows = await censusGet(
-    `https://api.census.gov/data/2020/dec/dhc?get=NAME,P1_001N,H1_001N&for=county:*&in=state:*&key=${CENSUS_KEY}`
-  )
+  // Population (optional — falls back to Gazetteer-only if Census API unavailable)
   const popMap = new Map<string, { pop: number; hh: number }>()
-  for (const row of popRows.slice(1)) {
-    const geoid = row[3] + row[4] // state + county FIPS
-    popMap.set(geoid, { pop: parseInt(row[1]) || 0, hh: parseInt(row[2]) || 0 })
+  try {
+    const popRows = await censusGet(
+      `https://api.census.gov/data/2020/dec/dhc?get=NAME,P1_001N,H1_001N&for=county:*&in=state:*&key=${CENSUS_KEY}`
+    )
+    for (const row of popRows.slice(1)) {
+      const geoid = row[3] + row[4]
+      popMap.set(geoid, { pop: parseInt(row[1]) || 0, hh: parseInt(row[2]) || 0 })
+    }
+    console.log(`  Census pop: ${popMap.size} counties`)
+  } catch (err) {
+    console.warn(`  Warning: county population unavailable — ${(err as Error).message}`)
   }
 
-  // ACS
-  const acsRows = await censusGet(
-    `https://api.census.gov/data/2022/acs/acs5?get=NAME,B19013_001E,B01002_001E,B25077_001E&for=county:*&in=state:*&key=${CENSUS_KEY}`
-  )
+  // ACS (optional)
   const acsMap = new Map<string, { income: number; age: number; homeVal: number }>()
-  for (const row of acsRows.slice(1)) {
-    const geoid = row[4] + row[5]
-    acsMap.set(geoid, {
-      income: parseInt(row[1]) > 0 ? parseInt(row[1]) : 0,
-      age: parseFloat(row[2]) > 0 ? parseFloat(row[2]) : 0,
-      homeVal: parseInt(row[3]) > 0 ? parseInt(row[3]) : 0,
-    })
+  try {
+    const acsRows = await censusGet(
+      `https://api.census.gov/data/2022/acs/acs5?get=NAME,B19013_001E,B01002_001E,B25077_001E&for=county:*&in=state:*&key=${CENSUS_KEY}`
+    )
+    for (const row of acsRows.slice(1)) {
+      const geoid = row[4] + row[5]
+      acsMap.set(geoid, {
+        income: parseInt(row[1]) > 0 ? parseInt(row[1]) : 0,
+        age: parseFloat(row[2]) > 0 ? parseFloat(row[2]) : 0,
+        homeVal: parseInt(row[3]) > 0 ? parseInt(row[3]) : 0,
+      })
+    }
+    console.log(`  ACS: ${acsMap.size} counties`)
+  } catch (err) {
+    console.warn(`  Warning: county ACS data unavailable — ${(err as Error).message}`)
   }
 
   const rows: Record<string, unknown>[] = []
@@ -442,30 +503,46 @@ async function seedZips() {
 
   console.log(`  Gazetteer: ${gazMap.size} ZCTAs`)
 
-  // Population from 2020 Census
-  const popRows = await censusGet(
-    `https://api.census.gov/data/2020/dec/dhc?get=NAME,P1_001N,H1_001N&for=zip+code+tabulation+area:*&key=${CENSUS_KEY}`
-  )
-
-  // ACS income + age for ZCTAs
-  const acsRows = await censusGet(
-    `https://api.census.gov/data/2022/acs/acs5?get=NAME,B19013_001E,B01002_001E&for=zip+code+tabulation+area:*&key=${CENSUS_KEY}`
-  )
-  const acsMap = new Map<string, { income: number; age: number }>()
-  for (const row of acsRows.slice(1)) {
-    const zip = row[3].padStart(5, '0')
-    acsMap.set(zip, {
-      income: parseInt(row[1]) > 0 ? parseInt(row[1]) : 0,
-      age: parseFloat(row[2]) > 0 ? parseFloat(row[2]) : 0,
-    })
+  // Population from 2020 Census (optional)
+  const popMap = new Map<string, { pop: number; hh: number }>()
+  try {
+    const popRows = await censusGet(
+      `https://api.census.gov/data/2020/dec/dhc?get=NAME,P1_001N,H1_001N&for=zip+code+tabulation+area:*&key=${CENSUS_KEY}`
+    )
+    for (const row of popRows.slice(1)) {
+      const zip = row[3].padStart(5, '0')
+      popMap.set(zip, { pop: parseInt(row[1]) || 0, hh: parseInt(row[2]) || 0 })
+    }
+    console.log(`  Census pop: ${popMap.size} ZCTAs`)
+  } catch (err) {
+    console.warn(`  Warning: ZCTA population unavailable — ${(err as Error).message}`)
   }
 
+  // ACS income + age for ZCTAs (optional)
+  const acsMap = new Map<string, { income: number; age: number }>()
+  try {
+    const acsRows = await censusGet(
+      `https://api.census.gov/data/2022/acs/acs5?get=NAME,B19013_001E,B01002_001E&for=zip+code+tabulation+area:*&key=${CENSUS_KEY}`
+    )
+    for (const row of acsRows.slice(1)) {
+      const zip = row[3].padStart(5, '0')
+      acsMap.set(zip, {
+        income: parseInt(row[1]) > 0 ? parseInt(row[1]) : 0,
+        age: parseFloat(row[2]) > 0 ? parseFloat(row[2]) : 0,
+      })
+    }
+    console.log(`  ACS: ${acsMap.size} ZCTAs`)
+  } catch (err) {
+    console.warn(`  Warning: ZCTA ACS data unavailable — ${(err as Error).message}`)
+  }
+
+  // Build rows: Gazetteer is authoritative for coordinates; use Census/ACS when available
   const rows: Record<string, unknown>[] = []
-  for (const row of popRows.slice(1)) {
-    const zip = row[3].padStart(5, '0')
-    const pop = parseInt(row[1]) || 0
-    if (pop < 100) continue // skip empty ZCTAs
-    const geo = gazMap.get(zip)
+  for (const [zip, geo] of gazMap) {
+    if (isNaN(geo.lat)) continue
+    const p = popMap.get(zip)
+    const pop = p?.pop ?? 0
+    if (pop < 100 && popMap.size > 0) continue // skip tiny ZCTAs only when we have pop data
     if (!geo || isNaN(geo.lat)) continue
     const acs = acsMap.get(zip)
 
@@ -475,8 +552,8 @@ async function seedZips() {
       zip,
       lat: geo.lat,
       lng: geo.lng,
-      population: pop,
-      households: parseInt(row[2]) || null,
+      population: pop || null,
+      households: p?.hh || null,
       land_area_sq_miles: geo.sqmi,
       median_household_income: acs?.income || null,
       median_age: acs?.age || null,
@@ -494,13 +571,20 @@ async function seedZips() {
 async function seedStates() {
   console.log('\n── Refreshing state demographics from ACS ──')
 
-  const acsRows = await censusGet(
-    `https://api.census.gov/data/2022/acs/acs5?get=NAME,B19013_001E,B01002_001E,B25077_001E,B25003_002E,B25003_001E&for=state:*&key=${CENSUS_KEY}`
-  )
-
-  const popRows = await censusGet(
-    `https://api.census.gov/data/2020/dec/dhc?get=NAME,P1_001N,H1_001N&for=state:*&key=${CENSUS_KEY}`
-  )
+  let acsRows: string[][] = []
+  let popRows: string[][] = []
+  try {
+    acsRows = await censusGet(
+      `https://api.census.gov/data/2022/acs/acs5?get=NAME,B19013_001E,B01002_001E,B25077_001E,B25003_002E,B25003_001E&for=state:*&key=${CENSUS_KEY}`
+    )
+    popRows = await censusGet(
+      `https://api.census.gov/data/2020/dec/dhc?get=NAME,P1_001N,H1_001N&for=state:*&key=${CENSUS_KEY}`
+    )
+  } catch (err) {
+    console.warn(`  Warning: Census API unavailable — ${(err as Error).message}`)
+    console.warn('  State demographics will retain existing values.')
+    return
+  }
 
   const popMap = new Map<string, { pop: number; hh: number }>()
   for (const row of popRows.slice(1)) {
