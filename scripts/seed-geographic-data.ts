@@ -326,15 +326,37 @@ async function seedPlaces() {
       })
     }
     if (gazOnlyRows.length > 0) {
+      // Deduplicate fallback rows by (name, state_abbr) — Gazetteer can have same name twice
+      const gazDeduped = new Map<string, Record<string, unknown>>()
+      for (const row of gazOnlyRows) {
+        const key = `${row.name}|${row.state_abbr}`
+        if (!gazDeduped.has(key)) gazDeduped.set(key, row)
+      }
+      const gazDedupedRows = Array.from(gazDeduped.values())
       console.log(
-        `\n  Gazetteer-only fallback: ${gazOnlyRows.length} places from ${ALL_STATE_FIPS.length - seededStates.size} states`
+        `\n  Gazetteer-only fallback: ${gazDedupedRows.length} places from ${ALL_STATE_FIPS.length - seededStates.size} states`
       )
-      await upsertBatch('geographic_places', gazOnlyRows, 'name,state_abbr')
+      await upsertBatch('geographic_places', gazDedupedRows, 'name,state_abbr')
     }
   }
 
-  console.log(`\n  Upserting ${rows.length} places…`)
-  await upsertBatch('geographic_places', rows, 'name,state_abbr')
+  // Deduplicate by (name, state_abbr) — keep highest-population record.
+  // Duplicate pairs arise when two Gazetteer places share a name in the same state.
+  const deduped = new Map<string, Record<string, unknown>>()
+  for (const row of rows) {
+    const key = `${row.name}|${row.state_abbr}`
+    const existing = deduped.get(key)
+    if (!existing || (row.population as number) > ((existing.population as number) ?? 0)) {
+      deduped.set(key, row)
+    }
+  }
+  const dedupedRows = Array.from(deduped.values())
+  if (dedupedRows.length < rows.length) {
+    console.log(`  Deduplicated: ${rows.length} → ${dedupedRows.length} places`)
+  }
+
+  console.log(`\n  Upserting ${dedupedRows.length} places…`)
+  await upsertBatch('geographic_places', dedupedRows, 'name,state_abbr')
 }
 
 // ── COUNTIES ──────────────────────────────────────────────────────────────────
