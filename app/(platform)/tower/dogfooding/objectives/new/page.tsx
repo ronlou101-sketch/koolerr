@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Users,
   Phone,
@@ -18,7 +18,7 @@ import {
   Search,
   Check,
   MapPin,
-  Map,
+  Map as MapIcon,
   Hash,
   Layers,
   Landmark,
@@ -27,6 +27,7 @@ import {
   X,
   Building2,
 } from 'lucide-react'
+import type { ValidatedPlace } from './ServiceAreaMap'
 
 const ServiceAreaMap = dynamic(() => import('./ServiceAreaMap'), { ssr: false })
 
@@ -87,9 +88,9 @@ type CoverageType = 'local' | 'cities' | 'zips' | 'county' | 'statewide' | 'nati
 
 type ServiceAreaState = {
   coverageType: CoverageType
-  locations: string[]
+  locations: ValidatedPlace[]
   radiusMiles: number
-  radiusAddress: string
+  radiusPlace: ValidatedPlace | null
 }
 
 const COVERAGE_OPTIONS: {
@@ -99,7 +100,12 @@ const COVERAGE_OPTIONS: {
   icon: React.ElementType
 }[] = [
   { type: 'local', label: 'Single City', description: 'Target one specific city', icon: MapPin },
-  { type: 'cities', label: 'Multiple Cities', description: 'Target a list of cities', icon: Map },
+  {
+    type: 'cities',
+    label: 'Multiple Cities',
+    description: 'Target a list of cities',
+    icon: MapIcon,
+  },
   { type: 'zips', label: 'ZIP Codes', description: 'Target specific postal codes', icon: Hash },
   { type: 'county', label: 'County', description: 'Target one or more counties', icon: Layers },
   { type: 'statewide', label: 'Statewide', description: 'Target an entire state', icon: Landmark },
@@ -172,167 +178,500 @@ const US_STATES = [
   'Wyoming',
 ]
 
-const TEXT_INPUT_PLACEHOLDER: Partial<Record<CoverageType, string>> = {
-  local: 'e.g. Austin, TX',
-  cities: 'e.g. Dallas, TX — press Enter to add',
-  zips: 'e.g. 78701 — press Enter to add',
-  county: 'e.g. Travis County, TX',
+// Approximate geographic centers for states (used to build ValidatedPlace from the list)
+const STATE_CENTERS: Record<string, { lat: number; lng: number; abbr: string }> = {
+  Alabama: { lat: 32.806671, lng: -86.79113, abbr: 'AL' },
+  Alaska: { lat: 61.370716, lng: -152.404419, abbr: 'AK' },
+  Arizona: { lat: 33.729759, lng: -111.431221, abbr: 'AZ' },
+  Arkansas: { lat: 34.969704, lng: -92.373123, abbr: 'AR' },
+  California: { lat: 36.116203, lng: -119.681564, abbr: 'CA' },
+  Colorado: { lat: 39.059811, lng: -105.311104, abbr: 'CO' },
+  Connecticut: { lat: 41.597782, lng: -72.755371, abbr: 'CT' },
+  Delaware: { lat: 39.318523, lng: -75.507141, abbr: 'DE' },
+  Florida: { lat: 27.766279, lng: -81.686783, abbr: 'FL' },
+  Georgia: { lat: 33.040619, lng: -83.643074, abbr: 'GA' },
+  Hawaii: { lat: 21.094318, lng: -157.498337, abbr: 'HI' },
+  Idaho: { lat: 44.240459, lng: -114.478828, abbr: 'ID' },
+  Illinois: { lat: 40.349457, lng: -88.986137, abbr: 'IL' },
+  Indiana: { lat: 39.849426, lng: -86.258278, abbr: 'IN' },
+  Iowa: { lat: 42.011539, lng: -93.210526, abbr: 'IA' },
+  Kansas: { lat: 38.5266, lng: -96.726486, abbr: 'KS' },
+  Kentucky: { lat: 37.66814, lng: -84.670067, abbr: 'KY' },
+  Louisiana: { lat: 31.16996, lng: -91.867805, abbr: 'LA' },
+  Maine: { lat: 44.693947, lng: -69.381927, abbr: 'ME' },
+  Maryland: { lat: 39.063946, lng: -76.802101, abbr: 'MD' },
+  Massachusetts: { lat: 42.230171, lng: -71.530106, abbr: 'MA' },
+  Michigan: { lat: 43.326618, lng: -84.536095, abbr: 'MI' },
+  Minnesota: { lat: 45.694454, lng: -93.900192, abbr: 'MN' },
+  Mississippi: { lat: 32.741646, lng: -89.678696, abbr: 'MS' },
+  Missouri: { lat: 38.456085, lng: -92.288368, abbr: 'MO' },
+  Montana: { lat: 46.921925, lng: -110.454353, abbr: 'MT' },
+  Nebraska: { lat: 41.492537, lng: -99.90181, abbr: 'NE' },
+  Nevada: { lat: 38.313515, lng: -117.055374, abbr: 'NV' },
+  'New Hampshire': { lat: 43.452492, lng: -71.563896, abbr: 'NH' },
+  'New Jersey': { lat: 40.298904, lng: -74.521011, abbr: 'NJ' },
+  'New Mexico': { lat: 34.840515, lng: -106.248482, abbr: 'NM' },
+  'New York': { lat: 42.165726, lng: -74.948051, abbr: 'NY' },
+  'North Carolina': { lat: 35.630066, lng: -79.806419, abbr: 'NC' },
+  'North Dakota': { lat: 47.528912, lng: -99.784012, abbr: 'ND' },
+  Ohio: { lat: 40.388783, lng: -82.764915, abbr: 'OH' },
+  Oklahoma: { lat: 35.565342, lng: -96.928917, abbr: 'OK' },
+  Oregon: { lat: 44.572021, lng: -122.070938, abbr: 'OR' },
+  Pennsylvania: { lat: 40.590752, lng: -77.209755, abbr: 'PA' },
+  'Rhode Island': { lat: 41.680893, lng: -71.51178, abbr: 'RI' },
+  'South Carolina': { lat: 33.856892, lng: -80.945007, abbr: 'SC' },
+  'South Dakota': { lat: 44.299782, lng: -99.438828, abbr: 'SD' },
+  Tennessee: { lat: 35.747845, lng: -86.692345, abbr: 'TN' },
+  Texas: { lat: 31.054487, lng: -97.563461, abbr: 'TX' },
+  Utah: { lat: 40.150032, lng: -111.862434, abbr: 'UT' },
+  Vermont: { lat: 44.045876, lng: -72.710686, abbr: 'VT' },
+  Virginia: { lat: 37.769337, lng: -78.169968, abbr: 'VA' },
+  Washington: { lat: 47.400902, lng: -121.490494, abbr: 'WA' },
+  'West Virginia': { lat: 38.491226, lng: -80.954453, abbr: 'WV' },
+  Wisconsin: { lat: 44.268543, lng: -89.616508, abbr: 'WI' },
+  Wyoming: { lat: 42.755966, lng: -107.30249, abbr: 'WY' },
 }
 
-// ── Step 3 coverage helpers ────────────────────────────────────────────────────
+// ── Autocomplete ───────────────────────────────────────────────────────────────
 
-type CoverageEstimates = {
-  population: string
-  households: string
-  businesses: string
-  counties: string
-  sqMiles: string
-  audienceSize: string
-  citiesCovered?: string
+type AutocompleteType = 'city' | 'zip' | 'county' | 'address'
+
+const STATE_ABBR: Record<string, string> = {
+  Alabama: 'AL',
+  Alaska: 'AK',
+  Arizona: 'AZ',
+  Arkansas: 'AR',
+  California: 'CA',
+  Colorado: 'CO',
+  Connecticut: 'CT',
+  Delaware: 'DE',
+  Florida: 'FL',
+  Georgia: 'GA',
+  Hawaii: 'HI',
+  Idaho: 'ID',
+  Illinois: 'IL',
+  Indiana: 'IN',
+  Iowa: 'IA',
+  Kansas: 'KS',
+  Kentucky: 'KY',
+  Louisiana: 'LA',
+  Maine: 'ME',
+  Maryland: 'MD',
+  Massachusetts: 'MA',
+  Michigan: 'MI',
+  Minnesota: 'MN',
+  Mississippi: 'MS',
+  Missouri: 'MO',
+  Montana: 'MT',
+  Nebraska: 'NE',
+  Nevada: 'NV',
+  'New Hampshire': 'NH',
+  'New Jersey': 'NJ',
+  'New Mexico': 'NM',
+  'New York': 'NY',
+  'North Carolina': 'NC',
+  'North Dakota': 'ND',
+  Ohio: 'OH',
+  Oklahoma: 'OK',
+  Oregon: 'OR',
+  Pennsylvania: 'PA',
+  'Rhode Island': 'RI',
+  'South Carolina': 'SC',
+  'South Dakota': 'SD',
+  Tennessee: 'TN',
+  Texas: 'TX',
+  Utah: 'UT',
+  Vermont: 'VT',
+  Virginia: 'VA',
+  Washington: 'WA',
+  'West Virginia': 'WV',
+  Wisconsin: 'WI',
+  Wyoming: 'WY',
+  'District of Columbia': 'DC',
 }
 
-function getCoverageEstimates(
-  type: CoverageType,
-  count: number,
-  radiusMiles: number
-): CoverageEstimates {
-  const n = Math.max(1, count)
-  switch (type) {
-    case 'local':
-      return {
-        population: '50,000 – 350,000',
-        households: '18,000 – 130,000',
-        businesses: '1,500 – 12,000',
-        counties: '1',
-        sqMiles: '20 – 150',
-        audienceSize: '15,000 – 75,000',
-      }
-    case 'cities':
-      return {
-        population: `${50 * n}K – ${350 * n}K`,
-        households: `${18 * n}K – ${130 * n}K`,
-        businesses: `${(1.5 * n).toFixed(0)}K – ${12 * n}K`,
-        counties: `${n} – ${n * 3}`,
-        sqMiles: `${20 * n} – ${150 * n}`,
-        audienceSize: `${15 * n}K – ${75 * n}K`,
-        citiesCovered: `${n}`,
-      }
-    case 'zips':
-      return {
-        population: `${8 * n}K – ${35 * n}K`,
-        households: `${3 * n}K – ${13 * n}K`,
-        businesses: `${250 * n} – ${1500 * n}`,
-        counties: `${Math.ceil(n / 3)} – ${Math.ceil(n / 2)}`,
-        sqMiles: `${2 * n} – ${20 * n}`,
-        audienceSize: `${2 * n}K – ${10 * n}K`,
-      }
-    case 'county':
-      return {
-        population: `${75 * n}K – ${600 * n}K`,
-        households: `${27 * n}K – ${220 * n}K`,
-        businesses: `${3 * n}K – ${30 * n}K`,
-        counties: `${n}`,
-        sqMiles: `${100 * n} – ${3000 * n}`,
-        audienceSize: `${22 * n}K – ${180 * n}K`,
-        citiesCovered: `${5 * n} – ${50 * n}`,
-      }
-    case 'statewide':
-      return {
-        population: n === 1 ? '1M – 20M' : `${n}M – ${20 * n}M`,
-        households: n === 1 ? '400K – 7M' : `${400 * n}K – ${7 * n}M`,
-        businesses: n === 1 ? '30K – 1.5M' : `${30 * n}K – ${1500 * n}K`,
-        counties: n === 1 ? '10 – 250' : `${10 * n} – ${250 * n}`,
-        sqMiles: n === 1 ? '1,000 – 100,000' : `${1000 * n} – ${100000 * n}`,
-        audienceSize: n === 1 ? '300K – 6M' : `${300 * n}K – ${6 * n}M`,
-        citiesCovered: n === 1 ? '50 – 2,000' : `${50 * n} – ${2000 * n}`,
-      }
-    case 'nationwide':
-      return {
-        population: '331M+',
-        households: '128M+',
-        businesses: '30M+',
-        counties: '3,000+',
-        sqMiles: '3.8M',
-        audienceSize: '250M+',
-        citiesCovered: '30,000+',
-      }
-    case 'radius': {
-      const TABLE: Record<number, CoverageEstimates> = {
-        5: {
-          population: '50K – 200K',
-          households: '18K – 75K',
-          businesses: '1K – 8K',
-          counties: '1',
-          sqMiles: '~80',
-          audienceSize: '15K – 60K',
-        },
-        10: {
-          population: '150K – 600K',
-          households: '55K – 220K',
-          businesses: '3K – 25K',
-          counties: '1 – 2',
-          sqMiles: '~315',
-          audienceSize: '45K – 180K',
-        },
-        25: {
-          population: '500K – 2M',
-          households: '180K – 750K',
-          businesses: '10K – 80K',
-          counties: '2 – 5',
-          sqMiles: '~2,000',
-          audienceSize: '150K – 600K',
-        },
-        50: {
-          population: '1M – 5M',
-          households: '380K – 1.9M',
-          businesses: '25K – 200K',
-          counties: '5 – 15',
-          sqMiles: '~7,850',
-          audienceSize: '300K – 1.5M',
-        },
-        100: {
-          population: '3M – 15M',
-          households: '1.1M – 5.7M',
-          businesses: '75K – 600K',
-          counties: '15 – 50',
-          sqMiles: '~31,400',
-          audienceSize: '900K – 4.5M',
-        },
-      }
-      return TABLE[radiusMiles] ?? TABLE[25]
-    }
+interface NominatimResult {
+  osm_type: string
+  osm_id: string
+  lat: string
+  lon: string
+  display_name: string
+  address?: {
+    city?: string
+    town?: string
+    village?: string
+    hamlet?: string
+    county?: string
+    state?: string
+    postcode?: string
+    country?: string
   }
 }
 
+const SUGGESTION_CACHE: Map<string, ValidatedPlace[]> = new Map()
+
+async function fetchSuggestions(query: string, type: AutocompleteType): Promise<ValidatedPlace[]> {
+  const key = `${type}:${query.toLowerCase()}`
+  if (SUGGESTION_CACHE.has(key)) return SUGGESTION_CACHE.get(key)!
+
+  const params: Record<string, string> = {
+    format: 'json',
+    limit: '8',
+    countrycodes: 'us',
+    addressdetails: '1',
+  }
+
+  if (type === 'county') {
+    params.q = query.toLowerCase().includes('county') ? query : `${query} county`
+  } else {
+    params.q = query
+  }
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?${new URLSearchParams(params)}`,
+      { headers: { 'User-Agent': 'Koolerr Campaign Wizard/1.0 (koolerr.com)' } }
+    )
+    if (!res.ok) {
+      SUGGESTION_CACHE.set(key, [])
+      return []
+    }
+    const data: NominatimResult[] = await res.json()
+
+    const stAbbr = (state?: string) => (state ? (STATE_ABBR[state] ?? state) : '')
+
+    const results = data
+      .map((item): ValidatedPlace | null => {
+        const addr = item.address
+        const st = stAbbr(addr?.state)
+        const osmId = `${item.osm_type[0].toUpperCase()}${item.osm_id}`
+
+        if (type === 'city') {
+          const city =
+            addr?.city ||
+            addr?.town ||
+            addr?.village ||
+            addr?.hamlet ||
+            item.display_name.split(',')[0]
+          if (!city) return null
+          return {
+            label: st ? `${city}, ${st}` : city,
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lon),
+            osmId,
+            osmType: item.osm_type,
+          }
+        }
+
+        if (type === 'zip') {
+          const zip = addr?.postcode
+          if (!zip?.match(/^\d{4,5}/)) return null
+          const city = addr?.city || addr?.town || addr?.village || ''
+          return {
+            label: [zip, city, st].filter(Boolean).join(', '),
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lon),
+            osmId,
+            osmType: item.osm_type,
+          }
+        }
+
+        if (type === 'county') {
+          const county = addr?.county || item.display_name.split(',')[0]
+          if (!county) return null
+          return {
+            label: st ? `${county}, ${st}` : county,
+            lat: parseFloat(item.lat),
+            lng: parseFloat(item.lon),
+            osmId,
+            osmType: item.osm_type,
+          }
+        }
+
+        // address
+        const parts = item.display_name.split(', ').filter((p) => p !== 'United States')
+        return {
+          label: parts.slice(0, 4).join(', '),
+          lat: parseFloat(item.lat),
+          lng: parseFloat(item.lon),
+          osmId,
+          osmType: item.osm_type,
+        }
+      })
+      .filter((x): x is ValidatedPlace => x !== null)
+      .filter((p, i, arr) => arr.findIndex((q) => q.label === p.label) === i)
+      .slice(0, 6)
+
+    SUGGESTION_CACHE.set(key, results)
+    return results
+  } catch {
+    SUGGESTION_CACHE.set(key, [])
+    return []
+  }
+}
+
+// ── LocationAutocomplete ───────────────────────────────────────────────────────
+//
+// Controlled input that shows Nominatim-backed suggestions.
+// onSelect is ONLY called when the user actively picks a suggestion (keyboard or mouse).
+// Raw typed text is never returned as a valid place.
+
+function LocationAutocomplete({
+  value,
+  onChange,
+  onSelect,
+  onKeyDown,
+  onBlur,
+  placeholder,
+  searchType,
+  autoFocus,
+}: {
+  value: string
+  onChange: (v: string) => void
+  onSelect: (place: ValidatedPlace) => void
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  onBlur?: () => void
+  placeholder?: string
+  searchType: AutocompleteType
+  autoFocus?: boolean
+}) {
+  const [suggestions, setSuggestions] = useState<ValidatedPlace[]>([])
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (value.length < 2) {
+      setSuggestions([])
+      setOpen(false)
+      return
+    }
+    const timer = setTimeout(async () => {
+      const results = await fetchSuggestions(value, searchType)
+      setSuggestions(results)
+      setActiveIndex(-1)
+      setOpen(results.length > 0)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [value, searchType])
+
+  useEffect(() => {
+    function onOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onOutside)
+    return () => document.removeEventListener('mousedown', onOutside)
+  }, [])
+
+  function select(place: ValidatedPlace) {
+    onSelect(place)
+    setSuggestions([])
+    setOpen(false)
+    setActiveIndex(-1)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (open && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1))
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setActiveIndex((i) => Math.max(i - 1, -1))
+        return
+      }
+      if (e.key === 'Enter' && activeIndex >= 0) {
+        e.preventDefault()
+        select(suggestions[activeIndex])
+        return
+      }
+      if (e.key === 'Escape') {
+        setOpen(false)
+        return
+      }
+    }
+    // Pass through to parent handler (e.g., blur commit for radius)
+    onKeyDown?.(e)
+  }
+
+  return (
+    <div ref={containerRef} className="relative flex-1">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        autoFocus={autoFocus}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={onBlur}
+        placeholder={placeholder}
+        className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        autoComplete="off"
+      />
+      {open && suggestions.length > 0 && (
+        <ul className="absolute top-full z-50 mt-1 max-h-52 w-full overflow-auto rounded-lg border border-border bg-card shadow-lg">
+          {suggestions.map((s, i) => (
+            <li
+              key={s.osmId + s.label}
+              onMouseEnter={() => setActiveIndex(i)}
+              onMouseDown={(e) => {
+                e.preventDefault() // prevent blur before select
+                select(s)
+              }}
+              className={`cursor-pointer px-4 py-2.5 text-sm transition-colors ${
+                i === activeIndex
+                  ? 'bg-primary/8 text-primary'
+                  : 'text-foreground hover:bg-muted/60'
+              }`}
+            >
+              {s.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+// ── Coverage data from Supabase ────────────────────────────────────────────────
+
+type CoverageMetrics = {
+  population?: number | null
+  households?: number | null
+  businesses?: number | null
+  medianHouseholdIncome?: number | null
+  medianAge?: number | null
+  homeownershipRate?: number | null
+  medianHomeValue?: number | null
+  landAreaSqMiles?: number | null
+  county?: string | null
+  msaName?: string | null
+  dataYear?: number | null
+}
+
+type CoverageState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'done'; metrics: CoverageMetrics; anyFound: boolean }
+
+function formatNum(n: number | null | undefined): string {
+  if (n == null) return 'Data unavailable'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`
+  return n.toLocaleString()
+}
+
+function formatDollar(n: number | null | undefined): string {
+  if (n == null) return 'Data unavailable'
+  return `$${n.toLocaleString()}`
+}
+
+function formatPct(n: number | null | undefined): string {
+  if (n == null) return 'Data unavailable'
+  return `${n.toFixed(1)}%`
+}
+
+function buildLookupUrl(coverageType: CoverageType, locations: ValidatedPlace[]): string | null {
+  if (coverageType === 'nationwide') return '/api/geographic/lookup?type=nationwide'
+
+  if (coverageType === 'local' || coverageType === 'cities') {
+    if (!locations.length) return null
+    const names = locations.map((l) => {
+      const parts = l.label.split(', ')
+      const city = parts[0]
+      const stateAbbr = parts[parts.length - 1]
+      return `names=${encodeURIComponent(`${city}|${stateAbbr}`)}`
+    })
+    return `/api/geographic/lookup?type=city&${names.join('&')}`
+  }
+
+  if (coverageType === 'statewide') {
+    if (!locations.length) return null
+    const names = locations.map((l) => {
+      const center = STATE_CENTERS[l.label]
+      return `names=${encodeURIComponent(center?.abbr ?? l.label)}`
+    })
+    return `/api/geographic/lookup?type=state&${names.join('&')}`
+  }
+
+  if (coverageType === 'county') {
+    if (!locations.length) return null
+    const names = locations.map((l) => {
+      const parts = l.label.split(', ')
+      const county = parts[0]
+      const stateAbbr = parts[parts.length - 1]
+      return `names=${encodeURIComponent(`${county}|${stateAbbr}`)}`
+    })
+    return `/api/geographic/lookup?type=county&${names.join('&')}`
+  }
+
+  if (coverageType === 'zips') {
+    if (!locations.length) return null
+    const zips = locations.map((l) => {
+      const zip = l.label.split(',')[0].trim()
+      return `zips=${encodeURIComponent(zip)}`
+    })
+    return `/api/geographic/lookup?type=zip&${zips.join('&')}`
+  }
+
+  return null
+}
+
+// ── Radius static estimates (no real address-specific data without Census block data)
+
+function radiusEstimates(miles: number): CoverageMetrics {
+  const TABLE: Record<number, CoverageMetrics> = {
+    5: { population: 75000, households: 27000, landAreaSqMiles: 79 },
+    10: { population: 250000, households: 92000, landAreaSqMiles: 314 },
+    25: { population: 900000, households: 330000, landAreaSqMiles: 1963 },
+    50: { population: 2500000, households: 930000, landAreaSqMiles: 7854 },
+    100: { population: 7000000, households: 2600000, landAreaSqMiles: 31416 },
+  }
+  return TABLE[miles] ?? TABLE[25]
+}
+
+// ── Targeting summary ──────────────────────────────────────────────────────────
+
 function getTargetingSummary(
   type: CoverageType | null,
-  locations: string[],
+  locations: ValidatedPlace[],
   radiusMiles: number,
-  radiusAddress: string
+  radiusPlace: ValidatedPlace | null
 ): string | null {
   if (!type) return null
   switch (type) {
     case 'nationwide':
       return 'Nationwide (United States)'
     case 'local':
-      return locations[0] ?? null
+      return locations[0]?.label ?? null
     case 'cities':
       if (!locations.length) return null
-      if (locations.length === 1) return locations[0]
-      if (locations.length <= 3) return locations.join(', ')
-      return `${locations.slice(0, 2).join(', ')} + ${locations.length - 2} more`
+      if (locations.length === 1) return locations[0].label
+      if (locations.length <= 3) return locations.map((l) => l.label).join(', ')
+      return `${locations
+        .slice(0, 2)
+        .map((l) => l.label)
+        .join(', ')} + ${locations.length - 2} more`
     case 'zips':
       if (!locations.length) return null
-      return locations.length === 1 ? `ZIP ${locations[0]}` : `${locations.length} ZIP codes`
+      return locations.length === 1
+        ? `ZIP ${locations[0].label.split(',')[0]}`
+        : `${locations.length} ZIP codes`
     case 'county':
       if (!locations.length) return null
-      return locations.length === 1 ? locations[0] : `${locations.length} counties`
+      return locations.length === 1 ? locations[0].label : `${locations.length} counties`
     case 'statewide':
       if (!locations.length) return null
-      return locations.length === 1 ? `${locations[0]} (Statewide)` : `${locations.length} states`
+      return locations.length === 1
+        ? `${locations[0].label} (Statewide)`
+        : `${locations.length} states`
     case 'radius':
-      if (!radiusAddress.trim()) return null
-      return `${radiusMiles}-mile radius from ${radiusAddress}`
+      if (!radiusPlace) return null
+      return `${radiusMiles}-mile radius from ${radiusPlace.label}`
   }
 }
 
@@ -396,23 +735,11 @@ function Step1({
               key={label}
               type="button"
               onClick={() => onSelect(label)}
-              className={`group relative flex items-start gap-3 rounded-xl p-4 text-left transition-all duration-150 ${
-                isSelected
-                  ? 'bg-primary/8 border-2 border-primary shadow-sm'
-                  : primary
-                    ? 'hover:bg-primary/4 border border-border bg-card shadow-sm hover:border-primary/40'
-                    : 'hover:bg-primary/4 border border-border bg-card hover:border-primary/40'
-              }`}
+              className={`group relative flex items-start gap-3 rounded-xl p-4 text-left transition-all duration-150 ${isSelected ? 'bg-primary/8 border-2 border-primary shadow-sm' : primary ? 'hover:bg-primary/4 border border-border bg-card shadow-sm hover:border-primary/40' : 'hover:bg-primary/4 border border-border bg-card hover:border-primary/40'}`}
             >
               {isSelected && <Check className="absolute right-3 top-3 h-4 w-4 text-primary" />}
               <div
-                className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                  isSelected
-                    ? 'bg-primary text-primary-foreground'
-                    : primary
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
-                }`}
+                className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${isSelected ? 'bg-primary text-primary-foreground' : primary ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}
               >
                 <Icon className="h-4 w-4" />
               </div>
@@ -471,9 +798,8 @@ function Step2({
   onNext: () => void
 }) {
   const [query, setQuery] = useState('')
-
   const filtered = query.trim()
-    ? BUSINESS_TYPES.filter((b) => b.toLowerCase().includes(query.trim().toLowerCase()))
+    ? BUSINESS_TYPES.filter((b) => b.toLowerCase().includes(query.toLowerCase()))
     : BUSINESS_TYPES
 
   return (
@@ -495,9 +821,7 @@ function Step2({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && filtered.length === 1) {
-              onSelect(filtered[0])
-            }
+            if (e.key === 'Enter' && filtered.length === 1) onSelect(filtered[0])
           }}
           placeholder="Search your business type…"
           className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -518,11 +842,7 @@ function Step2({
                   <button
                     type="button"
                     onClick={() => onSelect(business)}
-                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors ${
-                      isSelected
-                        ? 'bg-primary/8 font-medium text-primary'
-                        : 'text-foreground hover:bg-muted/60'
-                    }`}
+                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors ${isSelected ? 'bg-primary/8 font-medium text-primary' : 'text-foreground hover:bg-muted/60'}`}
                   >
                     <span>{business}</span>
                     {isSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}
@@ -579,41 +899,157 @@ function Step3({
   const [coverageType, setCoverageType] = useState<CoverageType | null>(
     initial?.coverageType ?? null
   )
-  const [locations, setLocations] = useState<string[]>(initial?.locations ?? [])
+  const [locations, setLocations] = useState<ValidatedPlace[]>(initial?.locations ?? [])
+
+  // Text input: live typed value (display only; NOT added until a suggestion is selected)
   const [inputValue, setInputValue] = useState('')
-  const [radiusAddress, setRadiusAddress] = useState(initial?.radiusAddress ?? '')
+  // Last place selected from autocomplete — the gate for Add/Enter
+  const [pendingPlace, setPendingPlace] = useState<ValidatedPlace | null>(null)
+  // Shown when user tries to Add without selecting from autocomplete
+  const [showValidationError, setShowValidationError] = useState(false)
+
+  // Radius: separate typed value from committed value (committed controls the map/summary)
+  const [radiusInputValue, setRadiusInputValue] = useState('')
+  const [radiusPlace, setRadiusPlace] = useState<ValidatedPlace | null>(
+    initial?.radiusPlace ?? null
+  )
   const [radiusMiles, setRadiusMiles] = useState(initial?.radiusMiles ?? 25)
+
+  // Statewide list
   const [stateQuery, setStateQuery] = useState('')
+
+  // Real demographic data from Supabase
+  const [coverage, setCoverage] = useState<CoverageState>({ status: 'idle' })
+  const coverageFetchRef = useRef(0)
+
+  // Fetch real demographics whenever valid selections change
+  useEffect(() => {
+    const isRadiusValid = coverageType === 'radius' && radiusPlace !== null
+    const isLocationValid =
+      coverageType === 'nationwide' ||
+      (coverageType !== null && coverageType !== 'radius' && locations.length > 0)
+
+    if (!isRadiusValid && !isLocationValid) {
+      setCoverage({ status: 'idle' })
+      return
+    }
+
+    if (coverageType === 'radius') {
+      // Static estimates for radius (no per-address Census block data available)
+      setCoverage({ status: 'done', metrics: radiusEstimates(radiusMiles), anyFound: true })
+      return
+    }
+
+    const url = buildLookupUrl(coverageType!, locations)
+    if (!url) {
+      setCoverage({ status: 'idle' })
+      return
+    }
+
+    const fetchId = ++coverageFetchRef.current
+    setCoverage({ status: 'loading' })
+
+    fetch(url)
+      .then((r) => r.json())
+      .then((data) => {
+        if (fetchId !== coverageFetchRef.current) return
+        const agg = data.aggregate as CoverageMetrics | undefined
+        const anyFound =
+          Array.isArray(data.results) && data.results.some((r: { found: boolean }) => r.found)
+        setCoverage({ status: 'done', metrics: agg ?? {}, anyFound })
+      })
+      .catch(() => {
+        if (fetchId === coverageFetchRef.current)
+          setCoverage({ status: 'done', metrics: {}, anyFound: false })
+      })
+  }, [coverageType, locations, radiusPlace, radiusMiles])
 
   function changeCoverageType(type: CoverageType) {
     if (type === coverageType) return
     setCoverageType(type)
     setLocations([])
     setInputValue('')
+    setPendingPlace(null)
+    setShowValidationError(false)
     setStateQuery('')
+    // Don't clear radius place when switching away — preserve if they come back
   }
 
-  function addLocation(loc: string) {
-    const trimmed = loc.trim()
-    if (trimmed && !locations.includes(trimmed)) {
-      setLocations((prev) => [...prev, trimmed])
+  // Called when user selects from autocomplete dropdown for text/chip inputs
+  function handleSuggestionSelect(place: ValidatedPlace) {
+    setInputValue(place.label)
+    setPendingPlace(place)
+    setShowValidationError(false)
+  }
+
+  // Called when user types (clears the validated place)
+  function handleInputChange(value: string) {
+    setInputValue(value)
+    setPendingPlace(null)
+    if (showValidationError) setShowValidationError(false)
+  }
+
+  function addPendingLocation() {
+    if (!pendingPlace) {
+      if (inputValue.trim()) setShowValidationError(true)
+      return
+    }
+    if (coverageType === 'local') {
+      setLocations([pendingPlace]) // single city: replace
+    } else if (!locations.find((l) => l.osmId === pendingPlace.osmId)) {
+      setLocations((prev) => [...prev, pendingPlace])
     }
     setInputValue('')
+    setPendingPlace(null)
+    setShowValidationError(false)
   }
 
-  function removeLocation(loc: string) {
-    setLocations((prev) => prev.filter((l) => l !== loc))
+  function removeLocation(osmId: string) {
+    setLocations((prev) => prev.filter((l) => l.osmId !== osmId))
   }
 
-  function handleTextKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && inputValue.trim()) {
-      e.preventDefault()
-      addLocation(inputValue)
-    }
-    if (e.key === 'Backspace' && !inputValue && locations.length > 0) {
-      removeLocation(locations[locations.length - 1])
+  // Statewide: pick from the predefined list (no Nominatim needed)
+  function toggleState(stateName: string) {
+    const center = STATE_CENTERS[stateName]
+    if (!center) return
+    const existing = locations.find((l) => l.label === stateName)
+    if (existing) {
+      removeLocation(existing.osmId)
+    } else {
+      const place: ValidatedPlace = {
+        label: stateName,
+        lat: center.lat,
+        lng: center.lng,
+        osmId: `state_${center.abbr}`, // synthetic id for state list
+        osmType: 'relation',
+      }
+      setLocations((prev) => [...prev, place])
     }
   }
+
+  // Radius: commit address only when suggestion is selected, Enter, or blur
+  function handleRadiusSuggestionSelect(place: ValidatedPlace) {
+    setRadiusInputValue(place.label)
+    setRadiusPlace(place)
+  }
+
+  function commitRadiusAddress() {
+    // Called on blur/Enter without an autocomplete selection —
+    // only keeps the committed value if a suggestion was already selected
+    // (radiusPlace is set by handleRadiusSuggestionSelect above)
+  }
+
+  const textInputPlaceholder =
+    coverageType === 'local'
+      ? 'e.g. Austin, TX'
+      : coverageType === 'cities'
+        ? 'e.g. Dallas, TX — press Enter or Add'
+        : coverageType === 'zips'
+          ? 'e.g. 78701 — press Enter or Add'
+          : 'e.g. Travis County, TX'
+
+  const textSearchType: AutocompleteType =
+    coverageType === 'zips' ? 'zip' : coverageType === 'county' ? 'county' : 'city'
 
   const filteredStates = stateQuery.trim()
     ? US_STATES.filter((s) => s.toLowerCase().includes(stateQuery.toLowerCase()))
@@ -621,42 +1057,90 @@ function Step3({
 
   const isValid =
     coverageType === 'nationwide' ||
-    (coverageType === 'radius' && radiusAddress.trim().length > 0) ||
-    (coverageType !== null && locations.length > 0)
+    (coverageType === 'radius' && radiusPlace !== null) ||
+    (coverageType !== null && coverageType !== 'radius' && locations.length > 0)
+
+  const showLiveMap =
+    coverageType === 'nationwide' ||
+    (coverageType === 'radius' && radiusPlace !== null) ||
+    (coverageType !== null && coverageType !== 'radius' && locations.length > 0)
 
   const showTextInput =
     coverageType !== null && ['local', 'cities', 'zips', 'county'].includes(coverageType)
-  const showStateInput = coverageType === 'statewide'
-  const showRadiusInput = coverageType === 'radius'
-  const showNationwideMessage = coverageType === 'nationwide'
+  const showPlaceholder = coverageType !== null && !showLiveMap
 
-  const showLiveMap = isValid
-  const showPlaceholder = coverageType !== null && !isValid
+  const targetingSummary = getTargetingSummary(coverageType, locations, radiusMiles, radiusPlace)
+  const hasCoverage = coverage.status === 'done'
+  const coverageMetrics = hasCoverage
+    ? (coverage as { status: 'done'; metrics: CoverageMetrics }).metrics
+    : null
+  const anyFound = hasCoverage
+    ? (coverage as { status: 'done'; anyFound: boolean }).anyFound
+    : false
 
-  const targetingSummary = getTargetingSummary(coverageType, locations, radiusMiles, radiusAddress)
-
-  const estimates =
-    coverageType && isValid
-      ? getCoverageEstimates(
-          coverageType,
-          coverageType === 'radius' ? 1 : locations.length,
-          radiusMiles
-        )
-      : null
-
-  const coverageStats = estimates
-    ? [
-        { label: 'Est. Population Reached', value: estimates.population },
-        { label: 'Est. Households', value: estimates.households },
-        { label: 'Est. Businesses', value: estimates.businesses },
-        { label: 'Counties Covered', value: estimates.counties },
-        ...(estimates.citiesCovered
-          ? [{ label: 'Cities Covered', value: estimates.citiesCovered }]
-          : []),
-        { label: 'Est. Service Area', value: `${estimates.sqMiles} sq mi` },
-        { label: 'Est. Audience Size', value: estimates.audienceSize },
-      ]
+  // Build coverage stats from real or estimated data
+  const coverageStats = coverageMetrics
+    ? ([
+        coverageMetrics.population !== undefined
+          ? { label: 'Population', value: formatNum(coverageMetrics.population) }
+          : null,
+        coverageMetrics.households !== undefined
+          ? { label: 'Households', value: formatNum(coverageMetrics.households) }
+          : null,
+        coverageMetrics.businesses !== undefined
+          ? { label: 'Businesses', value: formatNum(coverageMetrics.businesses) }
+          : null,
+        coverageMetrics.medianHouseholdIncome !== undefined
+          ? {
+              label: 'Median Household Income',
+              value: formatDollar(coverageMetrics.medianHouseholdIncome),
+            }
+          : null,
+        coverageMetrics.medianAge !== undefined
+          ? {
+              label: 'Median Age',
+              value:
+                coverageMetrics.medianAge != null
+                  ? `${coverageMetrics.medianAge}`
+                  : 'Data unavailable',
+            }
+          : null,
+        coverageMetrics.homeownershipRate !== undefined
+          ? { label: 'Homeownership Rate', value: formatPct(coverageMetrics.homeownershipRate) }
+          : null,
+        coverageMetrics.medianHomeValue !== undefined
+          ? { label: 'Median Home Value', value: formatDollar(coverageMetrics.medianHomeValue) }
+          : null,
+        coverageMetrics.landAreaSqMiles !== undefined
+          ? {
+              label: 'Land Area',
+              value:
+                coverageMetrics.landAreaSqMiles != null
+                  ? `${coverageMetrics.landAreaSqMiles.toLocaleString()} sq mi`
+                  : 'Data unavailable',
+            }
+          : null,
+        coverageMetrics.county ? { label: 'County', value: coverageMetrics.county } : null,
+        coverageMetrics.msaName
+          ? { label: 'Metro Area (MSA)', value: coverageMetrics.msaName }
+          : null,
+      ].filter(Boolean) as { label: string; value: string }[])
     : []
+
+  // Keyboard handler for text chip inputs — Enter adds pending place OR shows validation error
+  const handleTextKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        addPendingLocation()
+      }
+      if (e.key === 'Backspace' && !inputValue && locations.length > 0) {
+        removeLocation(locations[locations.length - 1].osmId)
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [inputValue, locations, pendingPlace]
+  )
 
   return (
     <>
@@ -676,21 +1160,13 @@ function Step3({
               key={type}
               type="button"
               onClick={() => changeCoverageType(type)}
-              className={`group relative flex items-start gap-3 rounded-xl p-3.5 text-left transition-all duration-150 ${
-                isSelected
-                  ? 'bg-primary/8 border-2 border-primary shadow-sm'
-                  : 'hover:bg-primary/4 border border-border bg-card hover:border-primary/40'
-              }`}
+              className={`group relative flex items-start gap-3 rounded-xl p-3.5 text-left transition-all duration-150 ${isSelected ? 'bg-primary/8 border-2 border-primary shadow-sm' : 'hover:bg-primary/4 border border-border bg-card hover:border-primary/40'}`}
             >
               {isSelected && (
                 <Check className="absolute right-2.5 top-2.5 h-3.5 w-3.5 text-primary" />
               )}
               <div
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                  isSelected
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
-                }`}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'}`}
               >
                 <Icon className="h-3.5 w-3.5" />
               </div>
@@ -707,8 +1183,8 @@ function Step3({
         })}
       </div>
 
-      {/* Nationwide confirmation */}
-      {showNationwideMessage && (
+      {/* Nationwide */}
+      {coverageType === 'nationwide' && (
         <div className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
           <Globe className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <p className="text-sm text-foreground">
@@ -718,24 +1194,21 @@ function Step3({
         </div>
       )}
 
-      {/* Text input — local / cities / zips / county */}
+      {/* Text chips input — local / cities / zips / county */}
       {showTextInput && (
         <div className="space-y-3">
           <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleTextKeyDown}
-                placeholder={TEXT_INPUT_PLACEHOLDER[coverageType!] ?? 'Type and press Enter'}
-                className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
+            <LocationAutocomplete
+              value={inputValue}
+              onChange={handleInputChange}
+              onSelect={handleSuggestionSelect}
+              onKeyDown={handleTextKeyDown}
+              placeholder={textInputPlaceholder}
+              searchType={textSearchType}
+            />
             <button
               type="button"
-              onClick={() => addLocation(inputValue)}
+              onClick={addPendingLocation}
               disabled={!inputValue.trim()}
               className="rounded-lg border border-input bg-background px-4 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -743,19 +1216,25 @@ function Step3({
             </button>
           </div>
 
+          {showValidationError && (
+            <p className="text-xs font-medium text-destructive">
+              Please select a valid location from the suggestions.
+            </p>
+          )}
+
           {locations.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {locations.map((loc) => (
                 <span
-                  key={loc}
+                  key={loc.osmId}
                   className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
                 >
-                  {loc}
+                  {loc.label}
                   <button
                     type="button"
-                    onClick={() => removeLocation(loc)}
+                    onClick={() => removeLocation(loc.osmId)}
                     className="hover:text-primary/60"
-                    aria-label={`Remove ${loc}`}
+                    aria-label={`Remove ${loc.label}`}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -767,7 +1246,7 @@ function Step3({
       )}
 
       {/* State selector */}
-      {showStateInput && (
+      {coverageType === 'statewide' && (
         <div className="space-y-3">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -788,19 +1267,13 @@ function Step3({
             ) : (
               <ul className="divide-y divide-border">
                 {filteredStates.map((state) => {
-                  const isStateSelected = locations.includes(state)
+                  const isStateSelected = locations.some((l) => l.label === state)
                   return (
                     <li key={state}>
                       <button
                         type="button"
-                        onClick={() =>
-                          isStateSelected ? removeLocation(state) : addLocation(state)
-                        }
-                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition-colors ${
-                          isStateSelected
-                            ? 'bg-primary/8 font-medium text-primary'
-                            : 'text-foreground hover:bg-muted/60'
-                        }`}
+                        onClick={() => toggleState(state)}
+                        className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition-colors ${isStateSelected ? 'bg-primary/8 font-medium text-primary' : 'text-foreground hover:bg-muted/60'}`}
                       >
                         {state}
                         {isStateSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}
@@ -816,15 +1289,15 @@ function Step3({
             <div className="flex flex-wrap gap-2">
               {locations.map((loc) => (
                 <span
-                  key={loc}
+                  key={loc.osmId}
                   className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
                 >
-                  {loc}
+                  {loc.label}
                   <button
                     type="button"
-                    onClick={() => removeLocation(loc)}
+                    onClick={() => removeLocation(loc.osmId)}
                     className="hover:text-primary/60"
-                    aria-label={`Remove ${loc}`}
+                    aria-label={`Remove ${loc.label}`}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -835,31 +1308,45 @@ function Step3({
         </div>
       )}
 
-      {/* Radius input */}
-      {showRadiusInput && (
+      {/* Radius input — address ONLY committed after selecting from autocomplete, blur, or Enter */}
+      {coverageType === 'radius' && (
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">Business address</label>
             <div className="flex gap-2">
-              <div className="relative flex-1">
-                <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={radiusAddress}
-                  onChange={(e) => setRadiusAddress(e.target.value)}
-                  placeholder="Enter your business address"
-                  className="w-full rounded-lg border border-input bg-background py-2.5 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
+              <LocationAutocomplete
+                value={radiusInputValue}
+                onChange={(v) => {
+                  setRadiusInputValue(v)
+                  // Typing clears the committed radius place (must re-select from suggestions)
+                  setRadiusPlace(null)
+                }}
+                onSelect={handleRadiusSuggestionSelect}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    commitRadiusAddress()
+                  }
+                }}
+                onBlur={commitRadiusAddress}
+                placeholder="Enter your business address"
+                searchType="address"
+              />
               <button
                 type="button"
-                onClick={() => setRadiusAddress('My Business Address')}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                onClick={commitRadiusAddress}
+                disabled={!radiusInputValue.trim()}
+                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-input bg-background px-3 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Building2 className="h-3.5 w-3.5" />
                 Use mine
               </button>
             </div>
+            {radiusInputValue.trim() && !radiusPlace && (
+              <p className="text-xs font-medium text-destructive">
+                Please select a valid address from the suggestions.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -870,11 +1357,7 @@ function Step3({
                   key={miles}
                   type="button"
                   onClick={() => setRadiusMiles(miles)}
-                  className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                    radiusMiles === miles
-                      ? 'bg-primary/8 border-primary text-primary'
-                      : 'hover:bg-primary/4 border-border bg-card text-foreground hover:border-primary/40'
-                  }`}
+                  className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${radiusMiles === miles ? 'bg-primary/8 border-primary text-primary' : 'hover:bg-primary/4 border-border bg-card text-foreground hover:border-primary/40'}`}
                 >
                   {miles} mi
                 </button>
@@ -893,23 +1376,63 @@ function Step3({
         </div>
       )}
 
-      {/* Estimated coverage panel */}
-      {estimates && (
+      {/* Coverage panel — real data from Supabase */}
+      {isValid && (
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">Estimated Coverage</p>
-            <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Estimated
-            </span>
+            <p className="text-sm font-semibold text-foreground">Coverage Data</p>
+            <div className="flex items-center gap-2">
+              {coverage.status === 'loading' && (
+                <span className="text-xs text-muted-foreground">Loading…</span>
+              )}
+              {coverageType === 'radius' && (
+                <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Estimated
+                </span>
+              )}
+              {coverageType !== 'radius' && hasCoverage && anyFound && (
+                <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                  Census Data
+                </span>
+              )}
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-            {coverageStats.map(({ label, value }) => (
-              <div key={label}>
-                <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="mt-0.5 text-sm font-semibold text-foreground">{value}</p>
-              </div>
-            ))}
-          </div>
+
+          {coverage.status === 'loading' && (
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="animate-pulse space-y-1.5">
+                  <div className="h-3 w-24 rounded bg-muted" />
+                  <div className="h-4 w-16 rounded bg-muted" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {hasCoverage && (
+            <>
+              {!anyFound && coverageType !== 'radius' && (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  This location is not yet in our database. Data will be added by the next Manus
+                  import cycle.
+                </p>
+              )}
+              {coverageStats.length > 0 && (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+                  {coverageStats.map(({ label, value }) => (
+                    <div key={label}>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                      <p
+                        className={`mt-0.5 text-sm font-semibold ${value === 'Data unavailable' ? 'text-muted-foreground' : 'text-foreground'}`}
+                      >
+                        {value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
@@ -919,11 +1442,11 @@ function Step3({
           coverageType={coverageType}
           locations={locations}
           radiusMiles={radiusMiles}
-          radiusAddress={radiusAddress}
+          radiusPlace={radiusPlace}
         />
       )}
 
-      {/* Map placeholder — type selected but no location yet */}
+      {/* Placeholder — type selected but no location yet */}
       {showPlaceholder && (
         <div className="overflow-hidden rounded-xl border-2 border-dashed border-border bg-muted/20">
           <div className="flex flex-col items-center gap-2 py-10 text-center">
@@ -931,7 +1454,9 @@ function Step3({
               <MapPin className="h-6 w-6 text-muted-foreground/50" />
             </div>
             <p className="text-sm font-medium text-muted-foreground">
-              Add a location to see the map
+              {coverageType === 'radius'
+                ? 'Select your address from the suggestions above'
+                : 'Select a location from the suggestions above'}
             </p>
           </div>
         </div>
@@ -960,7 +1485,7 @@ function Step3({
             onClick={() =>
               isValid &&
               coverageType &&
-              onNext({ coverageType, locations, radiusMiles, radiusAddress })
+              onNext({ coverageType, locations, radiusMiles, radiusPlace })
             }
             className="flex items-center gap-1.5 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
           >
@@ -973,7 +1498,7 @@ function Step3({
   )
 }
 
-// ── Step 4 placeholder ────────────────────────────────────────────────────────
+// ── Step 4 placeholder ─────────────────────────────────────────────────────────
 
 function Step4({ onBack }: { onBack: () => void }) {
   return (
@@ -982,7 +1507,6 @@ function Step4({ onBack }: { onBack: () => void }) {
         <h1 className="text-2xl font-semibold text-foreground">Step 4</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">Coming soon.</p>
       </div>
-
       <div className="flex items-center justify-between border-t border-border pt-6">
         <button
           type="button"
@@ -1010,29 +1534,24 @@ export default function NewObjectivePage() {
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
   const [selectedBusiness, setSelectedBusiness] = useState<string | null>(null)
   const [selectedServiceArea, setSelectedServiceArea] = useState<ServiceAreaState | undefined>()
-  const [wizardState, setWizardState] = useState<Partial<WizardState>>({})
 
   function advanceToStep2() {
     if (!selectedGoal) return
-    setWizardState((prev) => ({ ...prev, goalType: selectedGoal }))
     setStep(2)
   }
 
   function advanceToStep3() {
     if (!selectedBusiness) return
-    setWizardState((prev) => ({ ...prev, businessType: selectedBusiness }))
     setStep(3)
   }
 
   function advanceToStep4(serviceArea: ServiceAreaState) {
     setSelectedServiceArea(serviceArea)
-    setWizardState((prev) => ({ ...prev, serviceArea }))
     setStep(4)
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      {/* Breadcrumb */}
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Link href="/tower" className="hover:text-foreground">
           Tower Control
@@ -1054,7 +1573,6 @@ export default function NewObjectivePage() {
       {step === 1 && (
         <Step1 selected={selectedGoal} onSelect={setSelectedGoal} onNext={advanceToStep2} />
       )}
-
       {step === 2 && (
         <Step2
           selected={selectedBusiness}
@@ -1063,11 +1581,9 @@ export default function NewObjectivePage() {
           onNext={advanceToStep3}
         />
       )}
-
       {step === 3 && (
         <Step3 initial={selectedServiceArea} onBack={() => setStep(2)} onNext={advanceToStep4} />
       )}
-
       {step === 4 && <Step4 onBack={() => setStep(3)} />}
     </div>
   )

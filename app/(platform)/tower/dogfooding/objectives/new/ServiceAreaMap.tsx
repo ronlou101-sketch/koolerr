@@ -17,11 +17,19 @@ import type { GeoJsonObject } from 'geojson'
 
 type CoverageType = 'local' | 'cities' | 'zips' | 'county' | 'statewide' | 'nationwide' | 'radius'
 
+export interface ValidatedPlace {
+  label: string // "Austin, TX"
+  lat: number
+  lng: number
+  osmId: string // "R113314" — used for polygon lookups
+  osmType: string // "relation" | "node" | "way"
+}
+
 interface ServiceAreaMapProps {
   coverageType: CoverageType | null
-  locations: string[]
+  locations: ValidatedPlace[] // coordinates already known — no text geocoding
   radiusMiles: number
-  radiusAddress: string
+  radiusPlace: ValidatedPlace | null
 }
 
 interface GeoPoint {
@@ -31,43 +39,39 @@ interface GeoPoint {
   geojson?: GeoJsonObject
 }
 
-// ── Geocoding ─────────────────────────────────────────────────────────────────
+// ── Polygon cache — fetched by osmId via Nominatim lookup (not search) ────────
 
-const CACHE = new Map<string, GeoPoint | null>()
+const POLYGON_CACHE: Map<string, GeoJsonObject | null> = new Map()
 
-async function geocode(query: string, polygon = false): Promise<GeoPoint | null> {
-  const key = `${query}:${polygon}`
-  if (CACHE.has(key)) return CACHE.get(key) ?? null
+async function fetchPolygon(place: ValidatedPlace): Promise<GeoJsonObject | null> {
+  if (POLYGON_CACHE.has(place.osmId)) return POLYGON_CACHE.get(place.osmId) ?? null
+
+  // Nominatim lookup by osm_id is more precise than search and uses less quota
+  const osmTypeChar = place.osmType === 'relation' ? 'R' : place.osmType === 'way' ? 'W' : 'N'
+  const osmRef = `${osmTypeChar}${place.osmId.replace(/^[RNW]/, '')}`
 
   const params = new URLSearchParams({
-    q: query,
+    osm_ids: osmRef,
     format: 'json',
-    limit: '1',
-    countrycodes: 'us',
+    polygon_geojson: '1',
     addressdetails: '0',
-    ...(polygon ? { polygon_geojson: '1' } : {}),
   })
 
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+    const res = await fetch(`https://nominatim.openstreetmap.org/lookup?${params}`, {
       headers: { 'User-Agent': 'Koolerr Campaign Wizard/1.0 (koolerr.com)' },
     })
-    if (!res.ok) throw new Error('Nominatim error')
-    const data = await res.json()
-    if (!Array.isArray(data) || data.length === 0) {
-      CACHE.set(key, null)
+    if (!res.ok) {
+      POLYGON_CACHE.set(place.osmId, null)
       return null
     }
-    const pt: GeoPoint = {
-      lat: parseFloat(data[0].lat),
-      lng: parseFloat(data[0].lon),
-      label: query,
-      geojson: data[0].geojson,
-    }
-    CACHE.set(key, pt)
-    return pt
+    const data = await res.json()
+    const geojson: GeoJsonObject | null =
+      Array.isArray(data) && data[0]?.geojson ? data[0].geojson : null
+    POLYGON_CACHE.set(place.osmId, geojson)
+    return geojson
   } catch {
-    CACHE.set(key, null)
+    POLYGON_CACHE.set(place.osmId, null)
     return null
   }
 }
@@ -90,7 +94,7 @@ const radiusCenterIcon = L.divIcon({
   iconAnchor: [6, 6],
 })
 
-// ── Map controller — adjusts view when data changes ───────────────────────────
+// ── Map controller ────────────────────────────────────────────────────────────
 
 function MapController({
   points,
@@ -108,7 +112,6 @@ function MapController({
       map.setView([39.5, -98.35], 4)
       return
     }
-
     if (!points.length) return
 
     if (coverageType === 'radius') {
@@ -146,8 +149,9 @@ export default function ServiceAreaMap({
   coverageType,
   locations,
   radiusMiles,
-  radiusAddress,
+  radiusPlace,
 }: ServiceAreaMapProps) {
+  // Points with optional polygon GeoJSON (only fetched for county/statewide)
   const [points, setPoints] = useState<GeoPoint[]>([])
   const [loading, setLoading] = useState(false)
   const prevKey = useRef('')
@@ -156,16 +160,15 @@ export default function ServiceAreaMap({
     if (!coverageType) return
 
     const needsPolygon = coverageType === 'statewide' || coverageType === 'county'
-    const queries =
-      coverageType === 'nationwide'
-        ? []
-        : coverageType === 'radius'
-          ? radiusAddress.trim()
-            ? [radiusAddress.trim()]
-            : []
-          : locations
 
-    const stateKey = `${coverageType}|${queries.join(',')}|${radiusMiles}`
+    // Build the stable identity key for this render
+    const stateKey =
+      coverageType === 'nationwide'
+        ? 'nationwide'
+        : coverageType === 'radius'
+          ? `radius|${radiusPlace?.osmId ?? ''}|${radiusMiles}`
+          : `${coverageType}|${locations.map((l) => l.osmId).join(',')}|${radiusMiles}`
+
     if (stateKey === prevKey.current) return
     prevKey.current = stateKey
 
@@ -174,16 +177,38 @@ export default function ServiceAreaMap({
       return
     }
 
-    if (!queries.length) {
+    if (coverageType === 'radius') {
+      if (!radiusPlace) {
+        setPoints([])
+        return
+      }
+      // Coordinates already known — no geocoding needed
+      setPoints([{ lat: radiusPlace.lat, lng: radiusPlace.lng, label: radiusPlace.label }])
+      return
+    }
+
+    if (!locations.length) {
       setPoints([])
       return
     }
 
+    if (!needsPolygon) {
+      // Markers: use coordinates directly — no Nominatim call
+      setPoints(locations.map((l) => ({ lat: l.lat, lng: l.lng, label: l.label })))
+      return
+    }
+
+    // Polygon types: fetch GeoJSON by osmId from Nominatim lookup API
     setLoading(true)
-    Promise.all(queries.map((q) => geocode(q, needsPolygon)))
-      .then((results) => setPoints(results.filter(Boolean) as GeoPoint[]))
+    Promise.all(
+      locations.map(async (place): Promise<GeoPoint> => {
+        const geojson = await fetchPolygon(place)
+        return { lat: place.lat, lng: place.lng, label: place.label, geojson: geojson ?? undefined }
+      })
+    )
+      .then(setPoints)
       .finally(() => setLoading(false))
-  }, [coverageType, locations, radiusAddress, radiusMiles])
+  }, [coverageType, locations, radiusPlace, radiusMiles])
 
   const usePolygons = coverageType === 'statewide' || coverageType === 'county'
   const useRadius = coverageType === 'radius'
@@ -230,19 +255,14 @@ export default function ServiceAreaMap({
             )
           )}
 
-        {/* Service radius */}
+        {/* Service radius — coordinates already known */}
         {useRadius && points.length > 0 && (
           <>
             <Marker position={[points[0].lat, points[0].lng]} icon={radiusCenterIcon} />
             <Circle
               center={[points[0].lat, points[0].lng]}
               radius={radiusMiles * 1609.344}
-              pathOptions={{
-                color: '#6366f1',
-                weight: 2,
-                fillColor: '#6366f1',
-                fillOpacity: 0.15,
-              }}
+              pathOptions={{ color: '#6366f1', weight: 2, fillColor: '#6366f1', fillOpacity: 0.15 }}
             />
           </>
         )}
@@ -257,10 +277,10 @@ export default function ServiceAreaMap({
         </div>
       )}
 
-      {/* Geocoding loader */}
+      {/* Polygon loading */}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm">
-          <span className="text-sm text-muted-foreground">Finding location…</span>
+          <span className="text-sm text-muted-foreground">Loading boundary…</span>
         </div>
       )}
     </div>
