@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import {
   Users,
@@ -26,6 +27,8 @@ import {
   X,
   Building2,
 } from 'lucide-react'
+
+const ServiceAreaMap = dynamic(() => import('./ServiceAreaMap'), { ssr: false })
 
 // ── Step 1 data ────────────────────────────────────────────────────────────────
 
@@ -99,12 +102,7 @@ const COVERAGE_OPTIONS: {
   { type: 'cities', label: 'Multiple Cities', description: 'Target a list of cities', icon: Map },
   { type: 'zips', label: 'ZIP Codes', description: 'Target specific postal codes', icon: Hash },
   { type: 'county', label: 'County', description: 'Target one or more counties', icon: Layers },
-  {
-    type: 'statewide',
-    label: 'Statewide',
-    description: 'Target an entire state',
-    icon: Landmark,
-  },
+  { type: 'statewide', label: 'Statewide', description: 'Target an entire state', icon: Landmark },
   {
     type: 'nationwide',
     label: 'Nationwide',
@@ -179,6 +177,163 @@ const TEXT_INPUT_PLACEHOLDER: Partial<Record<CoverageType, string>> = {
   cities: 'e.g. Dallas, TX — press Enter to add',
   zips: 'e.g. 78701 — press Enter to add',
   county: 'e.g. Travis County, TX',
+}
+
+// ── Step 3 coverage helpers ────────────────────────────────────────────────────
+
+type CoverageEstimates = {
+  population: string
+  households: string
+  businesses: string
+  counties: string
+  sqMiles: string
+  audienceSize: string
+  citiesCovered?: string
+}
+
+function getCoverageEstimates(
+  type: CoverageType,
+  count: number,
+  radiusMiles: number
+): CoverageEstimates {
+  const n = Math.max(1, count)
+  switch (type) {
+    case 'local':
+      return {
+        population: '50,000 – 350,000',
+        households: '18,000 – 130,000',
+        businesses: '1,500 – 12,000',
+        counties: '1',
+        sqMiles: '20 – 150',
+        audienceSize: '15,000 – 75,000',
+      }
+    case 'cities':
+      return {
+        population: `${50 * n}K – ${350 * n}K`,
+        households: `${18 * n}K – ${130 * n}K`,
+        businesses: `${(1.5 * n).toFixed(0)}K – ${12 * n}K`,
+        counties: `${n} – ${n * 3}`,
+        sqMiles: `${20 * n} – ${150 * n}`,
+        audienceSize: `${15 * n}K – ${75 * n}K`,
+        citiesCovered: `${n}`,
+      }
+    case 'zips':
+      return {
+        population: `${8 * n}K – ${35 * n}K`,
+        households: `${3 * n}K – ${13 * n}K`,
+        businesses: `${250 * n} – ${1500 * n}`,
+        counties: `${Math.ceil(n / 3)} – ${Math.ceil(n / 2)}`,
+        sqMiles: `${2 * n} – ${20 * n}`,
+        audienceSize: `${2 * n}K – ${10 * n}K`,
+      }
+    case 'county':
+      return {
+        population: `${75 * n}K – ${600 * n}K`,
+        households: `${27 * n}K – ${220 * n}K`,
+        businesses: `${3 * n}K – ${30 * n}K`,
+        counties: `${n}`,
+        sqMiles: `${100 * n} – ${3000 * n}`,
+        audienceSize: `${22 * n}K – ${180 * n}K`,
+        citiesCovered: `${5 * n} – ${50 * n}`,
+      }
+    case 'statewide':
+      return {
+        population: n === 1 ? '1M – 20M' : `${n}M – ${20 * n}M`,
+        households: n === 1 ? '400K – 7M' : `${400 * n}K – ${7 * n}M`,
+        businesses: n === 1 ? '30K – 1.5M' : `${30 * n}K – ${1500 * n}K`,
+        counties: n === 1 ? '10 – 250' : `${10 * n} – ${250 * n}`,
+        sqMiles: n === 1 ? '1,000 – 100,000' : `${1000 * n} – ${100000 * n}`,
+        audienceSize: n === 1 ? '300K – 6M' : `${300 * n}K – ${6 * n}M`,
+        citiesCovered: n === 1 ? '50 – 2,000' : `${50 * n} – ${2000 * n}`,
+      }
+    case 'nationwide':
+      return {
+        population: '331M+',
+        households: '128M+',
+        businesses: '30M+',
+        counties: '3,000+',
+        sqMiles: '3.8M',
+        audienceSize: '250M+',
+        citiesCovered: '30,000+',
+      }
+    case 'radius': {
+      const TABLE: Record<number, CoverageEstimates> = {
+        5: {
+          population: '50K – 200K',
+          households: '18K – 75K',
+          businesses: '1K – 8K',
+          counties: '1',
+          sqMiles: '~80',
+          audienceSize: '15K – 60K',
+        },
+        10: {
+          population: '150K – 600K',
+          households: '55K – 220K',
+          businesses: '3K – 25K',
+          counties: '1 – 2',
+          sqMiles: '~315',
+          audienceSize: '45K – 180K',
+        },
+        25: {
+          population: '500K – 2M',
+          households: '180K – 750K',
+          businesses: '10K – 80K',
+          counties: '2 – 5',
+          sqMiles: '~2,000',
+          audienceSize: '150K – 600K',
+        },
+        50: {
+          population: '1M – 5M',
+          households: '380K – 1.9M',
+          businesses: '25K – 200K',
+          counties: '5 – 15',
+          sqMiles: '~7,850',
+          audienceSize: '300K – 1.5M',
+        },
+        100: {
+          population: '3M – 15M',
+          households: '1.1M – 5.7M',
+          businesses: '75K – 600K',
+          counties: '15 – 50',
+          sqMiles: '~31,400',
+          audienceSize: '900K – 4.5M',
+        },
+      }
+      return TABLE[radiusMiles] ?? TABLE[25]
+    }
+  }
+}
+
+function getTargetingSummary(
+  type: CoverageType | null,
+  locations: string[],
+  radiusMiles: number,
+  radiusAddress: string
+): string | null {
+  if (!type) return null
+  switch (type) {
+    case 'nationwide':
+      return 'Nationwide (United States)'
+    case 'local':
+      return locations[0] ?? null
+    case 'cities':
+      if (!locations.length) return null
+      if (locations.length === 1) return locations[0]
+      if (locations.length <= 3) return locations.join(', ')
+      return `${locations.slice(0, 2).join(', ')} + ${locations.length - 2} more`
+    case 'zips':
+      if (!locations.length) return null
+      return locations.length === 1 ? `ZIP ${locations[0]}` : `${locations.length} ZIP codes`
+    case 'county':
+      if (!locations.length) return null
+      return locations.length === 1 ? locations[0] : `${locations.length} counties`
+    case 'statewide':
+      if (!locations.length) return null
+      return locations.length === 1 ? `${locations[0]} (Statewide)` : `${locations.length} states`
+    case 'radius':
+      if (!radiusAddress.trim()) return null
+      return `${radiusMiles}-mile radius from ${radiusAddress}`
+  }
 }
 
 // ── Wizard state ───────────────────────────────────────────────────────────────
@@ -474,18 +629,34 @@ function Step3({
   const showStateInput = coverageType === 'statewide'
   const showRadiusInput = coverageType === 'radius'
   const showNationwideMessage = coverageType === 'nationwide'
-  const showMap = coverageType !== null
 
-  const mapSummary =
-    coverageType === 'nationwide'
-      ? 'United States'
-      : coverageType === 'radius' && radiusAddress
-        ? `${radiusMiles} mi radius · ${radiusAddress}`
-        : locations.length === 1
-          ? locations[0]
-          : locations.length > 1
-            ? `${locations.length} locations selected`
-            : null
+  const showLiveMap = isValid
+  const showPlaceholder = coverageType !== null && !isValid
+
+  const targetingSummary = getTargetingSummary(coverageType, locations, radiusMiles, radiusAddress)
+
+  const estimates =
+    coverageType && isValid
+      ? getCoverageEstimates(
+          coverageType,
+          coverageType === 'radius' ? 1 : locations.length,
+          radiusMiles
+        )
+      : null
+
+  const coverageStats = estimates
+    ? [
+        { label: 'Est. Population Reached', value: estimates.population },
+        { label: 'Est. Households', value: estimates.households },
+        { label: 'Est. Businesses', value: estimates.businesses },
+        { label: 'Counties Covered', value: estimates.counties },
+        ...(estimates.citiesCovered
+          ? [{ label: 'Cities Covered', value: estimates.citiesCovered }]
+          : []),
+        { label: 'Est. Service Area', value: `${estimates.sqMiles} sq mi` },
+        { label: 'Est. Audience Size', value: estimates.audienceSize },
+      ]
+    : []
 
   return (
     <>
@@ -713,15 +884,55 @@ function Step3({
         </div>
       )}
 
-      {/* Map preview placeholder */}
-      {showMap && (
+      {/* Targeting summary */}
+      {targetingSummary && (
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-4 py-2.5">
+          <MapPin className="h-4 w-4 shrink-0 text-primary" />
+          <span className="text-sm text-muted-foreground">Targeting:</span>
+          <span className="text-sm font-semibold text-foreground">{targetingSummary}</span>
+        </div>
+      )}
+
+      {/* Estimated coverage panel */}
+      {estimates && (
+        <div className="rounded-xl border border-border bg-card p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground">Estimated Coverage</p>
+            <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Estimated
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+            {coverageStats.map(({ label, value }) => (
+              <div key={label}>
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="mt-0.5 text-sm font-semibold text-foreground">{value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Interactive map */}
+      {showLiveMap && (
+        <ServiceAreaMap
+          coverageType={coverageType}
+          locations={locations}
+          radiusMiles={radiusMiles}
+          radiusAddress={radiusAddress}
+        />
+      )}
+
+      {/* Map placeholder — type selected but no location yet */}
+      {showPlaceholder && (
         <div className="overflow-hidden rounded-xl border-2 border-dashed border-border bg-muted/20">
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
               <MapPin className="h-6 w-6 text-muted-foreground/50" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground">Map preview</p>
-            {mapSummary && <p className="text-xs text-muted-foreground/70">{mapSummary}</p>}
+            <p className="text-sm font-medium text-muted-foreground">
+              Add a location to see the map
+            </p>
           </div>
         </div>
       )}
