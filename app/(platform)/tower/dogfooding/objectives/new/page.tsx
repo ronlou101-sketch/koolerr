@@ -233,80 +233,11 @@ const STATE_CENTERS: Record<string, { lat: number; lng: number; abbr: string }> 
 }
 
 // ── Autocomplete ───────────────────────────────────────────────────────────────
+//
+// City / ZIP / county: Supabase-backed with prefix-first ranking (fast, no rate limits)
+// Address (radius field): Nominatim — arbitrary addresses not stored in the DB
 
 type AutocompleteType = 'city' | 'zip' | 'county' | 'address'
-
-const STATE_ABBR: Record<string, string> = {
-  Alabama: 'AL',
-  Alaska: 'AK',
-  Arizona: 'AZ',
-  Arkansas: 'AR',
-  California: 'CA',
-  Colorado: 'CO',
-  Connecticut: 'CT',
-  Delaware: 'DE',
-  Florida: 'FL',
-  Georgia: 'GA',
-  Hawaii: 'HI',
-  Idaho: 'ID',
-  Illinois: 'IL',
-  Indiana: 'IN',
-  Iowa: 'IA',
-  Kansas: 'KS',
-  Kentucky: 'KY',
-  Louisiana: 'LA',
-  Maine: 'ME',
-  Maryland: 'MD',
-  Massachusetts: 'MA',
-  Michigan: 'MI',
-  Minnesota: 'MN',
-  Mississippi: 'MS',
-  Missouri: 'MO',
-  Montana: 'MT',
-  Nebraska: 'NE',
-  Nevada: 'NV',
-  'New Hampshire': 'NH',
-  'New Jersey': 'NJ',
-  'New Mexico': 'NM',
-  'New York': 'NY',
-  'North Carolina': 'NC',
-  'North Dakota': 'ND',
-  Ohio: 'OH',
-  Oklahoma: 'OK',
-  Oregon: 'OR',
-  Pennsylvania: 'PA',
-  'Rhode Island': 'RI',
-  'South Carolina': 'SC',
-  'South Dakota': 'SD',
-  Tennessee: 'TN',
-  Texas: 'TX',
-  Utah: 'UT',
-  Vermont: 'VT',
-  Virginia: 'VA',
-  Washington: 'WA',
-  'West Virginia': 'WV',
-  Wisconsin: 'WI',
-  Wyoming: 'WY',
-  'District of Columbia': 'DC',
-}
-
-interface NominatimResult {
-  osm_type: string
-  osm_id: string
-  lat: string
-  lon: string
-  display_name: string
-  address?: {
-    city?: string
-    town?: string
-    village?: string
-    hamlet?: string
-    county?: string
-    state?: string
-    postcode?: string
-    country?: string
-  }
-}
 
 const SUGGESTION_CACHE: Map<string, ValidatedPlace[]> = new Map()
 
@@ -314,93 +245,61 @@ async function fetchSuggestions(query: string, type: AutocompleteType): Promise<
   const key = `${type}:${query.toLowerCase()}`
   if (SUGGESTION_CACHE.has(key)) return SUGGESTION_CACHE.get(key)!
 
-  const params: Record<string, string> = {
+  // Structured geography: query our Supabase DB (prefix-ranked, population-sorted)
+  if (type !== 'address') {
+    try {
+      const params = new URLSearchParams({ q: query, type, limit: '8' })
+      const res = await fetch(`/api/geographic/search?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        const results: ValidatedPlace[] = data.results ?? []
+        SUGGESTION_CACHE.set(key, results)
+        return results
+      }
+    } catch {
+      // fall through to empty
+    }
+    SUGGESTION_CACHE.set(key, [])
+    return []
+  }
+
+  // Freeform address (radius field only) — still uses Nominatim
+  const params = new URLSearchParams({
     format: 'json',
-    limit: '8',
+    limit: '6',
     countrycodes: 'us',
     addressdetails: '1',
-  }
-
-  if (type === 'county') {
-    params.q = query.toLowerCase().includes('county') ? query : `${query} county`
-  } else {
-    params.q = query
-  }
+    q: query,
+  })
 
   try {
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?${new URLSearchParams(params)}`,
-      { headers: { 'User-Agent': 'Koolerr Campaign Wizard/1.0 (koolerr.com)' } }
-    )
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
+      headers: { 'User-Agent': 'Koolerr Campaign Wizard/1.0 (koolerr.com)' },
+    })
     if (!res.ok) {
       SUGGESTION_CACHE.set(key, [])
       return []
     }
-    const data: NominatimResult[] = await res.json()
+    const data: Array<{
+      osm_type: string
+      osm_id: string
+      lat: string
+      lon: string
+      display_name: string
+    }> = await res.json()
 
-    const stAbbr = (state?: string) => (state ? (STATE_ABBR[state] ?? state) : '')
-
-    const results = data
-      .map((item): ValidatedPlace | null => {
-        const addr = item.address
-        const st = stAbbr(addr?.state)
-        const osmId = `${item.osm_type[0].toUpperCase()}${item.osm_id}`
-
-        if (type === 'city') {
-          const city =
-            addr?.city ||
-            addr?.town ||
-            addr?.village ||
-            addr?.hamlet ||
-            item.display_name.split(',')[0]
-          if (!city) return null
-          return {
-            label: st ? `${city}, ${st}` : city,
-            lat: parseFloat(item.lat),
-            lng: parseFloat(item.lon),
-            osmId,
-            osmType: item.osm_type,
-          }
-        }
-
-        if (type === 'zip') {
-          const zip = addr?.postcode
-          if (!zip?.match(/^\d{4,5}/)) return null
-          const city = addr?.city || addr?.town || addr?.village || ''
-          return {
-            label: [zip, city, st].filter(Boolean).join(', '),
-            lat: parseFloat(item.lat),
-            lng: parseFloat(item.lon),
-            osmId,
-            osmType: item.osm_type,
-          }
-        }
-
-        if (type === 'county') {
-          const county = addr?.county || item.display_name.split(',')[0]
-          if (!county) return null
-          return {
-            label: st ? `${county}, ${st}` : county,
-            lat: parseFloat(item.lat),
-            lng: parseFloat(item.lon),
-            osmId,
-            osmType: item.osm_type,
-          }
-        }
-
-        // address
+    const results: ValidatedPlace[] = data
+      .map((item) => {
         const parts = item.display_name.split(', ').filter((p) => p !== 'United States')
         return {
           label: parts.slice(0, 4).join(', '),
           lat: parseFloat(item.lat),
           lng: parseFloat(item.lon),
-          osmId,
+          osmId: `${item.osm_type[0].toUpperCase()}${item.osm_id}`,
           osmType: item.osm_type,
         }
       })
-      .filter((x): x is ValidatedPlace => x !== null)
       .filter((p, i, arr) => arr.findIndex((q) => q.label === p.label) === i)
-      .slice(0, 6)
 
     SUGGESTION_CACHE.set(key, results)
     return results
@@ -1137,7 +1036,6 @@ function Step3({
       if (e.key === 'Backspace' && !inputValue && locations.length > 0) {
         removeLocation(locations[locations.length - 1].osmId)
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [inputValue, locations, pendingPlace]
   )
@@ -1413,8 +1311,7 @@ function Step3({
             <>
               {!anyFound && coverageType !== 'radius' && (
                 <p className="mb-3 text-xs text-muted-foreground">
-                  This location is not yet in our database. Data will be added by the next Manus
-                  import cycle.
+                  Demographic data is currently unavailable for this location.
                 </p>
               )}
               {coverageStats.length > 0 && (
