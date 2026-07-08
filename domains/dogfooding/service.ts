@@ -17,6 +17,9 @@ import type {
 
 export interface IDogfoodingService {
   createObjective(input: CreateObjectiveInput): Promise<PlatformResult<DogfoodingObjective>>
+  createCampaign(
+    campaign: Omit<DogfoodingCampaign, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<PlatformResult<DogfoodingCampaign>>
   getObjective(
     id: string,
     organizationId: OrganizationId
@@ -72,6 +75,22 @@ class DogfoodingService implements IDogfoodingService {
         goalType: input.goalType,
       })
       return ok(objective)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async createCampaign(
+    campaign: Omit<DogfoodingCampaign, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<PlatformResult<DogfoodingCampaign>> {
+    try {
+      const created = await _repo.createCampaign(campaign)
+      logger.info('[DOGFOODING] Campaign created', {
+        id: created.id,
+        organizationId: campaign.organizationId,
+        objectiveId: campaign.objectiveId,
+      })
+      return ok(created)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }

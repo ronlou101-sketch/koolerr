@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
@@ -1793,31 +1794,117 @@ function Step4({
   )
 }
 
-// ── Step 5 placeholder ─────────────────────────────────────────────────────────
+// ── Step 5 — Save campaign ─────────────────────────────────────────────────────
 
-function Step5({ onBack }: { onBack: () => void }) {
+function Step5({
+  goal,
+  businessType,
+  serviceArea,
+  strategy,
+  onBack,
+}: {
+  goal: string
+  businessType: string
+  serviceArea: ServiceAreaState
+  strategy: CampaignStrategy
+  onBack: () => void
+}) {
+  const router = useRouter()
+  const [status, setStatus] = useState<'saving' | 'error'>('saving')
+  const [errorMsg, setErrorMsg] = useState('')
+  const saveRef = useRef(0)
+
+  const locationSummary =
+    getTargetingSummary(
+      serviceArea.coverageType,
+      serviceArea.locations,
+      serviceArea.radiusMiles,
+      serviceArea.radiusPlace
+    ) ?? 'local area'
+
+  const save = useCallback(async () => {
+    setStatus('saving')
+    const saveId = ++saveRef.current
+    try {
+      const res = await fetch('/api/tower/dogfooding/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal, businessType, locationSummary, strategy }),
+      })
+      if (saveId !== saveRef.current) return
+      const data = (await res.json()) as { campaignId?: string; error?: string }
+      if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`)
+      if (!data.campaignId) throw new Error('No campaign ID returned')
+      router.push(`/tower/dogfooding/campaigns/${data.campaignId}`)
+    } catch (err) {
+      if (saveId !== saveRef.current) return
+      setErrorMsg(err instanceof Error ? err.message : String(err))
+      setStatus('error')
+    }
+  }, [goal, businessType, locationSummary, strategy, router])
+
+  useEffect(() => {
+    void save()
+  }, [save])
+
+  const navBack = (
+    <button
+      type="button"
+      onClick={onBack}
+      className="flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+    >
+      <ChevronLeft className="h-4 w-4" />
+      Back
+    </button>
+  )
+
+  if (status === 'error') {
+    return (
+      <>
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Saving Campaign</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Something went wrong. You can try again.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-8 text-center">
+          <p className="text-sm text-destructive">{errorMsg}</p>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          {navBack}
+          <button
+            type="button"
+            onClick={() => void save()}
+            className="flex items-center gap-1.5 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Try Again
+          </button>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Step 5</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">Coming soon.</p>
+        <h1 className="text-2xl font-semibold text-foreground">Saving Campaign</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Saving your campaign strategy and creating your campaign…
+        </p>
       </div>
-      <div className="flex items-center justify-between border-t border-border pt-6">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </button>
-        <Link
-          href="/tower/dogfooding/objectives"
-          className="text-sm text-muted-foreground hover:text-foreground"
-        >
-          Cancel
-        </Link>
+
+      <div className="flex flex-col items-center gap-6 rounded-2xl border border-border bg-card px-8 py-16">
+        <div className="relative flex h-16 w-16 items-center justify-center">
+          <div className="absolute inset-0 animate-spin rounded-full border-2 border-border border-t-primary" />
+          <Sparkles className="h-6 w-6 text-primary" />
+        </div>
+        <p className="text-sm font-medium text-foreground">Creating your campaign…</p>
       </div>
+
+      <div className="flex items-center justify-between border-t border-border pt-6">{navBack}</div>
     </>
   )
 }
@@ -1850,9 +1937,6 @@ export default function NewObjectivePage() {
     setSelectedStrategy(strategy)
     setStep(5)
   }
-
-  // suppress unused-variable warning until Step 5 uses it
-  void selectedStrategy
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -1897,7 +1981,19 @@ export default function NewObjectivePage() {
           onNext={advanceToStep5}
         />
       )}
-      {step === 5 && <Step5 onBack={() => setStep(4)} />}
+      {step === 5 &&
+        selectedGoal &&
+        selectedBusiness &&
+        selectedServiceArea &&
+        selectedStrategy && (
+          <Step5
+            goal={selectedGoal}
+            businessType={selectedBusiness}
+            serviceArea={selectedServiceArea}
+            strategy={selectedStrategy}
+            onBack={() => setStep(4)}
+          />
+        )}
     </div>
   )
 }
