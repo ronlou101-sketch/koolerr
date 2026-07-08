@@ -26,6 +26,9 @@ import {
   CircleDot,
   X,
   Building2,
+  Pencil,
+  RefreshCw,
+  Plus,
 } from 'lucide-react'
 import type { ValidatedPlace } from './ServiceAreaMap'
 
@@ -572,6 +575,20 @@ function getTargetingSummary(
       if (!radiusPlace) return null
       return `${radiusMiles}-mile radius from ${radiusPlace.label}`
   }
+}
+
+// ── Campaign strategy (Step 4 output) ─────────────────────────────────────────
+
+type CampaignStrategy = {
+  primaryGoal: string
+  targetAudience: string
+  coreMessage: string
+  recommendedOffer: string
+  contentPillars: string[]
+  postingFrequency: string
+  campaignLength: string
+  toneOfVoice: string[]
+  successMetrics: string[]
 }
 
 // ── Wizard state ───────────────────────────────────────────────────────────────
@@ -1395,13 +1412,394 @@ function Step3({
   )
 }
 
-// ── Step 4 placeholder ─────────────────────────────────────────────────────────
+// ── Step 4 — Campaign Strategy ─────────────────────────────────────────────────
 
-function Step4({ onBack }: { onBack: () => void }) {
+const LOADING_MESSAGES = [
+  'Analyzing your business…',
+  'Building campaign strategy…',
+  'Selecting content themes…',
+  'Finalizing recommendations…',
+]
+
+type EditField = keyof CampaignStrategy | null
+
+function StrategyCard({
+  label,
+  field,
+  strategy,
+  editField,
+  editValue,
+  onStartEdit,
+  onChangeEdit,
+  onCommit,
+  onCancel,
+}: {
+  label: string
+  field: keyof CampaignStrategy
+  strategy: CampaignStrategy
+  editField: EditField
+  editValue: string
+  onStartEdit: (f: EditField, v: string | string[]) => void
+  onChangeEdit: (v: string) => void
+  onCommit: () => void
+  onCancel: () => void
+}) {
+  const value = strategy[field]
+  const isArray = Array.isArray(value)
+  const isEditing = editField === field
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' && !isArray) {
+      e.preventDefault()
+      onCommit()
+    }
+    if (e.key === 'Escape') onCancel()
+  }
+
+  return (
+    <div className="group relative rounded-xl border border-border bg-card p-5">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        {!isEditing && (
+          <button
+            type="button"
+            onClick={() => onStartEdit(field, value)}
+            className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+            aria-label={`Edit ${label}`}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {isEditing && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onCommit}
+              className="rounded p-1 text-primary hover:bg-primary/10"
+              aria-label="Save"
+            >
+              <Check className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded p-1 text-muted-foreground hover:bg-muted"
+              aria-label="Cancel"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {!isEditing && !isArray && (
+        <p className="text-sm leading-relaxed text-foreground">{value as string}</p>
+      )}
+
+      {!isEditing && isArray && field === 'successMetrics' && (
+        <ul className="space-y-1">
+          {(value as string[]).map((item) => (
+            <li key={item} className="flex items-center gap-2 text-sm text-foreground">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!isEditing && isArray && field !== 'successMetrics' && (
+        <div className="flex flex-wrap gap-2">
+          {(value as string[]).map((item) => (
+            <span
+              key={item}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+                field === 'contentPillars'
+                  ? 'bg-primary/10 text-primary'
+                  : 'bg-muted text-foreground'
+              }`}
+            >
+              {field === 'contentPillars' && <Check className="h-3 w-3" />}
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {isEditing && (
+        <div className="space-y-2">
+          <textarea
+            autoFocus
+            value={editValue}
+            onChange={(e) => onChangeEdit(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={isArray ? Math.max(3, (value as string[]).length + 1) : 2}
+            className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          {isArray && <p className="text-xs text-muted-foreground">One item per line</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Step4({
+  goal,
+  businessType,
+  serviceArea,
+  onBack,
+  onNext,
+}: {
+  goal: string
+  businessType: string
+  serviceArea: ServiceAreaState
+  onBack: () => void
+  onNext: (strategy: CampaignStrategy) => void
+}) {
+  const [status, setStatus] = useState<'loading' | 'done' | 'error'>('loading')
+  const [strategy, setStrategy] = useState<CampaignStrategy | null>(null)
+  const [errorMsg, setErrorMsg] = useState('')
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
+  const [editField, setEditField] = useState<EditField>(null)
+  const [editValue, setEditValue] = useState('')
+  const requestRef = useRef(0)
+
+  const locationSummary =
+    getTargetingSummary(
+      serviceArea.coverageType,
+      serviceArea.locations,
+      serviceArea.radiusMiles,
+      serviceArea.radiusPlace
+    ) ?? 'local area'
+
+  const generate = useCallback(async () => {
+    setStatus('loading')
+    setEditField(null)
+    const requestId = ++requestRef.current
+    let msgIdx = 0
+    setLoadingMsgIdx(0)
+
+    const msgInterval = setInterval(() => {
+      msgIdx = Math.min(msgIdx + 1, LOADING_MESSAGES.length - 1)
+      setLoadingMsgIdx(msgIdx)
+    }, 1800)
+
+    try {
+      const res = await fetch('/api/tower/dogfooding/campaign-strategy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          goal,
+          businessType,
+          coverageType: serviceArea.coverageType,
+          locationSummary,
+        }),
+      })
+      clearInterval(msgInterval)
+      if (requestId !== requestRef.current) return
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string }
+        throw new Error(data.error ?? `Server error ${res.status}`)
+      }
+
+      const data = (await res.json()) as { strategy: CampaignStrategy }
+      if (requestId !== requestRef.current) return
+      setStrategy(data.strategy)
+      setStatus('done')
+    } catch (err) {
+      clearInterval(msgInterval)
+      if (requestId !== requestRef.current) return
+      setErrorMsg(err instanceof Error ? err.message : String(err))
+      setStatus('error')
+    }
+  }, [goal, businessType, serviceArea.coverageType, locationSummary])
+
+  useEffect(() => {
+    void generate()
+  }, [generate])
+
+  function startEdit(field: EditField, value: string | string[]) {
+    setEditField(field)
+    setEditValue(Array.isArray(value) ? value.join('\n') : value)
+  }
+
+  function commitEdit() {
+    if (!editField || !strategy) return
+    const currentValue = strategy[editField]
+    const isArray = Array.isArray(currentValue)
+    setStrategy({
+      ...strategy,
+      [editField]: isArray
+        ? editValue
+            .split('\n')
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : editValue.trim(),
+    })
+    setEditField(null)
+  }
+
+  function cancelEdit() {
+    setEditField(null)
+  }
+
+  const cardProps = {
+    strategy: strategy!,
+    editField,
+    editValue,
+    onStartEdit: startEdit,
+    onChangeEdit: setEditValue,
+    onCommit: commitEdit,
+    onCancel: cancelEdit,
+  }
+
+  const navBack = (
+    <button
+      type="button"
+      onClick={onBack}
+      className="flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+    >
+      <ChevronLeft className="h-4 w-4" />
+      Back
+    </button>
+  )
+
+  // ── Loading ──────────────────────────────────────────────────────────────────
+
+  if (status === 'loading') {
+    return (
+      <>
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Campaign Strategy</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Based on what you&apos;ve told us, here&apos;s the strategy our AI recommends.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center gap-6 rounded-2xl border border-border bg-card px-8 py-16">
+          <div className="relative flex h-16 w-16 items-center justify-center">
+            <div className="absolute inset-0 animate-spin rounded-full border-2 border-border border-t-primary" />
+            <Sparkles className="h-6 w-6 text-primary" />
+          </div>
+          <div className="space-y-3 text-center">
+            <p className="text-sm font-medium text-foreground">{LOADING_MESSAGES[loadingMsgIdx]}</p>
+            <div className="flex justify-center gap-1.5">
+              {LOADING_MESSAGES.map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-1 w-8 rounded-full transition-colors duration-500 ${
+                    i <= loadingMsgIdx ? 'bg-primary' : 'bg-border'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          {navBack}
+        </div>
+      </>
+    )
+  }
+
+  // ── Error ────────────────────────────────────────────────────────────────────
+
+  if (status === 'error') {
+    return (
+      <>
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Campaign Strategy</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Something went wrong. You can try again.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-8 text-center">
+          <p className="text-sm text-destructive">{errorMsg}</p>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          {navBack}
+          <button
+            type="button"
+            onClick={() => void generate()}
+            className="flex items-center gap-1.5 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Try Again
+          </button>
+        </div>
+      </>
+    )
+  }
+
+  // ── Strategy cards ───────────────────────────────────────────────────────────
+
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Step 4</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Campaign Strategy</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Based on what you&apos;ve told us, here&apos;s the strategy our AI recommends.
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        <StrategyCard label="Campaign Goal" field="primaryGoal" {...cardProps} />
+        <StrategyCard label="Target Audience" field="targetAudience" {...cardProps} />
+        <StrategyCard label="Core Message" field="coreMessage" {...cardProps} />
+        <StrategyCard label="Recommended Offer" field="recommendedOffer" {...cardProps} />
+        <StrategyCard label="Content Pillars" field="contentPillars" {...cardProps} />
+
+        <div className="grid grid-cols-2 gap-3">
+          <StrategyCard label="Posting Frequency" field="postingFrequency" {...cardProps} />
+          <StrategyCard label="Campaign Length" field="campaignLength" {...cardProps} />
+        </div>
+
+        <StrategyCard label="Tone of Voice" field="toneOfVoice" {...cardProps} />
+        <StrategyCard label="Success Metrics" field="successMetrics" {...cardProps} />
+      </div>
+
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Sparkles className="h-3.5 w-3.5 text-primary" />
+        AI-generated based on your selections. Hover any card to edit.
+      </p>
+
+      <div className="flex items-center justify-between border-t border-border pt-6">
+        {navBack}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void generate()}
+            className="flex items-center gap-1.5 rounded-md border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Regenerate
+          </button>
+          <button
+            type="button"
+            onClick={() => strategy && onNext(strategy)}
+            className="flex items-center gap-1.5 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Continue
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── Step 5 placeholder ─────────────────────────────────────────────────────────
+
+function Step5({ onBack }: { onBack: () => void }) {
+  return (
+    <>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">Step 5</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">Coming soon.</p>
       </div>
       <div className="flex items-center justify-between border-t border-border pt-6">
@@ -1431,6 +1829,7 @@ export default function NewObjectivePage() {
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null)
   const [selectedBusiness, setSelectedBusiness] = useState<string | null>(null)
   const [selectedServiceArea, setSelectedServiceArea] = useState<ServiceAreaState | undefined>()
+  const [selectedStrategy, setSelectedStrategy] = useState<CampaignStrategy | undefined>()
 
   function advanceToStep2() {
     if (!selectedGoal) return
@@ -1446,6 +1845,14 @@ export default function NewObjectivePage() {
     setSelectedServiceArea(serviceArea)
     setStep(4)
   }
+
+  function advanceToStep5(strategy: CampaignStrategy) {
+    setSelectedStrategy(strategy)
+    setStep(5)
+  }
+
+  // suppress unused-variable warning until Step 5 uses it
+  void selectedStrategy
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -1481,7 +1888,16 @@ export default function NewObjectivePage() {
       {step === 3 && (
         <Step3 initial={selectedServiceArea} onBack={() => setStep(2)} onNext={advanceToStep4} />
       )}
-      {step === 4 && <Step4 onBack={() => setStep(3)} />}
+      {step === 4 && selectedGoal && selectedBusiness && selectedServiceArea && (
+        <Step4
+          goal={selectedGoal}
+          businessType={selectedBusiness}
+          serviceArea={selectedServiceArea}
+          onBack={() => setStep(3)}
+          onNext={advanceToStep5}
+        />
+      )}
+      {step === 5 && <Step5 onBack={() => setStep(4)} />}
     </div>
   )
 }
