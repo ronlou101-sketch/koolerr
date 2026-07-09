@@ -1839,15 +1839,21 @@ function Step5({
   selected,
   onBack,
   onNext,
+  onChannelsChange,
 }: {
   selected: string[]
   onBack: () => void
   onNext: (channels: string[]) => void
+  onChannelsChange: (channels: string[]) => void
 }) {
   const [channels, setChannels] = useState<string[]>(selected)
 
   function toggle(id: string) {
-    setChannels((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]))
+    setChannels((prev) => {
+      const next = prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+      onChannelsChange(next)
+      return next
+    })
   }
 
   return (
@@ -2170,7 +2176,12 @@ export default function NewObjectivePage() {
         selectedBusiness &&
         selectedServiceArea &&
         selectedStrategy && (
-          <Step5 selected={selectedChannels} onBack={() => setStep(4)} onNext={advanceToStep6} />
+          <Step5
+            selected={selectedChannels}
+            onBack={() => setStep(4)}
+            onNext={advanceToStep6}
+            onChannelsChange={setSelectedChannels}
+          />
         )}
       {step === 6 &&
         selectedGoal &&
