@@ -17,15 +17,14 @@
     "AI Workforce Integration (End-to-End)",
     "Customer Onboarding Pipeline",
     "Live Provider Integrations (OpenAI, Manus, Anthropic, HeyGen, Higgsfield, ElevenLabs)",
-    "AI Campaign Architect Wizard — Steps 1–4 complete"
+    "AI Campaign Architect Wizard — Steps 1–5 complete (including Campaign Brief structured rendering)"
   ],
   "current": [
     "Stripe Integration",
     "Launch Readiness",
     "Phase 4 Creative Media Output UI",
     "Internal Dogfooding Phase 1 — Autonomous Marketing Department",
-    "Dogfooding Dashboard — Live pipeline UI, agent activity feed, full output display",
-    "AI Campaign Architect Wizard — Step 5: save campaign and redirect to campaign detail page"
+    "Dogfooding Dashboard — Live pipeline UI, agent activity feed, full output display"
   ],
   "remaining": [
     "Koolerr Academy",
