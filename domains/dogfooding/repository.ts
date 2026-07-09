@@ -43,6 +43,10 @@ export interface IDogfoodingRepository {
     id: string,
     status: DogfoodingCampaign['status']
   ): Promise<DogfoodingCampaign>
+  updateCampaignDetails(
+    id: string,
+    updates: { planId?: string; engagementRunId?: string }
+  ): Promise<DogfoodingCampaign>
 
   // Ad Copy
   createAdCopyVariant(

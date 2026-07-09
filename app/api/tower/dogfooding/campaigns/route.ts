@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { bootstrapPlatform } from '@/infrastructure/platform/bootstrap'
-import { dogfoodingService } from '@/domains/dogfooding'
+import { dogfoodingService, findOrCreateInternalMarketingWorkforce } from '@/domains/dogfooding'
+import { workforceEngineService } from '@/domains/workforce-engine'
+import { runDogfoodingPipeline } from '@/infrastructure/dogfooding/pipeline'
 import type { ObjectiveGoalType } from '@/domains/dogfooding'
 
 export const dynamic = 'force-dynamic'
+// Required so Vercel keeps the function alive while the fire-and-forget pipeline runs
+export const maxDuration = 300
 
 export async function GET() {
   const ctx = await getRequestPlatformContext()
@@ -43,6 +47,7 @@ export async function POST(request: Request) {
     businessType?: unknown
     locationSummary?: unknown
     strategy?: unknown
+    channels?: unknown
   }
   try {
     body = (await request.json()) as typeof body
@@ -56,6 +61,7 @@ export async function POST(request: Request) {
     typeof body.locationSummary === 'string' && body.locationSummary.trim()
       ? body.locationSummary.trim()
       : 'local area'
+  const channels = Array.isArray(body.channels) ? (body.channels as string[]) : []
 
   if (!goal || !businessType) {
     return NextResponse.json({ error: 'goal and businessType are required' }, { status: 400 })
@@ -90,7 +96,8 @@ export async function POST(request: Request) {
 
   const objective = objectiveResult.value
 
-  // Store the AI strategy fields in targetAudience so the detail page can display them
+  // Store the AI strategy fields in targetAudience so the detail page can display them.
+  // Channels are set from the founder's Step 5 selections rather than left empty.
   const campaignResult = await dogfoodingService.createCampaign({
     organizationId: ctx.organizationId,
     objectiveId: objective.id,
@@ -111,7 +118,7 @@ export async function POST(request: Request) {
     budgetCents: 0,
     startDate: null,
     endDate: null,
-    channels: [],
+    channels,
     status: 'planning',
     metaCampaignId: null,
     engagementRunId: null,
@@ -121,5 +128,44 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: campaignResult.error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ campaignId: campaignResult.value.id }, { status: 201 })
+  const campaignId = campaignResult.value.id
+
+  // Orchestrate the AI Workforce pipeline fire-and-forget.
+  // findOrCreateInternalMarketingWorkforce and triggerEngagementRun are fast (single DB
+  // lookup/insert each). Only runDogfoodingPipeline is long-running — it fires and returns
+  // immediately while the pipeline executes in the background under maxDuration = 300.
+  ;(async () => {
+    try {
+      const { workforceId } = await findOrCreateInternalMarketingWorkforce({
+        tenantId: ctx.tenantId,
+        organizationId: ctx.organizationId,
+      })
+
+      const runResult = await workforceEngineService.triggerEngagementRun({
+        tenantId: ctx.tenantId,
+        workforceId,
+        organizationId: ctx.organizationId,
+        objective: `Campaign: ${campaignResult.value.name}`,
+        context: { domain: 'dogfooding', campaignId },
+      })
+
+      if (!runResult.ok) {
+        console.error('[CAMPAIGNS] Failed to create engagement run:', runResult.error.message)
+        return
+      }
+
+      await runDogfoodingPipeline({
+        tenantId: ctx.tenantId,
+        organizationId: ctx.organizationId,
+        workforceId,
+        engagementRunId: runResult.value.id,
+        objective,
+        existingCampaignId: campaignId,
+      })
+    } catch (err) {
+      console.error('[CAMPAIGNS] Pipeline error (fire-and-forget):', err)
+    }
+  })()
+
+  return NextResponse.json({ campaignId }, { status: 201 })
 }

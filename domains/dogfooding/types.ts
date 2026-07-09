@@ -89,6 +89,9 @@ export interface AdCopyVariant {
   id: string
   organizationId: OrganizationId
   campaignId: string
+  engagementRunId: string | null
+  digitalEmployeeId: string | null
+  modelProvider: string | null
   variantName: string
   headline: string
   primaryText: string
@@ -110,6 +113,9 @@ export interface DogfoodingCreative {
   id: string
   organizationId: OrganizationId
   campaignId: string | null
+  engagementRunId: string | null
+  digitalEmployeeId: string | null
+  modelProvider: string | null
   type: CreativeType
   prompt: string
   assetUrl: string | null

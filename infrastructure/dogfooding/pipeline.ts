@@ -31,6 +31,9 @@ export interface DogfoodingPipelineInput {
   workforceId: WorkforceId
   engagementRunId: EngagementRunId
   objective: DogfoodingObjective
+  // When set, the pipeline enriches this existing campaign instead of creating a new one.
+  // The first strategy spec populates this campaign; additional specs create new records.
+  existingCampaignId?: string
 }
 
 function extractJson<T>(content: string): T | null {
@@ -276,26 +279,35 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
     },
   ]
 
-  for (const spec of campaignSpecs) {
+  for (const [index, spec] of campaignSpecs.entries()) {
     logger.info('[DOGFOODING_PIPELINE] Processing campaign', { name: spec.name })
 
     const campaignBudget = Math.round((objective.budgetCents * (spec.budgetPercent ?? 100)) / 100)
 
-    const campaign = await _dogfoodingRepository.createCampaign({
-      organizationId,
-      objectiveId: objective.id,
-      planId: plan.id,
-      name: spec.name,
-      objectiveSummary: spec.objectiveSummary,
-      targetAudience: spec.targetAudience,
-      budgetCents: campaignBudget,
-      startDate: null,
-      endDate: null,
-      channels: spec.channels,
-      status: 'planning',
-      metaCampaignId: null,
-      engagementRunId,
-    })
+    // If the caller supplied an existing campaign (from the Campaign Architect wizard),
+    // enrich it rather than creating a duplicate. Additional strategy specs still
+    // create new campaign records as supplementary execution campaigns.
+    const campaign =
+      index === 0 && input.existingCampaignId
+        ? await _dogfoodingRepository.updateCampaignDetails(input.existingCampaignId, {
+            planId: plan.id,
+            engagementRunId,
+          })
+        : await _dogfoodingRepository.createCampaign({
+            organizationId,
+            objectiveId: objective.id,
+            planId: plan.id,
+            name: spec.name,
+            objectiveSummary: spec.objectiveSummary,
+            targetAudience: spec.targetAudience,
+            budgetCents: campaignBudget,
+            startDate: null,
+            endDate: null,
+            channels: spec.channels,
+            status: 'planning',
+            metaCampaignId: null,
+            engagementRunId,
+          })
 
     // Step 4a: Ad Copy
     await recordProgress(input, `copy:${campaign.id}`, 'running')
@@ -325,6 +337,9 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
         await _dogfoodingRepository.createAdCopyVariant({
           organizationId,
           campaignId: campaign.id,
+          engagementRunId,
+          digitalEmployeeId: 'marketing-copywriter',
+          modelProvider: 'openai',
           variantName: variant.variantName ?? 'Variant',
           headline: variant.headline ?? '',
           primaryText: variant.primaryText ?? '',
@@ -373,6 +388,9 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
         await _dogfoodingRepository.createCreative({
           organizationId,
           campaignId: campaign.id,
+          engagementRunId,
+          digitalEmployeeId: 'marketing-creative-director',
+          modelProvider: 'openai',
           type: (cr.type as 'image' | 'video' | 'carousel' | 'story') ?? 'image',
           prompt: cr.prompt ?? cr.concept ?? '',
           assetUrl: null,

@@ -75,6 +75,9 @@ function toVariant(row: Record<string, unknown>): AdCopyVariant {
     id: row.id as string,
     organizationId: row.organization_id as OrganizationId,
     campaignId: row.campaign_id as string,
+    engagementRunId: (row.engagement_run_id as string | null) ?? null,
+    digitalEmployeeId: (row.digital_employee_id as string | null) ?? null,
+    modelProvider: (row.model_provider as string | null) ?? null,
     variantName: row.variant_name as string,
     headline: row.headline as string,
     primaryText: row.primary_text as string,
@@ -93,6 +96,9 @@ function toCreative(row: Record<string, unknown>): DogfoodingCreative {
     id: row.id as string,
     organizationId: row.organization_id as OrganizationId,
     campaignId: (row.campaign_id as string | null) ?? null,
+    engagementRunId: (row.engagement_run_id as string | null) ?? null,
+    digitalEmployeeId: (row.digital_employee_id as string | null) ?? null,
+    modelProvider: (row.model_provider as string | null) ?? null,
     type: row.type as DogfoodingCreative['type'],
     prompt: row.prompt as string,
     assetUrl: (row.asset_url as string | null) ?? null,
@@ -302,6 +308,23 @@ export class SupabaseDogfoodingRepository implements IDogfoodingRepository {
     return toCampaign(data as Record<string, unknown>)
   }
 
+  async updateCampaignDetails(
+    id: string,
+    updates: { planId?: string; engagementRunId?: string }
+  ): Promise<DogfoodingCampaign> {
+    const patch: Record<string, unknown> = {}
+    if (updates.planId !== undefined) patch.plan_id = updates.planId
+    if (updates.engagementRunId !== undefined) patch.engagement_run_id = updates.engagementRunId
+    const { data, error } = await this.supabase
+      .from('dogfooding_campaigns')
+      .update(patch)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw new Error(`[DOGFOODING_REPO] updateCampaignDetails: ${error.message}`)
+    return toCampaign(data as Record<string, unknown>)
+  }
+
   async createAdCopyVariant(
     variant: Omit<AdCopyVariant, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<AdCopyVariant> {
@@ -310,6 +333,9 @@ export class SupabaseDogfoodingRepository implements IDogfoodingRepository {
       .insert({
         organization_id: variant.organizationId,
         campaign_id: variant.campaignId,
+        engagement_run_id: variant.engagementRunId,
+        digital_employee_id: variant.digitalEmployeeId,
+        model_provider: variant.modelProvider,
         variant_name: variant.variantName,
         headline: variant.headline,
         primary_text: variant.primaryText,
@@ -357,6 +383,9 @@ export class SupabaseDogfoodingRepository implements IDogfoodingRepository {
       .insert({
         organization_id: creative.organizationId,
         campaign_id: creative.campaignId,
+        engagement_run_id: creative.engagementRunId,
+        digital_employee_id: creative.digitalEmployeeId,
+        model_provider: creative.modelProvider,
         type: creative.type,
         prompt: creative.prompt,
         asset_url: creative.assetUrl,

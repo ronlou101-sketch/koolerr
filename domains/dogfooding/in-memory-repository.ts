@@ -128,6 +128,24 @@ export class InMemoryDogfoodingRepository implements IDogfoodingRepository {
     return updated
   }
 
+  async updateCampaignDetails(
+    id: string,
+    updates: { planId?: string; engagementRunId?: string }
+  ): Promise<DogfoodingCampaign> {
+    const c = this.campaigns.get(id)
+    if (!c) throw new Error(`Campaign ${id} not found`)
+    const updated = {
+      ...c,
+      ...(updates.planId !== undefined ? { planId: updates.planId } : {}),
+      ...(updates.engagementRunId !== undefined
+        ? { engagementRunId: updates.engagementRunId }
+        : {}),
+      updatedAt: now(),
+    }
+    this.campaigns.set(id, updated)
+    return updated
+  }
+
   async createAdCopyVariant(
     variant: Omit<AdCopyVariant, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<AdCopyVariant> {
