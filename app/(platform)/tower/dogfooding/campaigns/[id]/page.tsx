@@ -104,18 +104,106 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
       {/* Summary */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">Campaign Brief</h2>
-        <div className="rounded-lg border border-border bg-card p-5">
-          <p className="text-sm text-foreground">{campaign.objectiveSummary}</p>
-          {Object.keys(campaign.targetAudience).length > 0 && (
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        <div className="space-y-4 rounded-lg border border-border bg-card p-5">
+          <div>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Primary Goal
+            </p>
+            <p className="text-sm text-foreground">{campaign.objectiveSummary}</p>
+          </div>
+
+          {campaign.targetAudience.description ? (
+            <div>
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Target Audience
               </p>
-              <pre className="overflow-auto text-xs text-muted-foreground">
-                {JSON.stringify(campaign.targetAudience, null, 2)}
-              </pre>
+              <p className="text-sm text-foreground">
+                {String(campaign.targetAudience.description)}
+              </p>
             </div>
-          )}
+          ) : null}
+
+          {campaign.targetAudience.coreMessage ? (
+            <div>
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Core Message
+              </p>
+              <p className="text-sm text-foreground">
+                {String(campaign.targetAudience.coreMessage)}
+              </p>
+            </div>
+          ) : null}
+
+          {campaign.targetAudience.recommendedOffer ? (
+            <div>
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Recommended Offer
+              </p>
+              <p className="text-sm text-foreground">
+                {String(campaign.targetAudience.recommendedOffer)}
+              </p>
+            </div>
+          ) : null}
+
+          {Array.isArray(campaign.targetAudience.contentPillars) &&
+          campaign.targetAudience.contentPillars.length > 0 ? (
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Content Pillars
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {(campaign.targetAudience.contentPillars as string[]).map((pillar) => (
+                  <span
+                    key={pillar}
+                    className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                  >
+                    {pillar}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {campaign.targetAudience.postingFrequency || campaign.targetAudience.campaignLength ? (
+            <div className="flex flex-wrap gap-6">
+              {campaign.targetAudience.postingFrequency ? (
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Posting Frequency
+                  </p>
+                  <p className="text-sm text-foreground">
+                    {String(campaign.targetAudience.postingFrequency)}
+                  </p>
+                </div>
+              ) : null}
+              {campaign.targetAudience.campaignLength ? (
+                <div>
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Campaign Length
+                  </p>
+                  <p className="text-sm text-foreground">
+                    {String(campaign.targetAudience.campaignLength)}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {Array.isArray(campaign.targetAudience.toneOfVoice) &&
+          campaign.targetAudience.toneOfVoice.length > 0 ? (
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Tone of Voice
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {(campaign.targetAudience.toneOfVoice as string[]).map((tone) => (
+                  <span key={tone} className="rounded bg-muted px-2 py-0.5 text-xs text-foreground">
+                    {tone}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
