@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { bootstrapPlatform } from '@/infrastructure/platform/bootstrap'
 import { dogfoodingService, findOrCreateInternalMarketingWorkforce } from '@/domains/dogfooding'
@@ -130,11 +130,11 @@ export async function POST(request: Request) {
 
   const campaignId = campaignResult.value.id
 
-  // Orchestrate the AI Workforce pipeline fire-and-forget.
-  // findOrCreateInternalMarketingWorkforce and triggerEngagementRun are fast (single DB
-  // lookup/insert each). Only runDogfoodingPipeline is long-running — it fires and returns
-  // immediately while the pipeline executes in the background under maxDuration = 300.
-  ;(async () => {
+  // Orchestrate the AI Workforce pipeline after the response is sent.
+  // after() is Next.js 15's mechanism for running work post-response on Vercel —
+  // it registers the callback with the framework scheduler so the Lambda is not
+  // frozen until the callback resolves. maxDuration = 300 caps the total lifetime.
+  after(async () => {
     try {
       const { workforceId } = await findOrCreateInternalMarketingWorkforce({
         tenantId: ctx.tenantId,
@@ -163,9 +163,9 @@ export async function POST(request: Request) {
         existingCampaignId: campaignId,
       })
     } catch (err) {
-      console.error('[CAMPAIGNS] Pipeline error (fire-and-forget):', err)
+      console.error('[CAMPAIGNS] Pipeline error (after):', err)
     }
-  })()
+  })
 
   return NextResponse.json({ campaignId }, { status: 201 })
 }
