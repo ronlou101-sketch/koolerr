@@ -1957,7 +1957,7 @@ export default function NewObjectivePage() {
         <span className="text-foreground">New Campaign</span>
       </div>
 
-      <ProgressBar step={step} total={6} />
+      <ProgressBar step={step} total={5} />
 
       {step === 1 && (
         <Step1 selected={selectedGoal} onSelect={setSelectedGoal} onNext={advanceToStep2} />
