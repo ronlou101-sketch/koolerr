@@ -1795,23 +1795,158 @@ function Step4({
   )
 }
 
-// ── Step 5 — Save campaign ─────────────────────────────────────────────────────
+// ── Step 5 — AI Assignment ────────────────────────────────────────────────────
+
+const EXECUTION_OPTIONS: {
+  id: string
+  label: string
+  description: string
+  icon: React.ElementType
+}[] = [
+  {
+    id: 'facebook_instagram',
+    label: 'Facebook & Instagram Ads',
+    description: 'Marketing Media Buyer executes paid social via Meta API',
+    icon: Megaphone,
+  },
+  {
+    id: 'google_ads',
+    label: 'Google Ads',
+    description: 'Search and display campaigns via Google Ads API',
+    icon: Globe,
+  },
+  {
+    id: 'tiktok_ads',
+    label: 'TikTok Ads',
+    description: 'Short-form video ads via TikTok for Business',
+    icon: Hash,
+  },
+  {
+    id: 'organic_content',
+    label: 'Organic Social',
+    description: 'Content Workforce publishes organic posts across channels',
+    icon: Layers,
+  },
+  {
+    id: 'email_marketing',
+    label: 'Email Marketing',
+    description: 'Automated sequences via the Email Workforce',
+    icon: Users,
+  },
+]
 
 function Step5({
+  selected,
+  onBack,
+  onNext,
+}: {
+  selected: string[]
+  onBack: () => void
+  onNext: (channels: string[]) => void
+}) {
+  const [channels, setChannels] = useState<string[]>(selected)
+
+  function toggle(id: string) {
+    setChannels((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]))
+  }
+
+  return (
+    <>
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">AI Assignment</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Choose which AI workforces will execute this campaign.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        {EXECUTION_OPTIONS.map(({ id, label, description, icon: Icon }) => {
+          const active = channels.includes(id)
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => toggle(id)}
+              className={`flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-colors ${
+                active ? 'border-primary bg-primary/5' : 'border-border bg-card hover:bg-muted/50'
+              }`}
+            >
+              <div
+                className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${
+                  active ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">{label}</p>
+                <p className="text-xs text-muted-foreground">{description}</p>
+              </div>
+              <div
+                className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border ${
+                  active ? 'border-primary bg-primary' : 'border-border'
+                }`}
+              >
+                {active && <Check className="h-3 w-3 text-primary-foreground" />}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border pt-6">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </button>
+        <button
+          type="button"
+          disabled={channels.length === 0}
+          onClick={() => onNext(channels)}
+          className="flex items-center gap-1.5 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Continue
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </>
+  )
+}
+
+// ── Step 6 — Review & Launch ───────────────────────────────────────────────────
+
+function ReviewRow({ label, value }: { label: string; value: string | string[] }) {
+  const display = Array.isArray(value) ? value.join(', ') : value
+  if (!display) return null
+  return (
+    <div className="flex flex-col gap-0.5">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm text-foreground">{display}</p>
+    </div>
+  )
+}
+
+function Step6({
   goal,
   businessType,
   serviceArea,
   strategy,
+  channels,
   onBack,
 }: {
   goal: string
   businessType: string
   serviceArea: ServiceAreaState
   strategy: CampaignStrategy
+  channels: string[]
   onBack: () => void
 }) {
   const router = useRouter()
-  const [status, setStatus] = useState<'saving' | 'error'>('saving')
+  const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const saveRef = useRef(0)
 
@@ -1830,7 +1965,7 @@ function Step5({
       const res = await fetch('/api/tower/dogfooding/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal, businessType, locationSummary, strategy }),
+        body: JSON.stringify({ goal, businessType, locationSummary, strategy, channels }),
       })
       if (saveId !== saveRef.current) return
       const data = (await res.json()) as { campaignId?: string; error?: string }
@@ -1842,11 +1977,7 @@ function Step5({
       setErrorMsg(err instanceof Error ? err.message : String(err))
       setStatus('error')
     }
-  }, [goal, businessType, locationSummary, strategy, router])
-
-  useEffect(() => {
-    void save()
-  }, [save])
+  }, [goal, businessType, locationSummary, strategy, channels, router])
 
   const navBack = (
     <button
@@ -1888,24 +2019,70 @@ function Step5({
     )
   }
 
+  if (status === 'saving') {
+    return (
+      <>
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Launching Campaign</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Saving your campaign strategy and creating your campaign…
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center gap-6 rounded-2xl border border-border bg-card px-8 py-16">
+          <div className="relative flex h-16 w-16 items-center justify-center">
+            <div className="absolute inset-0 animate-spin rounded-full border-2 border-border border-t-primary" />
+            <Sparkles className="h-6 w-6 text-primary" />
+          </div>
+          <p className="text-sm font-medium text-foreground">Creating your campaign…</p>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-border pt-6">
+          {navBack}
+        </div>
+      </>
+    )
+  }
+
+  const channelLabels = channels.map(
+    (id) => EXECUTION_OPTIONS.find((o) => o.id === id)?.label ?? id
+  )
+
   return (
     <>
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Saving Campaign</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Review & Launch</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Saving your campaign strategy and creating your campaign…
+          Confirm your campaign before it goes to your AI workforce.
         </p>
       </div>
 
-      <div className="flex flex-col items-center gap-6 rounded-2xl border border-border bg-card px-8 py-16">
-        <div className="relative flex h-16 w-16 items-center justify-center">
-          <div className="absolute inset-0 animate-spin rounded-full border-2 border-border border-t-primary" />
-          <Sparkles className="h-6 w-6 text-primary" />
-        </div>
-        <p className="text-sm font-medium text-foreground">Creating your campaign…</p>
+      <div className="space-y-4 rounded-xl border border-border bg-card p-6">
+        <ReviewRow label="Goal" value={goal} />
+        <ReviewRow label="Business Type" value={businessType} />
+        <ReviewRow label="Service Area" value={locationSummary} />
+        <ReviewRow label="Primary Goal" value={strategy.primaryGoal} />
+        <ReviewRow label="Target Audience" value={strategy.targetAudience} />
+        <ReviewRow label="Core Message" value={strategy.coreMessage} />
+        <ReviewRow label="Recommended Offer" value={strategy.recommendedOffer} />
+        <ReviewRow label="Content Pillars" value={strategy.contentPillars} />
+        <ReviewRow label="Posting Frequency" value={strategy.postingFrequency} />
+        <ReviewRow label="Campaign Length" value={strategy.campaignLength} />
+        <ReviewRow label="Tone of Voice" value={strategy.toneOfVoice} />
+        <ReviewRow label="AI Assignment" value={channelLabels} />
       </div>
 
-      <div className="flex items-center justify-between border-t border-border pt-6">{navBack}</div>
+      <div className="flex items-center justify-between border-t border-border pt-6">
+        {navBack}
+        <button
+          type="button"
+          onClick={() => void save()}
+          className="flex items-center gap-1.5 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          <Sparkles className="h-4 w-4" />
+          Launch Campaign
+        </button>
+      </div>
     </>
   )
 }
@@ -1918,6 +2095,7 @@ export default function NewObjectivePage() {
   const [selectedBusiness, setSelectedBusiness] = useState<string | null>(null)
   const [selectedServiceArea, setSelectedServiceArea] = useState<ServiceAreaState | undefined>()
   const [selectedStrategy, setSelectedStrategy] = useState<CampaignStrategy | undefined>()
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([])
 
   function advanceToStep2() {
     if (!selectedGoal) return
@@ -1939,6 +2117,11 @@ export default function NewObjectivePage() {
     setStep(5)
   }
 
+  function advanceToStep6(channels: string[]) {
+    setSelectedChannels(channels)
+    setStep(6)
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -1957,7 +2140,7 @@ export default function NewObjectivePage() {
         <span className="text-foreground">New Campaign</span>
       </div>
 
-      <ProgressBar step={step} total={5} />
+      <ProgressBar step={step} total={6} />
 
       {step === 1 && (
         <Step1 selected={selectedGoal} onSelect={setSelectedGoal} onNext={advanceToStep2} />
@@ -1987,12 +2170,20 @@ export default function NewObjectivePage() {
         selectedBusiness &&
         selectedServiceArea &&
         selectedStrategy && (
-          <Step5
+          <Step5 selected={selectedChannels} onBack={() => setStep(4)} onNext={advanceToStep6} />
+        )}
+      {step === 6 &&
+        selectedGoal &&
+        selectedBusiness &&
+        selectedServiceArea &&
+        selectedStrategy && (
+          <Step6
             goal={selectedGoal}
             businessType={selectedBusiness}
             serviceArea={selectedServiceArea}
             strategy={selectedStrategy}
-            onBack={() => setStep(4)}
+            channels={selectedChannels}
+            onBack={() => setStep(5)}
           />
         )}
     </div>
