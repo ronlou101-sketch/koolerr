@@ -22,15 +22,37 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
 
   useEffect(() => {
     if (!id) return
-    setLoading(true)
-    fetch(`/api/tower/dogfooding/campaigns/${id}`)
-      .then((r) => r.json())
-      .then((d: CampaignDetailData & { error?: string }) => {
-        if (d.error) throw new Error(d.error)
-        setData(d)
-      })
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false))
+
+    let cancelled = false
+    let pollTimer: ReturnType<typeof setTimeout> | null = null
+
+    function fetchData(isInitial: boolean) {
+      if (isInitial) setLoading(true)
+      fetch(`/api/tower/dogfooding/campaigns/${id}`)
+        .then((r) => r.json())
+        .then((d: CampaignDetailData & { error?: string }) => {
+          if (cancelled) return
+          if (d.error) throw new Error(d.error)
+          setData(d)
+          // Keep polling while the pipeline is still running
+          if (d.campaign?.status !== 'ready') {
+            pollTimer = setTimeout(() => fetchData(false), 4000)
+          }
+        })
+        .catch((e: Error) => {
+          if (!cancelled) setError(e.message)
+        })
+        .finally(() => {
+          if (isInitial && !cancelled) setLoading(false)
+        })
+    }
+
+    fetchData(true)
+
+    return () => {
+      cancelled = true
+      if (pollTimer) clearTimeout(pollTimer)
+    }
   }, [id])
 
   if (loading) {
