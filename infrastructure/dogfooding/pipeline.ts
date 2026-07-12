@@ -330,10 +330,36 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
         }>
       }
 
+      // [TEMP-DIAG] Remove after root cause identified
+      logger.info('[DOGFOODING_PIPELINE] Step 4a raw model output', {
+        campaignId: campaign.id,
+        copyContentLength: copyContent.length,
+        copyContentPreview: copyContent.slice(0, 500),
+      })
+
       const copyResult = extractJson<CopyResult>(copyContent)
+
+      // [TEMP-DIAG] Remove after root cause identified
+      logger.info('[DOGFOODING_PIPELINE] Step 4a extractJson result', {
+        campaignId: campaign.id,
+        copyResultIsNull: copyResult === null,
+        copyResultKeys: copyResult ? Object.keys(copyResult) : [],
+      })
+
       const variants = copyResult?.variants ?? []
 
+      // [TEMP-DIAG] Remove after root cause identified
+      logger.info('[DOGFOODING_PIPELINE] Step 4a variants', {
+        campaignId: campaign.id,
+        variantsLength: variants.length,
+      })
+
       for (const variant of variants) {
+        // [TEMP-DIAG] Remove after root cause identified
+        logger.info('[DOGFOODING_PIPELINE] Step 4a writing variant', {
+          campaignId: campaign.id,
+          variantName: variant.variantName,
+        })
         await _dogfoodingRepository.createAdCopyVariant({
           organizationId,
           campaignId: campaign.id,
@@ -381,10 +407,36 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
         }>
       }
 
+      // [TEMP-DIAG] Remove after root cause identified
+      logger.info('[DOGFOODING_PIPELINE] Step 4b raw model output', {
+        campaignId: campaign.id,
+        creativeContentLength: creativeContent.length,
+        creativeContentPreview: creativeContent.slice(0, 500),
+      })
+
       const creativeResult = extractJson<CreativeDirectionResult>(creativeContent)
+
+      // [TEMP-DIAG] Remove after root cause identified
+      logger.info('[DOGFOODING_PIPELINE] Step 4b extractJson result', {
+        campaignId: campaign.id,
+        creativeResultIsNull: creativeResult === null,
+        creativeResultKeys: creativeResult ? Object.keys(creativeResult) : [],
+      })
+
       const creatives = creativeResult?.creatives ?? []
 
+      // [TEMP-DIAG] Remove after root cause identified
+      logger.info('[DOGFOODING_PIPELINE] Step 4b creatives', {
+        campaignId: campaign.id,
+        creativesLength: creatives.length,
+      })
+
       for (const cr of creatives) {
+        // [TEMP-DIAG] Remove after root cause identified
+        logger.info('[DOGFOODING_PIPELINE] Step 4b writing creative', {
+          campaignId: campaign.id,
+          creativeType: cr.type,
+        })
         await _dogfoodingRepository.createCreative({
           organizationId,
           campaignId: campaign.id,
