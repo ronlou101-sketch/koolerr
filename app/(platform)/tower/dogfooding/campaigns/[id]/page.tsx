@@ -56,26 +56,34 @@ function FadeInCard({ children, delay = 0 }: { children: React.ReactNode; delay?
 function AdCopySkeletonCard() {
   return (
     <div className="animate-pulse space-y-3 rounded-lg border border-border bg-card p-5">
+      {/* Variant name + "draft" badge */}
       <div className="flex items-center justify-between gap-2">
-        <div className="h-4 w-28 rounded bg-muted" />
-        <div className="h-5 w-12 rounded bg-muted" />
+        <div className="h-4 w-32 rounded bg-muted" />
+        <div className="h-5 w-11 rounded bg-muted" />
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2">
+        {/* Headline */}
         <div>
-          <div className="mb-1.5 h-3 w-16 rounded bg-muted" />
+          <div className="mb-1 h-2.5 w-14 rounded bg-muted" />
           <div className="h-4 w-3/4 rounded bg-muted" />
         </div>
+        {/* Primary Text */}
         <div>
-          <div className="mb-1.5 h-3 w-24 rounded bg-muted" />
+          <div className="mb-1 h-2.5 w-20 rounded bg-muted" />
           <div className="space-y-1.5">
             <div className="h-3.5 w-full rounded bg-muted" />
-            <div className="h-3.5 w-5/6 rounded bg-muted" />
+            <div className="h-3.5 w-4/5 rounded bg-muted" />
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        {/* CTA + Description inline */}
+        <div className="flex items-start gap-8">
           <div>
-            <div className="mb-1.5 h-3 w-8 rounded bg-muted" />
-            <div className="h-4 w-20 rounded bg-muted" />
+            <div className="mb-1 h-2.5 w-6 rounded bg-muted" />
+            <div className="h-3.5 w-20 rounded bg-muted" />
+          </div>
+          <div>
+            <div className="mb-1 h-2.5 w-20 rounded bg-muted" />
+            <div className="h-3.5 w-28 rounded bg-muted" />
           </div>
         </div>
       </div>
@@ -86,23 +94,34 @@ function AdCopySkeletonCard() {
 function CreativeSkeletonCard() {
   return (
     <div className="animate-pulse space-y-3 rounded-lg border border-border bg-card p-5">
+      {/* "Creative 1" + "image" badge + "planned" badge */}
       <div className="flex items-center justify-between gap-2">
         <div className="h-4 w-20 rounded bg-muted" />
         <div className="flex items-center gap-2">
-          <div className="h-5 w-14 rounded bg-muted" />
-          <div className="h-5 w-14 rounded bg-muted" />
+          <div className="h-5 w-12 rounded bg-muted" />
+          <div className="h-5 w-16 rounded bg-muted" />
         </div>
       </div>
+      {/* Higgsfield Prompt */}
       <div>
-        <div className="mb-1.5 h-3 w-28 rounded bg-muted" />
+        <div className="mb-1 h-2.5 w-32 rounded bg-muted" />
         <div className="space-y-1.5">
           <div className="h-3.5 w-full rounded bg-muted" />
+          <div className="h-3.5 w-5/6 rounded bg-muted" />
           <div className="h-3.5 w-4/5 rounded bg-muted" />
-          <div className="h-3.5 w-3/4 rounded bg-muted" />
         </div>
       </div>
-      <div className="rounded-md bg-muted/50 px-3 py-2">
-        <div className="h-3 w-full rounded bg-muted/60" />
+      {/* Concept */}
+      <div>
+        <div className="mb-1 h-2.5 w-14 rounded bg-muted" />
+        <div className="h-3.5 w-3/4 rounded bg-muted" />
+      </div>
+      {/* Phase 2 info box */}
+      <div className="rounded-md bg-muted/50 px-3 py-2.5">
+        <div className="space-y-1">
+          <div className="h-3 w-full rounded bg-muted/60" />
+          <div className="h-3 w-3/4 rounded bg-muted/60" />
+        </div>
       </div>
     </div>
   )
@@ -130,7 +149,13 @@ function PhaseIcon({ status }: { status: PhaseStatus }) {
   }
   if (status === 'running') {
     return (
-      <div className="h-6 w-6 shrink-0 animate-spin rounded-full border-2 border-border border-t-primary" />
+      <div className="relative flex h-6 w-6 shrink-0 items-center justify-center">
+        <span
+          className="absolute inline-flex h-4 w-4 animate-ping rounded-full bg-primary/30"
+          style={{ animationDuration: '1.75s' }}
+        />
+        <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
+      </div>
     )
   }
   return (
@@ -150,7 +175,7 @@ function AIWorkforceStatus({
   const phases: { label: string; description: string; status: PhaseStatus }[] = [
     {
       label: 'Campaign Brief',
-      description: 'Ready',
+      description: '✓ Complete',
       status: 'completed',
     },
     {
@@ -178,28 +203,32 @@ function AIWorkforceStatus({
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold text-foreground">AI Workforce Status</h2>
-      <div className="rounded-lg border border-border bg-card p-5">
+      <div className="rounded-lg border border-border bg-card px-5 py-7">
         <div className="relative flex items-start justify-between">
           {/* Connecting line sits behind the icons */}
           <div className="absolute left-3 right-3 top-3 h-px bg-border" />
           {phases.map((phase) => (
             <div
               key={phase.label}
-              className="relative z-10 flex flex-col items-center gap-2 px-2 text-center"
+              className="relative z-10 flex flex-col items-center gap-3 px-2 text-center"
             >
               <PhaseIcon status={phase.status} />
-              <p
-                className={`text-xs font-medium leading-snug ${
-                  phase.status === 'completed'
-                    ? 'text-foreground'
-                    : phase.status === 'running'
-                      ? 'text-primary'
-                      : 'text-muted-foreground'
-                }`}
-              >
-                {phase.label}
-              </p>
-              <p className="text-[10px] leading-snug text-muted-foreground">{phase.description}</p>
+              <div className="space-y-1">
+                <p
+                  className={`text-xs font-medium leading-snug ${
+                    phase.status === 'completed'
+                      ? 'text-foreground'
+                      : phase.status === 'running'
+                        ? 'text-primary'
+                        : 'text-muted-foreground'
+                  }`}
+                >
+                  {phase.label}
+                </p>
+                <p className="text-[10px] leading-snug text-muted-foreground">
+                  {phase.description}
+                </p>
+              </div>
             </div>
           ))}
         </div>
