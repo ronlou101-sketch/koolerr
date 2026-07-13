@@ -20,7 +20,8 @@
     "AI Campaign Architect Wizard — 6-step wizard complete (AI Assignment + Review & Launch)",
     "Foundation Schema — Deliverable Attribution (engagementRunId, digitalEmployeeId, modelProvider on AdCopyVariant and DogfoodingCreative)",
     "Campaign Launch ↔ AI Workforce Orchestration — one Campaign → one Engagement Run → Deliverables",
-    "Campaign Detail Page — live polling until pipeline completes (variants and creatives appear automatically)"
+    "Campaign Detail Page — live polling until pipeline completes (variants and creatives appear automatically)",
+    "Campaign Detail Page — AI Workforce Status tracker, skeleton loaders, and FadeInCard staggered reveal"
   ],
   "current": [
     "Stripe Integration",
