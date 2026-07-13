@@ -4,11 +4,211 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import type { DogfoodingCampaign, AdCopyVariant, DogfoodingCreative } from '@/domains/dogfooding'
 
+// ── Types ──────────────────────────────────────────────────────────────────────
+
 interface CampaignDetailData {
   campaign: DogfoodingCampaign
   copyVariants: AdCopyVariant[]
   creatives: DogfoodingCreative[]
 }
+
+type PhaseStatus = 'pending' | 'running' | 'completed'
+
+// 'hidden'     — never shown, or fully removed after fade-out
+// 'running'    — pipeline is in progress; tracker is visible
+// 'completing' — pipeline just finished; hold the all-done state for 1 s
+// 'fadeout'    — opacity transitioning to 0 before DOM removal
+type TrackerPhase = 'hidden' | 'running' | 'completing' | 'fadeout'
+
+// ── FadeInCard ─────────────────────────────────────────────────────────────────
+// Fades + slides a card in from below on mount.
+// `delay` (ms) is used to stagger cards in a list.
+
+function FadeInCard({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    let timerId: ReturnType<typeof setTimeout> | undefined
+    const rafId = requestAnimationFrame(() => {
+      timerId = setTimeout(() => setVisible(true), delay)
+    })
+    return () => {
+      if (rafId !== undefined) cancelAnimationFrame(rafId)
+      if (timerId !== undefined) clearTimeout(timerId)
+    }
+  }, [delay])
+
+  return (
+    <div
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? 'translateY(0)' : 'translateY(10px)',
+        transition: 'opacity 400ms ease, transform 400ms ease',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ── Skeleton cards ─────────────────────────────────────────────────────────────
+
+function AdCopySkeletonCard() {
+  return (
+    <div className="animate-pulse space-y-3 rounded-lg border border-border bg-card p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="h-4 w-28 rounded bg-muted" />
+        <div className="h-5 w-12 rounded bg-muted" />
+      </div>
+      <div className="space-y-3">
+        <div>
+          <div className="mb-1.5 h-3 w-16 rounded bg-muted" />
+          <div className="h-4 w-3/4 rounded bg-muted" />
+        </div>
+        <div>
+          <div className="mb-1.5 h-3 w-24 rounded bg-muted" />
+          <div className="space-y-1.5">
+            <div className="h-3.5 w-full rounded bg-muted" />
+            <div className="h-3.5 w-5/6 rounded bg-muted" />
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div>
+            <div className="mb-1.5 h-3 w-8 rounded bg-muted" />
+            <div className="h-4 w-20 rounded bg-muted" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CreativeSkeletonCard() {
+  return (
+    <div className="animate-pulse space-y-3 rounded-lg border border-border bg-card p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="h-4 w-20 rounded bg-muted" />
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-14 rounded bg-muted" />
+          <div className="h-5 w-14 rounded bg-muted" />
+        </div>
+      </div>
+      <div>
+        <div className="mb-1.5 h-3 w-28 rounded bg-muted" />
+        <div className="space-y-1.5">
+          <div className="h-3.5 w-full rounded bg-muted" />
+          <div className="h-3.5 w-4/5 rounded bg-muted" />
+          <div className="h-3.5 w-3/4 rounded bg-muted" />
+        </div>
+      </div>
+      <div className="rounded-md bg-muted/50 px-3 py-2">
+        <div className="h-3 w-full rounded bg-muted/60" />
+      </div>
+    </div>
+  )
+}
+
+// ── AI Workforce Status ────────────────────────────────────────────────────────
+
+function PhaseIcon({ status }: { status: PhaseStatus }) {
+  if (status === 'completed') {
+    return (
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary">
+        <svg
+          className="h-3.5 w-3.5 text-primary-foreground"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </div>
+    )
+  }
+  if (status === 'running') {
+    return (
+      <div className="h-6 w-6 shrink-0 animate-spin rounded-full border-2 border-border border-t-primary" />
+    )
+  }
+  return (
+    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-border bg-card">
+      <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+    </div>
+  )
+}
+
+function AIWorkforceStatus({
+  copyStatus,
+  creativeStatus,
+}: {
+  copyStatus: PhaseStatus
+  creativeStatus: PhaseStatus
+}) {
+  const phases: { label: string; description: string; status: PhaseStatus }[] = [
+    {
+      label: 'Campaign Brief',
+      description: 'Ready',
+      status: 'completed',
+    },
+    {
+      label: 'Ad Copy Variants',
+      description:
+        copyStatus === 'running'
+          ? 'Writing personalized messaging…'
+          : copyStatus === 'completed'
+            ? 'Complete'
+            : 'Queued',
+      status: copyStatus,
+    },
+    {
+      label: 'Creative Direction',
+      description:
+        creativeStatus === 'running'
+          ? 'Generating visual concepts…'
+          : creativeStatus === 'completed'
+            ? 'Complete'
+            : 'Queued',
+      status: creativeStatus,
+    },
+  ]
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold text-foreground">AI Workforce Status</h2>
+      <div className="rounded-lg border border-border bg-card p-5">
+        <div className="relative flex items-start justify-between">
+          {/* Connecting line sits behind the icons */}
+          <div className="absolute left-3 right-3 top-3 h-px bg-border" />
+          {phases.map((phase) => (
+            <div
+              key={phase.label}
+              className="relative z-10 flex flex-col items-center gap-2 px-2 text-center"
+            >
+              <PhaseIcon status={phase.status} />
+              <p
+                className={`text-xs font-medium leading-snug ${
+                  phase.status === 'completed'
+                    ? 'text-foreground'
+                    : phase.status === 'running'
+                      ? 'text-primary'
+                      : 'text-muted-foreground'
+                }`}
+              >
+                {phase.label}
+              </p>
+              <p className="text-[10px] leading-snug text-muted-foreground">{phase.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [id, setId] = useState<string | null>(null)
@@ -55,6 +255,45 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
     }
   }, [id])
 
+  // Derived pipeline state — computed unconditionally so tracker effects below can use them.
+  const isPipelineRunning = data !== null && data.campaign.status !== 'ready'
+  const hasCopyVariants = (data?.copyVariants.length ?? 0) > 0
+  const hasCreatives = (data?.creatives.length ?? 0) > 0
+
+  // ── Tracker lifecycle ──────────────────────────────────────────────────────
+  // State machine: hidden → running → completing → fadeout → hidden
+  // Driven purely by isPipelineRunning; no artificial timers used for content.
+  // The two timeouts here are UX transitions only (hold + fade), not data gates.
+
+  const [trackerPhase, setTrackerPhase] = useState<TrackerPhase>('hidden')
+
+  // Step 1: mirror pipeline state into tracker phase
+  useEffect(() => {
+    if (isPipelineRunning) {
+      setTrackerPhase('running')
+    } else {
+      // Only advance if we were already showing; avoids showing tracker when
+      // the page loads after the pipeline has already finished.
+      setTrackerPhase((prev) => (prev === 'running' ? 'completing' : prev))
+    }
+  }, [isPipelineRunning])
+
+  // Step 2: hold the all-done state for 1 s, then start fading
+  useEffect(() => {
+    if (trackerPhase !== 'completing') return
+    const t = setTimeout(() => setTrackerPhase('fadeout'), 1000)
+    return () => clearTimeout(t)
+  }, [trackerPhase])
+
+  // Step 3: remove from DOM after the 400 ms CSS fade-out finishes
+  useEffect(() => {
+    if (trackerPhase !== 'fadeout') return
+    const t = setTimeout(() => setTrackerPhase('hidden'), 500)
+    return () => clearTimeout(t)
+  }, [trackerPhase])
+
+  // ── Early returns ──────────────────────────────────────────────────────────
+
   if (loading) {
     return (
       <div className="flex items-center gap-3 py-12 text-sm text-muted-foreground">
@@ -79,6 +318,23 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
   }
 
   const { campaign, copyVariants, creatives } = data
+
+  // Derive which pipeline phase is active from observable DB state.
+  // Creative only starts after copy finishes (sequential in the pipeline),
+  // so no creatives + no variants = copy is still running.
+  const copyStatus: PhaseStatus = hasCopyVariants
+    ? 'completed'
+    : isPipelineRunning
+      ? 'running'
+      : 'pending'
+
+  const creativeStatus: PhaseStatus = hasCreatives
+    ? 'completed'
+    : isPipelineRunning
+      ? hasCopyVariants
+        ? 'running'
+        : 'pending'
+      : 'pending'
 
   return (
     <div className="space-y-8">
@@ -123,7 +379,7 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Campaign Brief */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">Campaign Brief</h2>
         <div className="space-y-4 rounded-lg border border-border bg-card p-5">
@@ -229,112 +485,141 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </section>
 
+      {/* AI Workforce Status — fades out ~1 s after all phases complete */}
+      {trackerPhase !== 'hidden' && (
+        <div
+          style={{
+            opacity: trackerPhase === 'fadeout' ? 0 : 1,
+            transition: 'opacity 400ms ease',
+          }}
+        >
+          <AIWorkforceStatus copyStatus={copyStatus} creativeStatus={creativeStatus} />
+        </div>
+      )}
+
       {/* Ad Copy Variants */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">
-          Ad Copy Variants ({copyVariants.length})
+          Ad Copy Variants{hasCopyVariants ? ` (${copyVariants.length})` : null}
         </h2>
-        {copyVariants.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-6 text-center">
-            <p className="text-sm text-muted-foreground">No copy variants generated yet.</p>
-          </div>
-        ) : (
+        {isPipelineRunning && !hasCopyVariants ? (
           <div className="space-y-3">
-            {copyVariants.map((v) => (
-              <div key={v.id} className="space-y-3 rounded-lg border border-border bg-card p-5">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-foreground">{v.variantName}</p>
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-xs capitalize text-muted-foreground">
-                    {v.status}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Headline
-                    </p>
-                    <p className="mt-0.5 text-sm font-semibold text-foreground">{v.headline}</p>
+            <AdCopySkeletonCard />
+            <AdCopySkeletonCard />
+            <AdCopySkeletonCard />
+          </div>
+        ) : hasCopyVariants ? (
+          <div className="space-y-3">
+            {copyVariants.map((v, i) => (
+              <FadeInCard key={v.id} delay={i * 150}>
+                <div className="space-y-3 rounded-lg border border-border bg-card p-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-foreground">{v.variantName}</p>
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-xs capitalize text-muted-foreground">
+                      {v.status}
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Primary Text
-                    </p>
-                    <p className="mt-0.5 text-sm text-foreground">{v.primaryText}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
+                  <div className="space-y-2">
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        CTA
+                        Headline
                       </p>
-                      <p className="mt-0.5 text-sm font-medium text-foreground">{v.callToAction}</p>
+                      <p className="mt-0.5 text-sm font-semibold text-foreground">{v.headline}</p>
                     </div>
-                    {v.description && (
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Primary Text
+                      </p>
+                      <p className="mt-0.5 text-sm text-foreground">{v.primaryText}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
                       <div>
                         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                          Description
+                          CTA
                         </p>
-                        <p className="mt-0.5 text-sm text-muted-foreground">{v.description}</p>
+                        <p className="mt-0.5 text-sm font-medium text-foreground">
+                          {v.callToAction}
+                        </p>
                       </div>
-                    )}
+                      {v.description && (
+                        <div>
+                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            Description
+                          </p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">{v.description}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </FadeInCard>
             ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-border p-6 text-center">
+            <p className="text-sm text-muted-foreground">No copy variants generated yet.</p>
           </div>
         )}
       </section>
 
-      {/* Creatives */}
+      {/* Creative Direction */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">
-          Creative Direction ({creatives.length})
+          Creative Direction{hasCreatives ? ` (${creatives.length})` : null}
         </h2>
-        {creatives.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-6 text-center">
-            <p className="text-sm text-muted-foreground">No creatives generated yet.</p>
+        {isPipelineRunning && !hasCreatives ? (
+          <div className="space-y-3">
+            <CreativeSkeletonCard />
+            <CreativeSkeletonCard />
           </div>
-        ) : (
+        ) : hasCreatives ? (
           <div className="space-y-3">
             {creatives.map((cr, i) => (
-              <div key={cr.id} className="space-y-3 rounded-lg border border-border bg-card p-5">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-foreground">Creative {i + 1}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-xs capitalize text-muted-foreground">
-                      {cr.type}
-                    </span>
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-xs capitalize text-muted-foreground">
-                      {cr.status}
-                    </span>
+              <FadeInCard key={cr.id} delay={i * 150}>
+                <div className="space-y-3 rounded-lg border border-border bg-card p-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-foreground">Creative {i + 1}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs capitalize text-muted-foreground">
+                        {cr.type}
+                      </span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs capitalize text-muted-foreground">
+                        {cr.status}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Higgsfield Prompt
-                  </p>
-                  <p className="mt-1 text-sm text-foreground">{cr.prompt}</p>
-                </div>
-                {cr.metadata.concept ? (
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Concept
+                      Higgsfield Prompt
                     </p>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      {String(cr.metadata.concept)}
-                    </p>
+                    <p className="mt-1 text-sm text-foreground">{cr.prompt}</p>
                   </div>
-                ) : null}
-                {cr.status === 'planned' && (
-                  <div className="rounded-md bg-muted/50 px-3 py-2">
-                    <p className="text-xs text-muted-foreground">
-                      This prompt is ready for Phase 2 — when Higgsfield generation is connected,
-                      click <span className="font-medium">Generate Creative</span> to produce the
-                      actual asset.
-                    </p>
-                  </div>
-                )}
-              </div>
+                  {cr.metadata.concept ? (
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Concept
+                      </p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {String(cr.metadata.concept)}
+                      </p>
+                    </div>
+                  ) : null}
+                  {cr.status === 'planned' && (
+                    <div className="rounded-md bg-muted/50 px-3 py-2">
+                      <p className="text-xs text-muted-foreground">
+                        This prompt is ready for Phase 2 — when Higgsfield generation is connected,
+                        click <span className="font-medium">Generate Creative</span> to produce the
+                        actual asset.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </FadeInCard>
             ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-border p-6 text-center">
+            <p className="text-sm text-muted-foreground">No creatives generated yet.</p>
           </div>
         )}
       </section>
