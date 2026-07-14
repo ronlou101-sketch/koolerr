@@ -4,6 +4,8 @@ import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { billingService } from '@/domains/billing'
 import type { PlanId } from '@/domains/billing/plans'
 import { CheckoutButton } from './checkout-button'
+import { PlanChangeButton } from './plan-change-button'
+import { CancelButton } from './cancel-button'
 
 /**
  * Billing page — AI Workforce Packages.
@@ -256,6 +258,11 @@ export default async function BillingPage({
   const currentPlanId = (subscription?.planId ?? 'unpaid') as PlanId
   const stripeEnabled = !!process.env.STRIPE_SECRET_KEY
   const currentOrder = PLAN_ORDER[currentPlanId] ?? 0
+  // True when the customer already has a Stripe subscription — plan changes go
+  // through /api/billing/upgrade (subscriptions.update), not a new checkout session.
+  const hasStripeSubscription = !!subscription?.stripeSubscriptionId
+  const canCancel =
+    hasStripeSubscription && currentPlanId !== 'unpaid' && subscription?.status !== 'canceled'
 
   return (
     <div className="space-y-12 overflow-x-hidden">
@@ -314,16 +321,21 @@ export default async function BillingPage({
               )}
             </p>
           </div>
-          {subscription.stripeCustomerId && (
-            <form action="/api/billing/portal" method="POST" className="flex-shrink-0">
-              <button
-                type="submit"
-                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
-              >
-                Manage Billing →
-              </button>
-            </form>
-          )}
+          <div className="flex shrink-0 flex-col items-end gap-3">
+            {subscription.stripeCustomerId && (
+              <form action="/api/billing/portal" method="POST">
+                <button
+                  type="submit"
+                  className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                >
+                  Manage Billing →
+                </button>
+              </form>
+            )}
+            {canCancel && subscription.currentPeriodEnd && (
+              <CancelButton periodEndIso={subscription.currentPeriodEnd.toISOString()} />
+            )}
+          </div>
         </div>
       )}
 
@@ -407,14 +419,21 @@ export default async function BillingPage({
                     <div className="rounded-md bg-white/10 py-2.5 text-center text-sm font-bold">
                       Your Current Package
                     </div>
-                  ) : isUpgrade && stripeEnabled ? (
+                  ) : hasStripeSubscription && stripeEnabled ? (
+                    <PlanChangeButton
+                      planId={pkg.planId}
+                      className="w-full rounded-md bg-background py-2.5 text-sm font-extrabold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                    >
+                      {pkgOrder > currentOrder ? pkg.cta : `Switch to ${pkg.tier}`}
+                    </PlanChangeButton>
+                  ) : !hasStripeSubscription && isUpgrade && stripeEnabled ? (
                     <CheckoutButton
                       planId={pkg.planId}
                       className="w-full rounded-md bg-background py-2.5 text-sm font-extrabold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
                     >
                       {pkg.cta}
                     </CheckoutButton>
-                  ) : isUpgrade && !stripeEnabled ? (
+                  ) : !stripeEnabled && !isCurrent ? (
                     <div className="rounded-md bg-white/10 py-2.5 text-center text-xs opacity-50">
                       Payments not yet active
                     </div>
@@ -494,14 +513,21 @@ export default async function BillingPage({
                   <div className="rounded-md border border-border py-2.5 text-center text-sm font-semibold text-muted-foreground">
                     Your Current Package
                   </div>
-                ) : isUpgrade && stripeEnabled ? (
+                ) : hasStripeSubscription && stripeEnabled ? (
+                  <PlanChangeButton
+                    planId={pkg.planId}
+                    className="w-full rounded-md bg-foreground py-2.5 text-sm font-extrabold text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {pkgOrder > currentOrder ? pkg.cta : `Switch to ${pkg.tier}`}
+                  </PlanChangeButton>
+                ) : !hasStripeSubscription && isUpgrade && stripeEnabled ? (
                   <CheckoutButton
                     planId={pkg.planId}
                     className="w-full rounded-md bg-foreground py-2.5 text-sm font-extrabold text-background transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     {pkg.cta}
                   </CheckoutButton>
-                ) : isUpgrade && !stripeEnabled ? (
+                ) : !stripeEnabled && !isCurrent ? (
                   <p className="text-center text-xs text-muted-foreground">
                     Payments not yet active
                   </p>

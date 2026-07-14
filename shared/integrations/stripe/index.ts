@@ -242,6 +242,108 @@ export async function updateStripeSubscriptionMetadata(
   }
 }
 
+export interface UpdateSubscriptionPlanResult {
+  id: string
+  status: string
+  current_period_end: number
+  items: { data: Array<{ price: { id: string } }> }
+}
+
+/**
+ * Change the price on an existing Stripe subscription (upgrade or downgrade).
+ * Uses immediate proration so the customer is charged/credited on the next invoice.
+ * An idempotency key must be supplied by the caller to protect against duplicate
+ * submissions (e.g. double-click, network retry).
+ * Returns null if STRIPE_SECRET_KEY is not set or the request fails.
+ */
+export async function updateSubscriptionPlan(
+  subscriptionId: string,
+  priceId: string,
+  idempotencyKey: string
+): Promise<UpdateSubscriptionPlanResult | null> {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    logger.info('[STRIPE] STRIPE_SECRET_KEY not set — skipping subscription update')
+    return null
+  }
+  try {
+    const body = formEncode({
+      'items[0][price]': priceId,
+      proration_behavior: 'create_prorations',
+    })
+    const response = await fetch(
+      `${STRIPE_API}/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      {
+        method: 'POST',
+        headers: {
+          ...(stripeHeaders() as Record<string, string>),
+          'Idempotency-Key': idempotencyKey,
+        },
+        body,
+      }
+    )
+    if (!response.ok) {
+      const text = await response.text()
+      logger.warn('[STRIPE] updateSubscriptionPlan failed', {
+        subscriptionId,
+        status: response.status,
+        body: text.slice(0, 200),
+      })
+      return null
+    }
+    const data = (await response.json()) as UpdateSubscriptionPlanResult
+    logger.info('[STRIPE] Subscription plan updated', { subscriptionId })
+    return data
+  } catch (error) {
+    logger.warn('[STRIPE] updateSubscriptionPlan threw', { error: String(error) })
+    return null
+  }
+}
+
+/**
+ * Schedule a Stripe subscription to cancel at the end of the current billing period.
+ * Does not cancel immediately — the customer retains access until period end.
+ * Stripe fires customer.subscription.updated; the webhook keeps the DB in sync.
+ * An idempotency key must be supplied by the caller.
+ * Returns false if STRIPE_SECRET_KEY is not set or the request fails.
+ */
+export async function cancelSubscriptionAtPeriodEnd(
+  subscriptionId: string,
+  idempotencyKey: string
+): Promise<boolean> {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    logger.info('[STRIPE] STRIPE_SECRET_KEY not set — skipping subscription cancel')
+    return false
+  }
+  try {
+    const body = formEncode({ cancel_at_period_end: 'true' })
+    const response = await fetch(
+      `${STRIPE_API}/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      {
+        method: 'POST',
+        headers: {
+          ...(stripeHeaders() as Record<string, string>),
+          'Idempotency-Key': idempotencyKey,
+        },
+        body,
+      }
+    )
+    if (!response.ok) {
+      const text = await response.text()
+      logger.warn('[STRIPE] cancelSubscriptionAtPeriodEnd failed', {
+        subscriptionId,
+        status: response.status,
+        body: text.slice(0, 200),
+      })
+      return false
+    }
+    logger.info('[STRIPE] Subscription set to cancel at period end', { subscriptionId })
+    return true
+  } catch (error) {
+    logger.warn('[STRIPE] cancelSubscriptionAtPeriodEnd threw', { error: String(error) })
+    return false
+  }
+}
+
 /**
  * Verify a Stripe webhook signature using Web Crypto API (HMAC-SHA-256).
  * Returns true if the signature is valid, false otherwise.

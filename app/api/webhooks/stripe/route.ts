@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { billingService } from '@/domains/billing'
 import { verifyStripeWebhook } from '@/shared/integrations/stripe'
+import { planIdFromStripePriceId } from '@/domains/billing/plans'
 import { bootstrapPlatform, isPlatformBootstrapped } from '@/infrastructure/platform'
 import { logger } from '@/shared/lib/logger'
 import type { OrganizationId } from '@/shared/types'
@@ -159,13 +160,21 @@ export async function POST(request: Request) {
           break
         }
         const priceId = sub.items.data[0]?.price?.id
+        // Resolve planId from the Stripe price so the DB stays in sync after
+        // an upgrade, downgrade, or portal-initiated plan change.
+        const resolvedPlanId = priceId ? planIdFromStripePriceId(priceId) : null
         await billingService.updateSubscriptionStripeData({
           organizationId,
           stripeCustomerId: sub.customer,
           stripeSubscriptionId: sub.id,
           stripePriceId: priceId,
+          ...(resolvedPlanId && { planId: resolvedPlanId }),
           status: statusFromStripe(sub.status),
           currentPeriodEnd: new Date(sub.current_period_end * 1000),
+        })
+        logger.info('[STRIPE_WEBHOOK] Subscription updated', {
+          organizationId,
+          resolvedPlanId: resolvedPlanId ?? '(unknown price)',
         })
         break
       }

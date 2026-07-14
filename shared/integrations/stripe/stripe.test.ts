@@ -9,6 +9,8 @@ import {
   createPortalSession,
   retrieveCheckoutSession,
   updateStripeSubscriptionMetadata,
+  updateSubscriptionPlan,
+  cancelSubscriptionAtPeriodEnd,
   verifyStripeWebhook,
 } from './index'
 
@@ -211,6 +213,147 @@ describe('updateStripeSubscriptionMetadata', () => {
     vi.stubGlobal('fetch', mockFetchError(404, 'subscription not found'))
 
     const result = await updateStripeSubscriptionMetadata('sub_1', { plan_id: 'build' })
+    expect(result).toBe(false)
+  })
+})
+
+describe('updateSubscriptionPlan', () => {
+  beforeEach(() => {
+    delete process.env.STRIPE_SECRET_KEY
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it('returns null when STRIPE_SECRET_KEY is not set', async () => {
+    const result = await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
+    expect(result).toBeNull()
+  })
+
+  it('returns subscription data on success', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const stubData = {
+      id: 'sub_1',
+      status: 'active',
+      current_period_end: 1800000000,
+      items: { data: [{ price: { id: 'price_grow' } }] },
+    }
+    vi.stubGlobal('fetch', mockFetchOk(stubData))
+    const result = await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
+    expect(result).toMatchObject({ id: 'sub_1', status: 'active' })
+  })
+
+  it('sends proration_behavior=create_prorations in the request body', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockFetchOk({
+      id: 'sub_1',
+      status: 'active',
+      current_period_end: 0,
+      items: { data: [] },
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.body as string).toContain('proration_behavior=create_prorations')
+  })
+
+  it('sends the Idempotency-Key header', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockFetchOk({
+      id: 'sub_1',
+      status: 'active',
+      current_period_end: 0,
+      items: { data: [] },
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    await updateSubscriptionPlan('sub_1', 'price_grow', 'my-idem-key')
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect((init.headers as Record<string, string>)['Idempotency-Key']).toBe('my-idem-key')
+  })
+
+  it('includes the new price ID in the request body', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockFetchOk({
+      id: 'sub_1',
+      status: 'active',
+      current_period_end: 0,
+      items: { data: [] },
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    await updateSubscriptionPlan('sub_1', 'price_grow_789', 'idem_key_1')
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.body as string).toContain('price_grow_789')
+  })
+
+  it('posts to the correct subscription endpoint', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockFetchOk({
+      id: 'sub_xyz',
+      status: 'active',
+      current_period_end: 0,
+      items: { data: [] },
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    await updateSubscriptionPlan('sub_xyz', 'price_1', 'idem_key_1')
+    const [url] = fetchMock.mock.calls[0] as [string]
+    expect(url).toContain('/subscriptions/sub_xyz')
+  })
+
+  it('returns null when Stripe returns a non-OK status', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    vi.stubGlobal('fetch', mockFetchError(402, 'card_declined'))
+    const result = await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
+    expect(result).toBeNull()
+  })
+})
+
+describe('cancelSubscriptionAtPeriodEnd', () => {
+  beforeEach(() => {
+    delete process.env.STRIPE_SECRET_KEY
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it('returns false when STRIPE_SECRET_KEY is not set', async () => {
+    const result = await cancelSubscriptionAtPeriodEnd('sub_1', 'idem_key_1')
+    expect(result).toBe(false)
+  })
+
+  it('returns true on success', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    vi.stubGlobal('fetch', mockFetchOk({ id: 'sub_1', cancel_at_period_end: true }))
+    const result = await cancelSubscriptionAtPeriodEnd('sub_1', 'idem_key_1')
+    expect(result).toBe(true)
+  })
+
+  it('sends cancel_at_period_end=true in the request body', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockFetchOk({ id: 'sub_1', cancel_at_period_end: true })
+    vi.stubGlobal('fetch', fetchMock)
+    await cancelSubscriptionAtPeriodEnd('sub_1', 'idem_key_1')
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(init.body as string).toContain('cancel_at_period_end=true')
+  })
+
+  it('sends the Idempotency-Key header', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockFetchOk({ id: 'sub_1', cancel_at_period_end: true })
+    vi.stubGlobal('fetch', fetchMock)
+    await cancelSubscriptionAtPeriodEnd('sub_1', 'cancel-idem-key')
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect((init.headers as Record<string, string>)['Idempotency-Key']).toBe('cancel-idem-key')
+  })
+
+  it('posts to the correct subscription endpoint', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockFetchOk({ id: 'sub_abc', cancel_at_period_end: true })
+    vi.stubGlobal('fetch', fetchMock)
+    await cancelSubscriptionAtPeriodEnd('sub_abc', 'idem_key_1')
+    const [url] = fetchMock.mock.calls[0] as [string]
+    expect(url).toContain('/subscriptions/sub_abc')
+  })
+
+  it('returns false when Stripe returns a non-OK status', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    vi.stubGlobal('fetch', mockFetchError(404, 'subscription not found'))
+    const result = await cancelSubscriptionAtPeriodEnd('sub_1', 'idem_key_1')
     expect(result).toBe(false)
   })
 })

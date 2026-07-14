@@ -55,6 +55,22 @@ export const ENTITLEMENT_FEATURES = {
   modelInvocation: 'model_invocation',
 } as const
 
+/**
+ * Reverse-lookup: map a Stripe Price ID back to our internal PlanId.
+ * Used by the webhook handler to keep planId in sync when Stripe fires
+ * customer.subscription.updated (e.g. after an upgrade or downgrade).
+ * Returns null when the price ID is unknown or the env var is not set.
+ */
+export function planIdFromStripePriceId(priceId: string): PlanId | null {
+  if (process.env.STRIPE_BUILD_PRICE_ID && priceId === process.env.STRIPE_BUILD_PRICE_ID)
+    return 'build'
+  if (process.env.STRIPE_GROW_PRICE_ID && priceId === process.env.STRIPE_GROW_PRICE_ID)
+    return 'grow'
+  if (process.env.STRIPE_SCALE_PRICE_ID && priceId === process.env.STRIPE_SCALE_PRICE_ID)
+    return 'scale'
+  return null
+}
+
 /** Default entitlement limits for each plan tier. */
 export const PLAN_ENTITLEMENTS: Record<PlanId, Record<string, number>> = {
   unpaid: {
