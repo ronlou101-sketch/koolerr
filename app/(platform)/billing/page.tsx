@@ -108,7 +108,7 @@ const PACKAGES: Package[] = [
         items: ['Priority Support (8-hr response)'],
       },
     ],
-    cta: 'Scale My AI Team',
+    cta: 'Grow My AI Team',
   },
   {
     planId: 'scale',
@@ -148,7 +148,7 @@ const PACKAGES: Package[] = [
         ],
       },
     ],
-    cta: 'Talk to Our Team',
+    cta: 'Scale My AI Team',
   },
 ]
 
