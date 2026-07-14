@@ -81,6 +81,10 @@ export interface DogfoodingCampaign {
   updatedAt: Date
 }
 
+// ── Shared ─────────────────────────────────────────────────────────────────────
+
+export type PublishStatus = 'unpublished' | 'scheduled' | 'published'
+
 // ── Ad Copy Variant ────────────────────────────────────────────────────────────
 
 export type CopyVariantStatus = 'draft' | 'approved' | 'rejected' | 'archived'
@@ -100,6 +104,9 @@ export interface AdCopyVariant {
   urlParameters: Record<string, unknown>
   status: CopyVariantStatus
   performanceScore: number | null
+  approvalNote: string | null
+  approvedAt: Date | null
+  publishStatus: PublishStatus
   createdAt: Date
   updatedAt: Date
 }
@@ -107,7 +114,13 @@ export interface AdCopyVariant {
 // ── Creative ───────────────────────────────────────────────────────────────────
 
 export type CreativeType = 'image' | 'video' | 'carousel' | 'story'
-export type CreativeStatus = 'planned' | 'generating' | 'ready' | 'rejected' | 'archived'
+export type CreativeStatus =
+  | 'planned'
+  | 'generating'
+  | 'ready'
+  | 'approved'
+  | 'rejected'
+  | 'archived'
 
 export interface DogfoodingCreative {
   id: string
@@ -122,6 +135,9 @@ export interface DogfoodingCreative {
   thumbnailUrl: string | null
   metadata: Record<string, unknown>
   status: CreativeStatus
+  approvalNote: string | null
+  approvedAt: Date | null
+  publishStatus: PublishStatus
   createdAt: Date
   updatedAt: Date
 }
@@ -167,6 +183,272 @@ export interface MetaConnection {
   status: MetaConnectionStatus
   createdAt: Date
   updatedAt: Date
+}
+
+// ── Campaign Assets ────────────────────────────────────────────────────────────
+
+export type CampaignAssetType = 'image' | 'video' | 'audio'
+export type CampaignAssetStatus =
+  | 'generating'
+  | 'ready'
+  | 'failed'
+  | 'approved'
+  | 'rejected'
+  | 'published'
+
+export interface CampaignAsset {
+  id: string
+  organizationId: OrganizationId
+  campaignId: string
+  engagementRunId: string | null
+  digitalEmployeeId: string | null
+  modelProvider: string
+  creativeId: string | null
+  type: CampaignAssetType
+  subtype: string | null
+  assetUrl: string | null
+  thumbnailUrl: string | null
+  metadata: Record<string, unknown>
+  status: CampaignAssetStatus
+  approvalNote: string | null
+  approvedAt: Date | null
+  publishStatus: PublishStatus
+  version: number
+  parentAssetId: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface CreateCampaignAssetInput {
+  organizationId: OrganizationId
+  campaignId: string
+  engagementRunId?: string | null
+  digitalEmployeeId?: string | null
+  modelProvider: string
+  creativeId?: string | null
+  type: CampaignAssetType
+  subtype?: string | null
+  assetUrl?: string | null
+  thumbnailUrl?: string | null
+  metadata?: Record<string, unknown>
+  status?: CampaignAssetStatus
+  version?: number
+  parentAssetId?: string | null
+}
+
+// ── Campaign Scripts ───────────────────────────────────────────────────────────
+
+export type ScriptStatus = 'draft' | 'approved' | 'rejected'
+
+export interface CampaignScript {
+  id: string
+  organizationId: OrganizationId
+  campaignId: string
+  engagementRunId: string | null
+  digitalEmployeeId: string | null
+  modelProvider: string | null
+  title: string
+  body: string
+  platform: string | null
+  estimatedDurationSec: number | null
+  status: ScriptStatus
+  approvalNote: string | null
+  approvedAt: Date | null
+  version: number
+  parentScriptId: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface CreateCampaignScriptInput {
+  organizationId: OrganizationId
+  campaignId: string
+  engagementRunId?: string | null
+  digitalEmployeeId?: string | null
+  modelProvider?: string | null
+  title: string
+  body: string
+  platform?: string | null
+  estimatedDurationSec?: number | null
+  version?: number
+  parentScriptId?: string | null
+}
+
+// ── Campaign Captions ──────────────────────────────────────────────────────────
+
+export type CaptionStatus = 'draft' | 'approved' | 'rejected'
+
+export interface CampaignCaption {
+  id: string
+  organizationId: OrganizationId
+  campaignId: string
+  engagementRunId: string | null
+  digitalEmployeeId: string | null
+  modelProvider: string | null
+  platform: string
+  body: string
+  characterCount: number
+  pairedAssetId: string | null
+  status: CaptionStatus
+  approvalNote: string | null
+  approvedAt: Date | null
+  version: number
+  parentCaptionId: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface CreateCampaignCaptionInput {
+  organizationId: OrganizationId
+  campaignId: string
+  engagementRunId?: string | null
+  digitalEmployeeId?: string | null
+  modelProvider?: string | null
+  platform: string
+  body: string
+  characterCount?: number
+  pairedAssetId?: string | null
+  version?: number
+  parentCaptionId?: string | null
+}
+
+// ── Campaign Hashtag Sets ──────────────────────────────────────────────────────
+
+export type ReachTier = 'niche' | 'mid' | 'broad'
+export type HashtagSetStatus = 'draft' | 'approved' | 'rejected'
+
+export interface CampaignHashtagSet {
+  id: string
+  organizationId: OrganizationId
+  campaignId: string
+  engagementRunId: string | null
+  digitalEmployeeId: string | null
+  modelProvider: string | null
+  platform: string
+  name: string
+  tags: string[]
+  reachTier: ReachTier
+  status: HashtagSetStatus
+  approvalNote: string | null
+  approvedAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface CreateCampaignHashtagSetInput {
+  organizationId: OrganizationId
+  campaignId: string
+  engagementRunId?: string | null
+  digitalEmployeeId?: string | null
+  modelProvider?: string | null
+  platform: string
+  name: string
+  tags: string[]
+  reachTier?: ReachTier
+}
+
+// ── Campaign Calendar Slots ────────────────────────────────────────────────────
+
+export type CalendarSlotStatus = 'draft' | 'scheduled' | 'published' | 'missed' | 'cancelled'
+
+export interface CampaignCalendarSlot {
+  id: string
+  organizationId: OrganizationId
+  campaignId: string
+  scheduledAt: Date
+  platform: string
+  assetId: string | null
+  copyVariantId: string | null
+  captionId: string | null
+  hashtagSetId: string | null
+  status: CalendarSlotStatus
+  publishedAt: Date | null
+  publishedBy: string | null
+  livePostUrl: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface CreateCampaignCalendarSlotInput {
+  organizationId: OrganizationId
+  campaignId: string
+  scheduledAt: Date
+  platform: string
+  assetId?: string | null
+  copyVariantId?: string | null
+  captionId?: string | null
+  hashtagSetId?: string | null
+}
+
+// ── Campaign Approval Events ───────────────────────────────────────────────────
+
+export type ApprovalDecision = 'approved' | 'rejected' | 'reset_to_draft'
+export type ApprovalAssetType =
+  | 'ad_copy_variant'
+  | 'creative'
+  | 'asset'
+  | 'script'
+  | 'caption'
+  | 'hashtag_set'
+export type ActorType = 'user' | 'digital_employee'
+
+export interface CampaignApprovalEvent {
+  id: string
+  organizationId: OrganizationId
+  campaignId: string
+  assetType: ApprovalAssetType
+  assetId: string
+  decision: ApprovalDecision
+  note: string | null
+  actorType: ActorType
+  actorId: string
+  engagementRunId: string | null
+  createdAt: Date
+}
+
+export interface CreateCampaignApprovalEventInput {
+  organizationId: OrganizationId
+  campaignId: string
+  assetType: ApprovalAssetType
+  assetId: string
+  decision: ApprovalDecision
+  note?: string | null
+  actorType: ActorType
+  actorId: string
+  engagementRunId?: string | null
+}
+
+// ── Campaign Publish Events ────────────────────────────────────────────────────
+
+export type PublishAction = 'published' | 'unpublished' | 'scheduled' | 'cancelled'
+export type PublishActorType = 'user' | 'automation'
+
+export interface CampaignPublishEvent {
+  id: string
+  organizationId: OrganizationId
+  campaignId: string
+  calendarSlotId: string | null
+  assetType: ApprovalAssetType
+  assetId: string
+  platform: string
+  action: PublishAction
+  actorType: PublishActorType
+  actorId: string
+  livePostUrl: string | null
+  publishedAt: Date
+}
+
+export interface CreateCampaignPublishEventInput {
+  organizationId: OrganizationId
+  campaignId: string
+  calendarSlotId?: string | null
+  assetType: ApprovalAssetType
+  assetId: string
+  platform: string
+  action: PublishAction
+  actorType: PublishActorType
+  actorId: string
+  livePostUrl?: string | null
 }
 
 // ── IMediaExecutionAdapter (Phase 2 stub interface) ───────────────────────────

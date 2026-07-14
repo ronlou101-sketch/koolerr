@@ -1,6 +1,24 @@
 import type { OrganizationId } from '@/shared/types'
 import type {
+  ActorType,
   AdCopyVariant,
+  ApprovalAssetType,
+  ApprovalDecision,
+  CampaignApprovalEvent,
+  CampaignAsset,
+  CampaignAssetStatus,
+  CampaignCalendarSlot,
+  CampaignCaption,
+  CampaignHashtagSet,
+  CampaignPublishEvent,
+  CampaignScript,
+  CreateCampaignApprovalEventInput,
+  CreateCampaignAssetInput,
+  CreateCampaignCalendarSlotInput,
+  CreateCampaignCaptionInput,
+  CreateCampaignHashtagSetInput,
+  CreateCampaignPublishEventInput,
+  CreateCampaignScriptInput,
   CreateObjectiveInput,
   DogfoodingCampaign,
   DogfoodingCreative,
@@ -50,17 +68,43 @@ export interface IDogfoodingRepository {
 
   // Ad Copy
   createAdCopyVariant(
-    variant: Omit<AdCopyVariant, 'id' | 'createdAt' | 'updatedAt'>
+    variant: Omit<
+      AdCopyVariant,
+      'id' | 'createdAt' | 'updatedAt' | 'approvalNote' | 'approvedAt' | 'publishStatus'
+    >
   ): Promise<AdCopyVariant>
   listAdCopyVariants(campaignId: string, organizationId: OrganizationId): Promise<AdCopyVariant[]>
   listAllCopyVariants(organizationId: OrganizationId): Promise<AdCopyVariant[]>
+  approveAdCopyVariant(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<AdCopyVariant>
+  rejectAdCopyVariant(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<AdCopyVariant>
 
   // Creatives
   createCreative(
-    creative: Omit<DogfoodingCreative, 'id' | 'createdAt' | 'updatedAt'>
+    creative: Omit<
+      DogfoodingCreative,
+      'id' | 'createdAt' | 'updatedAt' | 'approvalNote' | 'approvedAt' | 'publishStatus'
+    >
   ): Promise<DogfoodingCreative>
   listCreatives(campaignId: string, organizationId: OrganizationId): Promise<DogfoodingCreative[]>
   listAllCreatives(organizationId: OrganizationId): Promise<DogfoodingCreative[]>
+  approveCreative(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<DogfoodingCreative>
+  rejectCreative(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<DogfoodingCreative>
 
   // Learnings
   createLearning(
@@ -73,4 +117,53 @@ export interface IDogfoodingRepository {
   upsertMetaConnection(
     connection: Omit<MetaConnection, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<MetaConnection>
+
+  // Campaign Assets
+  createCampaignAsset(input: CreateCampaignAssetInput): Promise<CampaignAsset>
+  findCampaignAssetById(id: string, organizationId: OrganizationId): Promise<CampaignAsset | null>
+  listCampaignAssets(campaignId: string, organizationId: OrganizationId): Promise<CampaignAsset[]>
+  updateCampaignAssetStatus(
+    id: string,
+    status: CampaignAssetStatus,
+    organizationId: OrganizationId
+  ): Promise<CampaignAsset>
+
+  // Campaign Scripts
+  createCampaignScript(input: CreateCampaignScriptInput): Promise<CampaignScript>
+  listCampaignScripts(campaignId: string, organizationId: OrganizationId): Promise<CampaignScript[]>
+
+  // Campaign Captions
+  createCampaignCaption(input: CreateCampaignCaptionInput): Promise<CampaignCaption>
+  listCampaignCaptions(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<CampaignCaption[]>
+
+  // Campaign Hashtag Sets
+  createCampaignHashtagSet(input: CreateCampaignHashtagSetInput): Promise<CampaignHashtagSet>
+  listCampaignHashtagSets(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<CampaignHashtagSet[]>
+
+  // Calendar Slots
+  createCalendarSlot(input: CreateCampaignCalendarSlotInput): Promise<CampaignCalendarSlot>
+  listCalendarSlots(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<CampaignCalendarSlot[]>
+
+  // Approval Events (append-only)
+  createApprovalEvent(input: CreateCampaignApprovalEventInput): Promise<CampaignApprovalEvent>
+  listApprovalEvents(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<CampaignApprovalEvent[]>
+
+  // Publish Events (append-only)
+  createPublishEvent(input: CreateCampaignPublishEventInput): Promise<CampaignPublishEvent>
+  listPublishEvents(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<CampaignPublishEvent[]>
 }

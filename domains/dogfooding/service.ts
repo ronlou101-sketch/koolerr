@@ -6,6 +6,21 @@ import type { IDogfoodingRepository } from './repository'
 import { InMemoryDogfoodingRepository } from './in-memory-repository'
 import type {
   AdCopyVariant,
+  CampaignApprovalEvent,
+  CampaignAsset,
+  CampaignAssetStatus,
+  CampaignCalendarSlot,
+  CampaignCaption,
+  CampaignHashtagSet,
+  CampaignPublishEvent,
+  CampaignScript,
+  CreateCampaignApprovalEventInput,
+  CreateCampaignAssetInput,
+  CreateCampaignCalendarSlotInput,
+  CreateCampaignCaptionInput,
+  CreateCampaignHashtagSetInput,
+  CreateCampaignPublishEventInput,
+  CreateCampaignScriptInput,
   CreateObjectiveInput,
   DogfoodingCampaign,
   DogfoodingCreative,
@@ -57,6 +72,86 @@ export interface IDogfoodingService {
   listLearnings(organizationId: OrganizationId): Promise<PlatformResult<DogfoodingLearning[]>>
 
   getMetaConnection(organizationId: OrganizationId): Promise<PlatformResult<MetaConnection | null>>
+
+  approveAdCopyVariant(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<AdCopyVariant>>
+  rejectAdCopyVariant(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<AdCopyVariant>>
+  approveCreative(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<DogfoodingCreative>>
+  rejectCreative(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<DogfoodingCreative>>
+
+  createCampaignAsset(input: CreateCampaignAssetInput): Promise<PlatformResult<CampaignAsset>>
+  findCampaignAssetById(
+    id: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignAsset | null>>
+  listCampaignAssets(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignAsset[]>>
+  updateCampaignAssetStatus(
+    id: string,
+    status: CampaignAssetStatus,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignAsset>>
+
+  createCampaignScript(input: CreateCampaignScriptInput): Promise<PlatformResult<CampaignScript>>
+  listCampaignScripts(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignScript[]>>
+
+  createCampaignCaption(input: CreateCampaignCaptionInput): Promise<PlatformResult<CampaignCaption>>
+  listCampaignCaptions(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignCaption[]>>
+
+  createCampaignHashtagSet(
+    input: CreateCampaignHashtagSetInput
+  ): Promise<PlatformResult<CampaignHashtagSet>>
+  listCampaignHashtagSets(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignHashtagSet[]>>
+
+  createCalendarSlot(
+    input: CreateCampaignCalendarSlotInput
+  ): Promise<PlatformResult<CampaignCalendarSlot>>
+  listCalendarSlots(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignCalendarSlot[]>>
+
+  createApprovalEvent(
+    input: CreateCampaignApprovalEventInput
+  ): Promise<PlatformResult<CampaignApprovalEvent>>
+  listApprovalEvents(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignApprovalEvent[]>>
+
+  createPublishEvent(
+    input: CreateCampaignPublishEventInput
+  ): Promise<PlatformResult<CampaignPublishEvent>>
+  listPublishEvents(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignPublishEvent[]>>
 }
 
 let _repo: IDogfoodingRepository = new InMemoryDogfoodingRepository()
@@ -233,6 +328,224 @@ class DogfoodingService implements IDogfoodingService {
     try {
       const connection = await _repo.getMetaConnection(organizationId)
       return ok(connection)
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async approveAdCopyVariant(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<AdCopyVariant>> {
+    try {
+      return ok(await _repo.approveAdCopyVariant(id, note, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async rejectAdCopyVariant(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<AdCopyVariant>> {
+    try {
+      return ok(await _repo.rejectAdCopyVariant(id, note, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async approveCreative(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<DogfoodingCreative>> {
+    try {
+      return ok(await _repo.approveCreative(id, note, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async rejectCreative(
+    id: string,
+    note: string | null,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<DogfoodingCreative>> {
+    try {
+      return ok(await _repo.rejectCreative(id, note, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async createCampaignAsset(
+    input: CreateCampaignAssetInput
+  ): Promise<PlatformResult<CampaignAsset>> {
+    try {
+      return ok(await _repo.createCampaignAsset(input))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async findCampaignAssetById(
+    id: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignAsset | null>> {
+    try {
+      return ok(await _repo.findCampaignAssetById(id, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listCampaignAssets(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignAsset[]>> {
+    try {
+      return ok(await _repo.listCampaignAssets(campaignId, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async updateCampaignAssetStatus(
+    id: string,
+    status: CampaignAssetStatus,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignAsset>> {
+    try {
+      return ok(await _repo.updateCampaignAssetStatus(id, status, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async createCampaignScript(
+    input: CreateCampaignScriptInput
+  ): Promise<PlatformResult<CampaignScript>> {
+    try {
+      return ok(await _repo.createCampaignScript(input))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listCampaignScripts(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignScript[]>> {
+    try {
+      return ok(await _repo.listCampaignScripts(campaignId, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async createCampaignCaption(
+    input: CreateCampaignCaptionInput
+  ): Promise<PlatformResult<CampaignCaption>> {
+    try {
+      return ok(await _repo.createCampaignCaption(input))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listCampaignCaptions(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignCaption[]>> {
+    try {
+      return ok(await _repo.listCampaignCaptions(campaignId, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async createCampaignHashtagSet(
+    input: CreateCampaignHashtagSetInput
+  ): Promise<PlatformResult<CampaignHashtagSet>> {
+    try {
+      return ok(await _repo.createCampaignHashtagSet(input))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listCampaignHashtagSets(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignHashtagSet[]>> {
+    try {
+      return ok(await _repo.listCampaignHashtagSets(campaignId, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async createCalendarSlot(
+    input: CreateCampaignCalendarSlotInput
+  ): Promise<PlatformResult<CampaignCalendarSlot>> {
+    try {
+      return ok(await _repo.createCalendarSlot(input))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listCalendarSlots(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignCalendarSlot[]>> {
+    try {
+      return ok(await _repo.listCalendarSlots(campaignId, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async createApprovalEvent(
+    input: CreateCampaignApprovalEventInput
+  ): Promise<PlatformResult<CampaignApprovalEvent>> {
+    try {
+      return ok(await _repo.createApprovalEvent(input))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listApprovalEvents(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignApprovalEvent[]>> {
+    try {
+      return ok(await _repo.listApprovalEvents(campaignId, organizationId))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async createPublishEvent(
+    input: CreateCampaignPublishEventInput
+  ): Promise<PlatformResult<CampaignPublishEvent>> {
+    try {
+      return ok(await _repo.createPublishEvent(input))
+    } catch (e) {
+      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+    }
+  }
+
+  async listPublishEvents(
+    campaignId: string,
+    organizationId: OrganizationId
+  ): Promise<PlatformResult<CampaignPublishEvent[]>> {
+    try {
+      return ok(await _repo.listPublishEvents(campaignId, organizationId))
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
     }
