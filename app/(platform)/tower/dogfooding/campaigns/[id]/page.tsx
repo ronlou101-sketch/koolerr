@@ -406,6 +406,14 @@ export default function CampaignDetailPage({ params }: { params: Promise<{ id: s
             </span>
           )}
         </div>
+        <div className="mt-3">
+          <Link
+            href={`/tower/dogfooding/campaigns/${campaign.id}/deliverables`}
+            className="text-xs text-primary hover:underline"
+          >
+            View Deliverables →
+          </Link>
+        </div>
       </div>
 
       {/* Campaign Brief */}
