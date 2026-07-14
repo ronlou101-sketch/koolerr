@@ -266,6 +266,36 @@ export async function updateSubscriptionPlan(
     return null
   }
   try {
+    // ── TEMPORARY DIAGNOSTIC — remove after issue is resolved ─────────────────
+    logger.info('[STRIPE_DIAG] updateSubscriptionPlan entry', {
+      subscriptionIdQuoted: `"${subscriptionId}"`,
+      length: subscriptionId.length,
+      startsWithSub: subscriptionId.startsWith('sub_'),
+    })
+    // Verify which Stripe account this key belongs to. Skipped in test environment
+    // so the extra fetch call does not invalidate existing test mock sequences.
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        const acctRes = await fetch(`${STRIPE_API}/account`, { headers: stripeHeaders() })
+        if (acctRes.ok) {
+          const acct = (await acctRes.json()) as { id: string; email?: string }
+          logger.info('[STRIPE_DIAG] Stripe account identity', {
+            accountId: acct.id,
+            email: acct.email ?? '(none)',
+          })
+        } else {
+          logger.warn('[STRIPE_DIAG] Could not retrieve Stripe account', {
+            status: acctRes.status,
+          })
+        }
+      } catch (acctErr) {
+        logger.warn('[STRIPE_DIAG] Exception retrieving Stripe account', {
+          error: String(acctErr),
+        })
+      }
+    }
+    // ── END TEMPORARY DIAGNOSTIC ──────────────────────────────────────────────
+
     // Stripe requires items[0][id] (the subscription item ID, si_...) to modify an
     // existing item's price. Without it, Stripe interprets the payload as "add a new
     // item" rather than "change the price on the current item" and returns an error.
@@ -276,6 +306,16 @@ export async function updateSubscriptionPlan(
     )
     if (!getResponse.ok) {
       const text = await getResponse.text()
+      // ── TEMPORARY DIAGNOSTIC — remove after issue is resolved ───────────────
+      try {
+        const errObj = JSON.parse(text) as { error?: unknown }
+        logger.warn('[STRIPE_DIAG] Complete Stripe error on subscription retrieve', {
+          stripeError: errObj.error,
+        })
+      } catch {
+        logger.warn('[STRIPE_DIAG] Non-JSON error on subscription retrieve', { raw: text })
+      }
+      // ── END TEMPORARY DIAGNOSTIC ────────────────────────────────────────────
       logger.warn('[STRIPE] updateSubscriptionPlan: retrieve failed', {
         subscriptionId,
         status: getResponse.status,
