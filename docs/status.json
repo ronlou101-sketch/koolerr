@@ -27,7 +27,8 @@
     "Campaign Deliverables — Phase 3 API Layer (GET /deliverables returns all 7 deliverable types; POST /approve handles ad_copy_variant and creative approve/reject)",
     "Campaign Deliverables — Phase 4 UI Layer (Deliverables page with Ad Copy, Creatives, Assets, Scripts, Captions, Hashtags, Calendar, and Approval History sections; inline approve/reject controls for variants and creatives; navigation link from campaign detail page)",
     "Stripe Integration — Phase 3 Code Completion (upgrade/downgrade via POST /api/billing/upgrade; cancel-at-period-end via POST /api/billing/cancel; PlanChangeButton and CancelButton client components wired into billing page; planIdFromStripePriceId utility; planId sync fix in customer.subscription.updated webhook handler; 45 new tests; 608 total passing)",
-    "Billing page CTA copy fix — GROW: 'Grow My AI Team'; SCALE: 'Scale My AI Team' (self-serve, not contact-sales)"
+    "Billing page CTA copy fix — GROW: 'Grow My AI Team'; SCALE: 'Scale My AI Team' (self-serve, not contact-sales)",
+    "Stripe upgrade defect fix — updateSubscriptionPlan now GETs subscription item ID (si_...) before POSTing plan change; without items[0][id] Stripe adds a new item instead of modifying the existing one (4 new tests; 612 total)"
   ],
   "current": [
     "Stripe Integration",

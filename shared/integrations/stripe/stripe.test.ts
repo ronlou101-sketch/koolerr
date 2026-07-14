@@ -223,6 +223,37 @@ describe('updateSubscriptionPlan', () => {
   })
   afterEach(() => vi.restoreAllMocks())
 
+  // Helper: mock the two-step fetch sequence (GET retrieve, then POST update).
+  function mockPlanUpdateSequence(
+    getBody: unknown,
+    postBody: unknown,
+    getOk = true,
+    postOk = true
+  ) {
+    const fetchMock = vi.fn()
+    fetchMock.mockResolvedValueOnce({
+      ok: getOk,
+      status: getOk ? 200 : 400,
+      json: vi.fn().mockResolvedValue(getBody),
+      text: vi.fn().mockResolvedValue(JSON.stringify(getBody)),
+    })
+    fetchMock.mockResolvedValueOnce({
+      ok: postOk,
+      status: postOk ? 200 : 402,
+      json: vi.fn().mockResolvedValue(postBody),
+      text: vi.fn().mockResolvedValue(JSON.stringify(postBody)),
+    })
+    return fetchMock
+  }
+
+  const SUB_GET = { items: { data: [{ id: 'si_item_abc' }] } }
+  const SUB_UPDATE = {
+    id: 'sub_1',
+    status: 'active',
+    current_period_end: 1800000000,
+    items: { data: [{ price: { id: 'price_grow' } }] },
+  }
+
   it('returns null when STRIPE_SECRET_KEY is not set', async () => {
     const result = await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
     expect(result).toBeNull()
@@ -230,76 +261,98 @@ describe('updateSubscriptionPlan', () => {
 
   it('returns subscription data on success', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_key'
-    const stubData = {
-      id: 'sub_1',
-      status: 'active',
-      current_period_end: 1800000000,
-      items: { data: [{ price: { id: 'price_grow' } }] },
-    }
-    vi.stubGlobal('fetch', mockFetchOk(stubData))
+    vi.stubGlobal('fetch', mockPlanUpdateSequence(SUB_GET, SUB_UPDATE))
     const result = await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
     expect(result).toMatchObject({ id: 'sub_1', status: 'active' })
   })
 
-  it('sends proration_behavior=create_prorations in the request body', async () => {
+  it('GETs the subscription before POSTing to retrieve the subscription item ID', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_key'
-    const fetchMock = mockFetchOk({
-      id: 'sub_1',
-      status: 'active',
-      current_period_end: 0,
-      items: { data: [] },
-    })
+    const fetchMock = mockPlanUpdateSequence(SUB_GET, SUB_UPDATE)
     vi.stubGlobal('fetch', fetchMock)
     await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    // First call must be a GET (no method in init = default GET)
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit | undefined]
+    expect(url).toContain('/subscriptions/sub_1')
+    expect(init?.method).toBeUndefined()
+  })
+
+  it('sends items[0][id] from the retrieved subscription item in the POST body', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockPlanUpdateSequence(
+      { items: { data: [{ id: 'si_specific_item' }] } },
+      SUB_UPDATE
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit]
+    expect(init.body as string).toContain('si_specific_item')
+  })
+
+  it('sends proration_behavior=create_prorations in the POST body', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockPlanUpdateSequence(SUB_GET, SUB_UPDATE)
+    vi.stubGlobal('fetch', fetchMock)
+    await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit]
     expect(init.body as string).toContain('proration_behavior=create_prorations')
   })
 
-  it('sends the Idempotency-Key header', async () => {
+  it('sends the Idempotency-Key header on the POST', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_key'
-    const fetchMock = mockFetchOk({
-      id: 'sub_1',
-      status: 'active',
-      current_period_end: 0,
-      items: { data: [] },
-    })
+    const fetchMock = mockPlanUpdateSequence(SUB_GET, SUB_UPDATE)
     vi.stubGlobal('fetch', fetchMock)
     await updateSubscriptionPlan('sub_1', 'price_grow', 'my-idem-key')
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit]
     expect((init.headers as Record<string, string>)['Idempotency-Key']).toBe('my-idem-key')
   })
 
-  it('includes the new price ID in the request body', async () => {
+  it('includes the new price ID in the POST body', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_key'
-    const fetchMock = mockFetchOk({
-      id: 'sub_1',
-      status: 'active',
-      current_period_end: 0,
-      items: { data: [] },
-    })
+    const fetchMock = mockPlanUpdateSequence(SUB_GET, SUB_UPDATE)
     vi.stubGlobal('fetch', fetchMock)
     await updateSubscriptionPlan('sub_1', 'price_grow_789', 'idem_key_1')
-    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit]
     expect(init.body as string).toContain('price_grow_789')
   })
 
-  it('posts to the correct subscription endpoint', async () => {
+  it('POSTs to the correct subscription endpoint', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_key'
-    const fetchMock = mockFetchOk({
-      id: 'sub_xyz',
-      status: 'active',
-      current_period_end: 0,
-      items: { data: [] },
-    })
+    const fetchMock = mockPlanUpdateSequence(SUB_GET, SUB_UPDATE)
     vi.stubGlobal('fetch', fetchMock)
     await updateSubscriptionPlan('sub_xyz', 'price_1', 'idem_key_1')
-    const [url] = fetchMock.mock.calls[0] as [string]
+    const [url] = fetchMock.mock.calls[1] as [string]
     expect(url).toContain('/subscriptions/sub_xyz')
   })
 
-  it('returns null when Stripe returns a non-OK status', async () => {
+  it('returns null when the subscription retrieval fails', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_key'
-    vi.stubGlobal('fetch', mockFetchError(402, 'card_declined'))
+    const fetchMock = mockPlanUpdateSequence({}, {}, false, false)
+    vi.stubGlobal('fetch', fetchMock)
+    const result = await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
+    expect(result).toBeNull()
+    // Must not make a second call if the GET fails
+    expect(fetchMock.mock.calls).toHaveLength(1)
+  })
+
+  it('returns null when the subscription has no items', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ items: { data: [] } }),
+      text: vi.fn().mockResolvedValue(''),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const result = await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
+    expect(result).toBeNull()
+    expect(fetchMock.mock.calls).toHaveLength(1)
+  })
+
+  it('returns null when the Stripe POST returns a non-OK status', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_key'
+    const fetchMock = mockPlanUpdateSequence(SUB_GET, 'card_declined', true, false)
+    vi.stubGlobal('fetch', fetchMock)
     const result = await updateSubscriptionPlan('sub_1', 'price_grow', 'idem_key_1')
     expect(result).toBeNull()
   })

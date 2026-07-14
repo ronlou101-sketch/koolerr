@@ -266,7 +266,32 @@ export async function updateSubscriptionPlan(
     return null
   }
   try {
+    // Stripe requires items[0][id] (the subscription item ID, si_...) to modify an
+    // existing item's price. Without it, Stripe interprets the payload as "add a new
+    // item" rather than "change the price on the current item" and returns an error.
+    // The item ID is not stored in our DB, so we retrieve the subscription first.
+    const getResponse = await fetch(
+      `${STRIPE_API}/subscriptions/${encodeURIComponent(subscriptionId)}`,
+      { headers: stripeHeaders() }
+    )
+    if (!getResponse.ok) {
+      const text = await getResponse.text()
+      logger.warn('[STRIPE] updateSubscriptionPlan: retrieve failed', {
+        subscriptionId,
+        status: getResponse.status,
+        body: text.slice(0, 200),
+      })
+      return null
+    }
+    const sub = (await getResponse.json()) as { items: { data: Array<{ id: string }> } }
+    const itemId = sub.items.data[0]?.id
+    if (!itemId) {
+      logger.warn('[STRIPE] updateSubscriptionPlan: no subscription item found', { subscriptionId })
+      return null
+    }
+
     const body = formEncode({
+      'items[0][id]': itemId,
       'items[0][price]': priceId,
       proration_behavior: 'create_prorations',
     })
