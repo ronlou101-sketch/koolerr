@@ -32,7 +32,7 @@
     "Phase 3 Stripe Integration — code complete; diagnostic logging removed; live subscription lifecycle validation (upgrade, downgrade, cancel) pending against reprovisioned live account"
   ],
   "current": [
-    "Phase 4 — AI Integrations",
+    "Phase 4 — AI Integrations — Milestone 4.1 complete: video script generation (EngagementRun → Deliverable ownership; 9 new tests; 621 total)",
     "Launch Readiness",
     "Phase 4 Creative Media Output UI",
     "Internal Dogfooding Phase 1 — Autonomous Marketing Department",

@@ -26,11 +26,17 @@ ${KOOLERR_CONTEXT}
 
 Your job: write 3 distinct ad copy variants per campaign — each with a different angle, hook, and CTA. Focus on specific pain points, tangible outcomes, and urgency. Always respond with valid JSON.`
 
-export const CREATIVE_DIRECTOR_SYSTEM_CONTEXT = `You are the Creative Director for Koolerr's internal marketing department. You design visual creative strategies for paid social campaigns and write detailed prompts for Higgsfield AI image generation.
+export const CREATIVE_DIRECTOR_SYSTEM_CONTEXT = `You are the Creative Director for Koolerr's internal marketing department. You design visual creative strategies for paid social campaigns. You write Higgsfield image prompts and spokesperson video concepts.
 
 ${KOOLERR_CONTEXT}
 
-Your job: produce 2-3 detailed image generation prompts per campaign that will be rendered by Higgsfield. Prompts must describe cinematic, high-production-value scenes that work as social media ad creatives. Always respond with valid JSON.`
+Your job: produce 2 image creatives (Higgsfield prompts) and 1 spokesperson video creative per campaign. Always respond with valid JSON.`
+
+export const VIDEO_SCRIPT_WRITER_SYSTEM_CONTEXT = `You are the Video Producer for Koolerr's internal marketing department. You write tight, high-converting spokesperson scripts for HeyGen AI video generation.
+
+${KOOLERR_CONTEXT}
+
+Your job: write a 30–60 second spokesperson script that will be delivered by an AI avatar. The script must be direct, conversational, and end with a clear call to action. Always respond with valid JSON.`
 
 export function buildResearchPrompt(objective: DogfoodingObjective): string {
   return `Conduct market research for the following Koolerr marketing objective:
@@ -188,7 +194,7 @@ export function buildCreativeDirectorPrompt(
   const audience = JSON.stringify(targetAudience, null, 2)
   const pillars = messagingPillars.join(', ')
 
-  return `Design visual creative direction and Higgsfield image prompts for this Koolerr ad campaign.
+  return `Design visual creative direction for this Koolerr ad campaign. Produce 2 Higgsfield image creatives and 1 HeyGen spokesperson video creative.
 
 CAMPAIGN: ${campaignName}
 TARGET AUDIENCE:
@@ -212,9 +218,64 @@ Produce creative direction in this exact JSON structure:
         "emotion": "string",
         "colorPalette": "string"
       }
+    },
+    {
+      "type": "image",
+      "concept": "string",
+      "prompt": "string",
+      "adFormat": "square",
+      "metadata": {
+        "angle": "string",
+        "emotion": "string",
+        "colorPalette": "string"
+      }
+    },
+    {
+      "type": "video",
+      "concept": "string (what the spokesperson introduces and the emotional hook)",
+      "prompt": "string (key messages and tone for the spokesperson — 2-3 sentences of direction)",
+      "adFormat": "landscape",
+      "metadata": {
+        "angle": "string (e.g. 'pain-point hook', 'ROI demo', 'social proof')",
+        "emotion": "string",
+        "speakerRole": "string (e.g. 'CEO', 'Marketing Director', 'AI expert')"
+      }
     }
   ]
 }
 
-Include 2 image creatives. Make prompts cinematic and specific.`
+Return exactly 3 creatives: 2 of type image, 1 of type video.`
+}
+
+export function buildVideoScriptPrompt(
+  creativeDirection: string,
+  campaignName: string,
+  messagingPillars: string[]
+): string {
+  const pillars = messagingPillars.length > 0 ? messagingPillars.join('\n- ') : 'None specified'
+
+  return `Write a 30–60 second spokesperson script for this Koolerr campaign video.
+
+CAMPAIGN: ${campaignName}
+CREATIVE DIRECTION:
+${creativeDirection}
+
+MESSAGING PILLARS:
+- ${pillars}
+
+Requirements:
+- Conversational and direct — written exactly as the spokesperson will speak it
+- Opens with a pain point or hook in the first 5 seconds
+- Delivers the core value proposition in the middle
+- Ends with a single clear call to action
+- Between 75 and 150 words
+- No stage directions, emojis, or formatting marks — spoken text only
+
+Produce the script in this exact JSON structure:
+{
+  "title": "string (descriptive name for this script, e.g. 'Pain-Point Hook — 45s')",
+  "platform": "string (primary placement: 'facebook', 'instagram', 'youtube', or 'linkedin')",
+  "estimatedDurationSec": 45,
+  "script": "string (the complete spoken script — every word the spokesperson will say)"
+}`
 }

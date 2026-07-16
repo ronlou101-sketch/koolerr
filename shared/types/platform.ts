@@ -210,6 +210,7 @@ export type DeliverableType =
   | 'strategy'
   | 'image'
   | 'video'
+  | 'video_script'
   | 'hiring_packet'
   | 'customer_response'
   | 'implementation_plan'

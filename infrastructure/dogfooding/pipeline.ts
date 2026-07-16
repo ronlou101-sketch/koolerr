@@ -8,6 +8,7 @@ import type {
 import { modelGateway } from '@/shared/model-gateway'
 import { businessBrainService } from '@/domains/business-brain'
 import { workforceEngineService } from '@/domains/workforce-engine'
+import { deliverablesService } from '@/domains/deliverables'
 import { _dogfoodingRepository } from '@/domains/dogfooding/service'
 import { ensureMarketingTrustRules } from '@/domains/dogfooding/workforce'
 import { logger } from '@/shared/lib/logger'
@@ -17,13 +18,15 @@ import {
   buildCMOPlanPrompt,
   buildCopywriterPrompt,
   buildCreativeDirectorPrompt,
+  buildVideoScriptPrompt,
   RESEARCHER_SYSTEM_CONTEXT,
   STRATEGIST_SYSTEM_CONTEXT,
   CMO_SYSTEM_CONTEXT,
   COPYWRITER_SYSTEM_CONTEXT,
   CREATIVE_DIRECTOR_SYSTEM_CONTEXT,
+  VIDEO_SCRIPT_WRITER_SYSTEM_CONTEXT,
 } from './prompts'
-import type { DogfoodingObjective } from '@/domains/dogfooding'
+import type { DogfoodingCreative, DogfoodingObjective } from '@/domains/dogfooding'
 
 export interface DogfoodingPipelineInput {
   tenantId: TenantId
@@ -73,6 +76,81 @@ async function invokeAgent(
     maxTokens: 2000,
   })
   return response.content
+}
+
+/**
+ * Step 4c — Video Script Generation
+ *
+ * For each video-type creative produced in Step 4b, invokes the Video Producer
+ * to write a 30–60 second spokesperson script. Persists each script as a
+ * platform Deliverable owned by the Engagement Run — not by the Campaign —
+ * preserving the EngagementRun → Deliverable ownership chain.
+ *
+ * Failures are non-fatal: a failure for one creative is logged and skipped;
+ * remaining creatives in the same batch are still processed.
+ */
+export async function generateVideoScripts({
+  input,
+  campaignName,
+  messagingPillars,
+  videoCreatives,
+}: {
+  input: DogfoodingPipelineInput
+  campaignName: string
+  messagingPillars: string[]
+  videoCreatives: DogfoodingCreative[]
+}): Promise<void> {
+  for (const creative of videoCreatives) {
+    try {
+      const prompt = buildVideoScriptPrompt(creative.prompt, campaignName, messagingPillars)
+      const content = await invokeAgent(
+        input,
+        'video-producer',
+        'write_video_script',
+        prompt,
+        VIDEO_SCRIPT_WRITER_SYSTEM_CONTEXT
+      )
+
+      interface ScriptResult {
+        title: string
+        script: string
+        platform: string
+        estimatedDurationSec: number
+      }
+
+      const parsed = extractJson<ScriptResult>(content)
+      const title = parsed?.title ?? `Spokesperson Script — ${campaignName}`
+      const script = parsed?.script ?? content
+      const platform = parsed?.platform ?? 'facebook'
+      const estimatedDurationSec = parsed?.estimatedDurationSec ?? 45
+
+      await deliverablesService.storeDeliverable({
+        tenantId: input.tenantId,
+        organizationId: input.organizationId,
+        engagementRunId: input.engagementRunId,
+        type: 'video_script',
+        title,
+        content: {
+          script,
+          platform,
+          estimatedDurationSec,
+          creativeId: creative.id,
+        },
+        attributedTo: ['video-producer' as DigitalEmployeeId],
+      })
+
+      logger.info('[DOGFOODING_PIPELINE] Video script stored as Deliverable', {
+        creativeId: creative.id,
+        engagementRunId: input.engagementRunId,
+        title,
+      })
+    } catch (e) {
+      logger.warn('[DOGFOODING_PIPELINE] Video script generation failed — skipping creative', {
+        creativeId: creative.id,
+        error: String(e),
+      })
+    }
+  }
 }
 
 async function recordProgress(
@@ -386,8 +464,9 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
 
       const creatives = creativeResult?.creatives ?? []
 
+      const persistedCreatives: DogfoodingCreative[] = []
       for (const cr of creatives) {
-        await _dogfoodingRepository.createCreative({
+        const persisted = await _dogfoodingRepository.createCreative({
           organizationId,
           campaignId: campaign.id,
           engagementRunId,
@@ -405,8 +484,23 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
           },
           status: 'planned',
         })
+        persistedCreatives.push(persisted)
       }
       await recordProgress(input, `creative:${campaign.id}`, 'completed')
+
+      // Step 4c: Video Script Generation
+      // Scripts are stored as Deliverables owned by the Engagement Run, not the Campaign.
+      const videoCreatives = persistedCreatives.filter((cr) => cr.type === 'video')
+      if (videoCreatives.length > 0) {
+        await recordProgress(input, `scripts:${campaign.id}`, 'running')
+        await generateVideoScripts({
+          input,
+          campaignName: spec.name,
+          messagingPillars,
+          videoCreatives,
+        })
+        await recordProgress(input, `scripts:${campaign.id}`, 'completed')
+      }
     } catch (e) {
       logger.warn('[DOGFOODING_PIPELINE] Creative direction failed', {
         campaign: spec.name,
