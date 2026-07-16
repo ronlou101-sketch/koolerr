@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
 type GenerationState = 'idle' | 'loading' | 'success' | 'error'
 
@@ -8,6 +9,7 @@ export default function CreativePage() {
   const [prompt, setPrompt] = useState('')
   const [state, setState] = useState<GenerationState>('idle')
   const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [deliverableId, setDeliverableId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [elapsedSecs, setElapsedSecs] = useState(0)
 
@@ -17,6 +19,7 @@ export default function CreativePage() {
 
     setState('loading')
     setImageUrl(null)
+    setDeliverableId(null)
     setError(null)
     setElapsedSecs(0)
 
@@ -26,19 +29,24 @@ export default function CreativePage() {
     }, 1000)
 
     try {
-      const res = await fetch('/api/creative/generate-image', {
+      const res = await fetch('/api/image/higgsfield/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: prompt.trim() }),
       })
 
-      const data = (await res.json()) as { imageUrl?: string; error?: string }
+      const data = (await res.json()) as {
+        imageUrl?: string
+        deliverableId?: string | null
+        error?: string
+      }
 
       if (!res.ok || !data.imageUrl) {
         throw new Error(data.error ?? 'Generation failed')
       }
 
       setImageUrl(data.imageUrl)
+      setDeliverableId(data.deliverableId ?? null)
       setState('success')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed')
@@ -121,17 +129,25 @@ export default function CreativePage() {
           <p className="mb-4 text-sm font-medium text-foreground">Generated image</p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={imageUrl} alt={prompt} className="w-full rounded-md object-contain" />
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <p className="break-all text-xs text-muted-foreground">{imageUrl}</p>
             <a
               href={imageUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-4 shrink-0 text-xs text-primary underline hover:text-primary/80"
+              className="shrink-0 text-xs text-primary underline hover:text-primary/80"
             >
               Open
             </a>
           </div>
+          {deliverableId && (
+            <Link
+              href={`/deliverables/${deliverableId}`}
+              className="mt-3 block text-xs text-primary hover:underline"
+            >
+              View in Media Library →
+            </Link>
+          )}
           <button
             onClick={() => {
               setState('idle')

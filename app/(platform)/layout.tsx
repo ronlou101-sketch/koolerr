@@ -95,6 +95,12 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               Creative
             </Link>
             <Link
+              href="/deliverables"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Media
+            </Link>
+            <Link
               href="/workforces"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
