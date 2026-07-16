@@ -44,7 +44,7 @@ their Business Brain, and working around the clock.
 
 ## 2. Overall Completion
 
-**~28%** — Phase 1 is complete. Phase 2 is near-complete. Phase 3 is in progress. Phases 4–10 are not started.
+**~35%** — Phase 1 complete. Phase 2 near-complete. Phase 3 code complete; one operational validation remaining. Phase 4 in progress. Phases 5–10 not started.
 
 > ⚠️ Percentage reflects code implementation only. No phase is counted Complete until
 > end-to-end verification in the running application is confirmed.
@@ -53,8 +53,8 @@ their Business Brain, and working around the clock.
 | ----- | ----------------------- | -------------- | ------------- |
 | 1     | Production Foundation   | ✅ Complete    | 100%          |
 | 2     | Launch Readiness Review | 🟡 In Progress | ~90%          |
-| 3     | Stripe Integration      | 🟡 In Progress | ~70%          |
-| 4     | AI Integrations         | ⬜ Not Started | 0%            |
+| 3     | Stripe Integration      | 🟡 In Progress | ~95%          |
+| 4     | AI Integrations         | 🟡 In Progress | ~0%           |
 | 5     | Core V1 Experiences     | ⬜ Not Started | 0%            |
 | 6     | End-to-End Verification | ⬜ Not Started | 0%            |
 | 7     | Internal Dogfooding     | ⬜ Not Started | 0%            |
@@ -111,19 +111,23 @@ Any change to the roadmap requires explicit founder approval.
 
 **Phase 3 — Stripe Integration** 🟡
 
-All Stripe and onboarding code is implemented and deployed to production (commit `7dbd5cc`).
-The complete pre-auth checkout flow is live: `/pricing` → `/api/checkout/start` → Stripe Checkout
-→ `/checkout/success` (provision + password creation + auto sign-in → `/dashboard`). Subscription
-enforcement (soft banner + billing_only hard gate) and permanent Owner Protection are deployed.
+All Phase 3 code is complete and deployed. The full billing lifecycle is implemented:
+pre-auth checkout, provisioning, in-app plan change (upgrade and downgrade), cancel at period
+end, webhook-driven DB synchronisation (`planId` sync fix), and subscription enforcement.
 
-B-006 (password reset regression) is resolved: scanner-proof `/confirm` page deployed (commit
-`69dd3f6`), Supabase email template updated to `{{ .TokenHash }}` flow, end-to-end production
-verification confirmed by founder. Stripe Dashboard configuration and Vercel env vars are still
-pending user action (`B-001`, `B-002`). Phase 3 is not complete until end-to-end Stripe checkout
-passes full production verification.
+Billing code was verified against Stripe Live mode during incremental verification (2026-07-16).
+Two defects were found and fixed: GROW/SCALE CTA copy errors, and missing `items[0][id]` in the
+Stripe subscription update payload (Stripe requires the subscription item ID to modify an existing
+item rather than add a new one). A test-mode subscription ID in the DB caused a temporary
+environment mismatch; this was resolved by reprovisioning the owner account through live Stripe
+checkout.
 
-**Phase gate:** Stripe must pass full end-to-end production verification before Phase 4
-(AI Integrations) begins. This is a hard gate — no exceptions.
+**One operational validation remains:**
+
+- [ ] Live subscription lifecycle end-to-end: BUILD → GROW upgrade, GROW → BUILD downgrade,
+      cancel at period end — executed against a live Stripe subscription on the production account.
+
+**Phase gate:** This validation is required before Phase 4 is marked complete.
 
 ---
 
@@ -278,7 +282,7 @@ passes full production verification.
 - ✅ Upgrade/Downgrade — plan change flows (proration, timing)
 - ✅ Cancellation — cancel-at-period-end; access revocation via webhook + enforcement layer
 - ✅ Payment failure handling — dunning handled by Stripe; `invoice.payment_failed` webhook sets `past_due`; soft amber banner enforced via subscription layer
-- ⬜ Billing verification — end-to-end production test (see Success Criteria)
+- 🟡 Billing verification — live subscription lifecycle (BUILD→GROW upgrade, downgrade, cancel) pending final operational validation
 
 > ⚠️ ✅ items above are code implementation only. None qualify as ✅ Complete under the
 > project definition until verified working in the running application.
@@ -316,7 +320,9 @@ passes full production verification.
 - ✅ `app/(platform)/billing/cancel-button.tsx` — client component; two-step confirmation; shows period-end date; calls `/api/billing/cancel`
 - ✅ `app/(platform)/billing/page.tsx` — wired: `PlanChangeButton` for plan changes on existing subscriptions; `CancelButton` when subscription is cancellable; `CheckoutButton` path preserved for initial checkout
 - ✅ `app/api/webhooks/stripe/route.ts` — `customer.subscription.updated` now resolves `planId` via `planIdFromStripePriceId` and includes it in `updateSubscriptionStripeData`
-- ✅ Test suite — 608 tests across 33 files (45 new Phase 3 completion tests: upgrade route, cancel route, webhook planId sync, stripe integration, plans utility)
+- ✅ Test suite — 612 tests across 33 files (49 new Phase 3 completion tests: upgrade route, cancel route, webhook planId sync, stripe integration including GET+POST two-step sequence, plans utility)
+- ✅ GROW/SCALE billing page CTA copy corrected: GROW → "Grow My AI Team"; SCALE → "Scale My AI Team" (self-serve, not contact-sales)
+- ✅ Stripe subscription update fix: `updateSubscriptionPlan` now GETs the subscription to retrieve `items[0][id]` (si\_...) before POSTing the plan change; without this Stripe adds a new item instead of modifying the existing one
 - 🟡 DB migration `plan_id 'free' → 'unpaid'` — SQL provided, execution in production not confirmed (Needs Review)
 
 > ⚠️ Code items above are marked ✅ for implementation only. None qualify as ✅ Complete
@@ -335,20 +341,21 @@ passes full production verification.
 
 **Vercel — pending user action**
 
-- 🟡 `STRIPE_SECRET_KEY` set in Production — Needs Review
-- 🟡 `STRIPE_WEBHOOK_SECRET` set in Production — Needs Review
-- 🟡 `STRIPE_BUILD_PRICE_ID` set in Production — Needs Review
-- 🟡 `STRIPE_GROW_PRICE_ID` set in Production — Needs Review
-- 🟡 `STRIPE_SCALE_PRICE_ID` set in Production — Needs Review
-- 🟡 `NEXT_PUBLIC_APP_URL` set in Production — Needs Review
+- ✅ `STRIPE_SECRET_KEY` set in Production (Live mode)
+- ✅ `STRIPE_WEBHOOK_SECRET` set in Production
+- ✅ `STRIPE_BUILD_PRICE_ID` set in Production
+- ✅ `STRIPE_GROW_PRICE_ID` set in Production
+- ✅ `STRIPE_SCALE_PRICE_ID` set in Production
+- ✅ `NEXT_PUBLIC_APP_URL` set in Production
 
-**End-to-End Verification — blocked on B-006 and B-001/B-002**
+**End-to-End Verification**
 
-See Section 6 (Session Objective) → Success Criteria for the full verification checklist.
+Previously verified: new customer checkout, webhook delivery, Customer Portal, subscription enforcement, password reset.
+Remaining: live subscription lifecycle (upgrade, downgrade, cancel) — pending operational validation against reprovisioned live account.
 
 ---
 
-### Phase 4 — AI Integrations ⬜
+### Phase 4 — AI Integrations 🟡
 
 - ⬜ **HeyGen** — AI spokesperson video generation
   Spokesperson video limits are named on all three pricing tiers (5 / 30 / 100 per month).
@@ -377,26 +384,27 @@ Not started. Scope to be defined after Phase 5 is complete.
 
 ## 8. Session Log
 
-| Date       | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-06-23 | Phase 2 public pages: Landing, Features, Pricing, Privacy, Terms, Contact, Support. PublicHeader, PublicFooter. Middleware public route whitelist.                                                                                                                                                                                                                                                                                                                                                 |
-| 2026-06-23 | Logo/favicon: Trimmed + Wordmark PNG variants generated. Full favicon set. OG/Twitter images. PWA manifest. SEO metadata.                                                                                                                                                                                                                                                                                                                                                                          |
-| 2026-06-23 | UI Polish: platform header h-10, auth Wordmark h-16, nav spacing widened, OG image regenerated.                                                                                                                                                                                                                                                                                                                                                                                                    |
-| 2026-06-23 | Phase 3.1 audit: complete readiness reports for Stripe, Manus, HeyGen, Higgsfield. Gaps identified: 4 missing Stripe env vars, webhook not registered, form/JSON mismatch, middleware blocking webhook.                                                                                                                                                                                                                                                                                            |
-| 2026-06-24 | Stripe code fixes: middleware webhook exemption, checkout formData→JSON, `'free'`→`'unpaid'` plan rename, `PLAN_PRICES_CENTS` corrected to $99/$499.                                                                                                                                                                                                                                                                                                                                               |
-| 2026-06-24 | Plan ID alignment: `starter`/`growth` → `build`/`grow`; SCALE added as purchasable Stripe tier with `planId: 'scale'`; `CheckoutButton` client component created; env var names updated.                                                                                                                                                                                                                                                                                                           |
-| 2026-06-25 | KOOLERR_MASTER_TRACKER.md created.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| 2026-06-26 | Billing/provisioning hardening: heal missing subscription on idempotent re-provision; login healing for already-authenticated users; suppress active package widget for unpaid plan; remove diagnostic logging.                                                                                                                                                                                                                                                                                    |
-| 2026-06-26 | Onboarding redesign (commit `81af314`): pre-auth Stripe checkout (/pricing → /api/checkout/start → Stripe → /checkout/success with provisioning + password creation + auto sign-in → /dashboard); /forgot-password and /reset-password; subscription enforcement (soft banner + billing_only gate); middleware x-pathname header; schema migration 016.                                                                                                                                            |
-| 2026-06-27 | Owner Protection (commit `7dbd5cc`): OWNER_ALWAYS_PATHS in infrastructure/auth/guards.ts; isOwner() and isOwnerAlwaysPath() guards; platform layout gate updated; 73 regression tests; TypeScript clean; 228 tests passing; deployed to production.                                                                                                                                                                                                                                                |
-| 2026-06-27 | Production verification: 5 of 6 items confirmed. Regression identified: password reset email links fail with otp_expired — Supabase OTP consumed by email security scanner before user click. Root cause documented. Fix not yet implemented (B-006).                                                                                                                                                                                                                                              |
-| 2026-06-28 | Tracker synchronized with codebase state through commit 7dbd5cc. All unrecorded work from 2026-06-26 and 2026-06-27 entered. Phase 3 checklist, success criteria, and blockers updated.                                                                                                                                                                                                                                                                                                            |
-| 2026-06-28 | B-006 root-cause verification (5 dimensions): confirmed OTP consumed by email scanner via {{ .ConfirmationURL }} → supabase.co/auth/v1/verify prefetch. Scanner-proof fix implemented (uncommitted): app/(auth)/confirm/page.tsx — verifyOtp on form POST only, not GET; middleware.ts — /confirm added to PUBLIC_PATHS. TypeScript clean, 228/228 tests pass. Pending: Supabase dashboard template change ({{ .TokenHash }} flow) + end-to-end verification.                                      |
-| 2026-06-28 | B-006 fix deployed (commit 69dd3f6) and Supabase email template updated to {{ .TokenHash }} flow. End-to-end production verification confirmed: reset email requested → /confirm link received → page rendered without consuming OTP → button clicked → recovery session established → /reset-password reached → new password saved → signed in successfully with new password. B-006 closed.                                                                                                      |
-| 2026-06-29 | Tower Control v1 — all 12 phases built (commits `59afb77`–`fd0d279`). 234 tests. 44 production routes. Deployed to production.                                                                                                                                                                                                                                                                                                                                                                     |
-| 2026-07-01 | Customer Onboarding Pipeline — 7-step Business Profile wizard + AI Workforce trigger (commit `8111299`). 445 tests across 19 files.                                                                                                                                                                                                                                                                                                                                                                |
-| 2026-07-08 | Campaign Architect Wizard Steps 1–4 complete. `createCampaign()` surfaced through service layer; `POST /api/tower/dogfooding/campaigns` added; Step 5 save+redirect implemented (commit `08d248b`); Step 4 Continue `disabled={editField !== null}` gate added (commit `2173c6b`). 563 tests passing. Step 5 is the active mission.                                                                                                                                                                |
-| 2026-07-14 | Phase 3 Stripe code completion: upgrade/downgrade route (`POST /api/billing/upgrade`), cancel route (`POST /api/billing/cancel`), `updateSubscriptionPlan` and `cancelSubscriptionAtPeriodEnd` in stripe integration, `planIdFromStripePriceId` reverse lookup, `planId` sync fix in `customer.subscription.updated` webhook handler, `PlanChangeButton` and `CancelButton` client components, billing page wired for all plan-change paths. 608 tests (45 new) across 33 files. TypeScript clean. |
+| Date       | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-06-23 | Phase 2 public pages: Landing, Features, Pricing, Privacy, Terms, Contact, Support. PublicHeader, PublicFooter. Middleware public route whitelist.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 2026-06-23 | Logo/favicon: Trimmed + Wordmark PNG variants generated. Full favicon set. OG/Twitter images. PWA manifest. SEO metadata.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 2026-06-23 | UI Polish: platform header h-10, auth Wordmark h-16, nav spacing widened, OG image regenerated.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 2026-06-23 | Phase 3.1 audit: complete readiness reports for Stripe, Manus, HeyGen, Higgsfield. Gaps identified: 4 missing Stripe env vars, webhook not registered, form/JSON mismatch, middleware blocking webhook.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 2026-06-24 | Stripe code fixes: middleware webhook exemption, checkout formData→JSON, `'free'`→`'unpaid'` plan rename, `PLAN_PRICES_CENTS` corrected to $99/$499.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 2026-06-24 | Plan ID alignment: `starter`/`growth` → `build`/`grow`; SCALE added as purchasable Stripe tier with `planId: 'scale'`; `CheckoutButton` client component created; env var names updated.                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 2026-06-25 | KOOLERR_MASTER_TRACKER.md created.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 2026-06-26 | Billing/provisioning hardening: heal missing subscription on idempotent re-provision; login healing for already-authenticated users; suppress active package widget for unpaid plan; remove diagnostic logging.                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 2026-06-26 | Onboarding redesign (commit `81af314`): pre-auth Stripe checkout (/pricing → /api/checkout/start → Stripe → /checkout/success with provisioning + password creation + auto sign-in → /dashboard); /forgot-password and /reset-password; subscription enforcement (soft banner + billing_only gate); middleware x-pathname header; schema migration 016.                                                                                                                                                                                                                                                             |
+| 2026-06-27 | Owner Protection (commit `7dbd5cc`): OWNER_ALWAYS_PATHS in infrastructure/auth/guards.ts; isOwner() and isOwnerAlwaysPath() guards; platform layout gate updated; 73 regression tests; TypeScript clean; 228 tests passing; deployed to production.                                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-06-27 | Production verification: 5 of 6 items confirmed. Regression identified: password reset email links fail with otp_expired — Supabase OTP consumed by email security scanner before user click. Root cause documented. Fix not yet implemented (B-006).                                                                                                                                                                                                                                                                                                                                                               |
+| 2026-06-28 | Tracker synchronized with codebase state through commit 7dbd5cc. All unrecorded work from 2026-06-26 and 2026-06-27 entered. Phase 3 checklist, success criteria, and blockers updated.                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 2026-06-28 | B-006 root-cause verification (5 dimensions): confirmed OTP consumed by email scanner via {{ .ConfirmationURL }} → supabase.co/auth/v1/verify prefetch. Scanner-proof fix implemented (uncommitted): app/(auth)/confirm/page.tsx — verifyOtp on form POST only, not GET; middleware.ts — /confirm added to PUBLIC_PATHS. TypeScript clean, 228/228 tests pass. Pending: Supabase dashboard template change ({{ .TokenHash }} flow) + end-to-end verification.                                                                                                                                                       |
+| 2026-06-28 | B-006 fix deployed (commit 69dd3f6) and Supabase email template updated to {{ .TokenHash }} flow. End-to-end production verification confirmed: reset email requested → /confirm link received → page rendered without consuming OTP → button clicked → recovery session established → /reset-password reached → new password saved → signed in successfully with new password. B-006 closed.                                                                                                                                                                                                                       |
+| 2026-06-29 | Tower Control v1 — all 12 phases built (commits `59afb77`–`fd0d279`). 234 tests. 44 production routes. Deployed to production.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 2026-07-01 | Customer Onboarding Pipeline — 7-step Business Profile wizard + AI Workforce trigger (commit `8111299`). 445 tests across 19 files.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-07-08 | Campaign Architect Wizard Steps 1–4 complete. `createCampaign()` surfaced through service layer; `POST /api/tower/dogfooding/campaigns` added; Step 5 save+redirect implemented (commit `08d248b`); Step 4 Continue `disabled={editField !== null}` gate added (commit `2173c6b`). 563 tests passing. Step 5 is the active mission.                                                                                                                                                                                                                                                                                 |
+| 2026-07-14 | Phase 3 Stripe code completion: upgrade/downgrade route (`POST /api/billing/upgrade`), cancel route (`POST /api/billing/cancel`), `updateSubscriptionPlan` and `cancelSubscriptionAtPeriodEnd` in stripe integration, `planIdFromStripePriceId` reverse lookup, `planId` sync fix in `customer.subscription.updated` webhook handler, `PlanChangeButton` and `CancelButton` client components, billing page wired for all plan-change paths. 608 tests (45 new) across 33 files. TypeScript clean.                                                                                                                  |
+| 2026-07-16 | Phase 3 incremental production verification. Two defects found and fixed: (1) GROW/SCALE CTA copy — GROW was labelled "Scale My AI Team", SCALE was labelled "Talk to Our Team"; (2) `updateSubscriptionPlan` missing `items[0][id]` in Stripe POST body — Stripe requires the subscription item ID to modify an existing item's price; without it, Stripe adds a new item and returns an error. Test-mode subscription ID in production DB identified and resolved by reprovisioning owner account through live Stripe checkout. 612 tests. Phase 3 code complete; live subscription lifecycle validation pending. |
 
 ---
 
