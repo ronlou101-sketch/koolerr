@@ -32,7 +32,7 @@
     "Phase 3 Stripe Integration — code complete; diagnostic logging removed; live subscription lifecycle validation (upgrade, downgrade, cancel) pending against reprovisioned live account"
   ],
   "current": [
-    "Phase 4 — AI Integrations — Milestone 4.2 complete: HeyGen video generation route POST /api/video/heygen/generate (EngagementRun → Deliverable ownership; 16 new tests; 637 total)",
+    "Phase 4 — AI Integrations — Milestone 4.3 complete: Higgsfield image generation route POST /api/image/higgsfield/generate (EngagementRun → Deliverable ownership; 17 new tests; 654 total)",
     "Launch Readiness",
     "Phase 4 Creative Media Output UI",
     "Internal Dogfooding Phase 1 — Autonomous Marketing Department",
