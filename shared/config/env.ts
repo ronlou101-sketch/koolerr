@@ -76,4 +76,17 @@ export const env = {
       return asTenantId(required('PLATFORM_TENANT_ID'))
     },
   },
+  pipeline: {
+    /**
+     * Maximum AI Workforce pipeline runs a single organization may start per
+     * rolling 24 hours. Guards against runaway provider spend from repeated
+     * triggers. Override with PIPELINE_DAILY_RUN_LIMIT; defaults to 10. Invalid
+     * or non-positive values fall back to the default.
+     */
+    dailyRunLimit(): number {
+      const raw = process.env.PIPELINE_DAILY_RUN_LIMIT
+      const parsed = raw ? Number(raw) : NaN
+      return Number.isInteger(parsed) && parsed > 0 ? parsed : 10
+    },
+  },
 }

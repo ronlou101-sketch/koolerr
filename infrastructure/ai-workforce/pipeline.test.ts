@@ -17,6 +17,10 @@ vi.mock('@/domains/ai-workforce/creative', () => ({
 }))
 vi.mock('@/domains/ai-workforce/video-production', () => ({
   videoProductionDepartment: { planProduction: vi.fn() },
+  buildSkippedVideoProductionBrief: (creativeBrief: unknown) => ({
+    productionPlan: 'Video production was skipped for this run.',
+    sourceCreativeBrief: creativeBrief,
+  }),
 }))
 vi.mock('@/domains/ai-workforce/publishing', () => ({
   publishingDepartment: { preparePackages: vi.fn() },
@@ -140,7 +144,7 @@ describe('runAIWorkforcePipeline()', () => {
   it('calls all 7 departments in sequence on happy path', async () => {
     setupHappyPath()
     const { runAIWorkforcePipeline } = await import('./pipeline')
-    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE)
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
     expect(researchMock).toHaveBeenCalledOnce()
     expect(strategyMock).toHaveBeenCalledOnce()
@@ -154,7 +158,7 @@ describe('runAIWorkforcePipeline()', () => {
   it('passes profile to research department with brand-researcher preference', async () => {
     setupHappyPath()
     const { runAIWorkforcePipeline } = await import('./pipeline')
-    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE)
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
     expect(researchMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -168,7 +172,7 @@ describe('runAIWorkforcePipeline()', () => {
   it('threads research brief into strategy request', async () => {
     setupHappyPath()
     const { runAIWorkforcePipeline } = await import('./pipeline')
-    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE)
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
     expect(strategyMock).toHaveBeenCalledWith(
       expect.objectContaining({ researchBrief: RESEARCH_BRIEF })
@@ -178,7 +182,7 @@ describe('runAIWorkforcePipeline()', () => {
   it('stores a deliverable with business name in title on completion', async () => {
     setupHappyPath()
     const { runAIWorkforcePipeline } = await import('./pipeline')
-    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE)
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
     expect(storeDeliverableMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -192,7 +196,7 @@ describe('runAIWorkforcePipeline()', () => {
   it('marks engagement run as completed on success', async () => {
     setupHappyPath()
     const { runAIWorkforcePipeline } = await import('./pipeline')
-    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE)
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
     expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
   })
@@ -200,7 +204,7 @@ describe('runAIWorkforcePipeline()', () => {
   it('records progress memories for each completed step', async () => {
     setupHappyPath()
     const { runAIWorkforcePipeline } = await import('./pipeline')
-    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE)
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
     const calls = storeMemoryMock.mock.calls
     const completedSteps = calls
@@ -219,7 +223,7 @@ describe('runAIWorkforcePipeline()', () => {
       error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'No provider', retriable: false },
     })
     const { runAIWorkforcePipeline } = await import('./pipeline')
-    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE)
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
     expect(strategyMock).not.toHaveBeenCalled()
     expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
@@ -230,7 +234,7 @@ describe('runAIWorkforcePipeline()', () => {
     strategyMock.mockResolvedValue({ ok: true, value: { strategyBrief: undefined } })
 
     const { runAIWorkforcePipeline } = await import('./pipeline')
-    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE)
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
     expect(creativeMock).not.toHaveBeenCalled()
     expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
@@ -239,9 +243,184 @@ describe('runAIWorkforcePipeline()', () => {
   it('records runId in relevanceScope of progress memories', async () => {
     setupHappyPath()
     const { runAIWorkforcePipeline } = await import('./pipeline')
-    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE)
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
     const firstProgressCall = storeMemoryMock.mock.calls[1]
     expect(firstProgressCall[0].memory.relevanceScope).toContain(TEST_CTX.engagementRunId)
+  })
+
+  // ── Video step is non-fatal (Milestone 6.1) ─────────────────────────────────
+
+  it('continues to publishing when video plan generation fails', async () => {
+    setupHappyPath()
+    videoMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'No provider', retriable: false },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(publishingMock).toHaveBeenCalledOnce()
+    expect(approvalMock).toHaveBeenCalledOnce()
+    expect(deliveryMock).toHaveBeenCalledOnce()
+  })
+
+  it('marks the run completed even when video is skipped', async () => {
+    setupHappyPath()
+    videoMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'No provider', retriable: false },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+    expect(updateStatusMock).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+  })
+
+  it('records a skipped progress memory for the video step on failure', async () => {
+    setupHappyPath()
+    videoMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'No provider', retriable: false },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    const skippedVideo = storeMemoryMock.mock.calls
+      .map((c) => c[0].memory.content as { step: string; status: string })
+      .find((c) => c.step === 'video' && c.status === 'skipped')
+    expect(skippedVideo).toBeDefined()
+  })
+
+  it('hands a fallback video brief to publishing when video is skipped', async () => {
+    setupHappyPath()
+    videoMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'No provider', retriable: false },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    const publishingArg = publishingMock.mock.calls[0][0]
+    expect(publishingArg.videoProductionBrief).toBeDefined()
+    expect(publishingArg.videoProductionBrief.productionPlan).toContain('skipped')
+  })
+
+  // ── Per-department retry & failure surface (Milestone 6.2) ───────────────────
+
+  it('retries a failed department and continues when a later attempt succeeds', async () => {
+    setupHappyPath()
+    researchMock
+      .mockResolvedValueOnce({
+        ok: false,
+        error: { code: 'TIMEOUT', message: 'Transient timeout', retriable: true },
+      })
+      .mockResolvedValue({ ok: true, value: { brief: RESEARCH_BRIEF } })
+
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(researchMock).toHaveBeenCalledTimes(2)
+    expect(strategyMock).toHaveBeenCalledOnce()
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('retries a failing department up to the attempt limit before failing the run', async () => {
+    researchMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'No provider', retriable: false },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(researchMock).toHaveBeenCalledTimes(3)
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+    expect(strategyMock).not.toHaveBeenCalled()
+  })
+
+  it('calls a department exactly once when it succeeds on the first attempt', async () => {
+    setupHappyPath()
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(researchMock).toHaveBeenCalledOnce()
+  })
+
+  it('retries a mid-pipeline department (publishing) before succeeding', async () => {
+    setupHappyPath()
+    publishingMock
+      .mockResolvedValueOnce({
+        ok: false,
+        error: { code: 'TIMEOUT', message: 'Rate limited', retriable: true },
+      })
+      .mockResolvedValue({ ok: true, value: PUBLISHING_JOB })
+
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(publishingMock).toHaveBeenCalledTimes(2)
+    expect(approvalMock).toHaveBeenCalledOnce()
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('retries the video step before skipping it', async () => {
+    setupHappyPath()
+    videoMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'No provider', retriable: false },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(videoMock).toHaveBeenCalledTimes(3)
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('records failedAtDepartment on permanent failure', async () => {
+    strategyMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'Strategy down', retriable: false },
+    })
+    researchMock.mockResolvedValue({ ok: true, value: { brief: RESEARCH_BRIEF } })
+
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    const failed = storeMemoryMock.mock.calls
+      .map((c) => c[0].memory.content as { status: string; failedAtDepartment?: string })
+      .find((c) => c.status === 'failed')
+    expect(failed?.failedAtDepartment).toBe('strategy')
+  })
+
+  it('records a human-readable failureReason on permanent failure', async () => {
+    strategyMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'Strategy down', retriable: false },
+    })
+    researchMock.mockResolvedValue({ ok: true, value: { brief: RESEARCH_BRIEF } })
+
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    const failed = storeMemoryMock.mock.calls
+      .map((c) => c[0].memory.content as { status: string; failureReason?: string })
+      .find((c) => c.status === 'failed')
+    expect(failed?.failureReason).toBe('Strategy down')
+  })
+
+  it('does not mark the run failed when every department eventually succeeds', async () => {
+    setupHappyPath()
+    creativeMock
+      .mockResolvedValueOnce({
+        ok: false,
+        error: { code: 'TIMEOUT', message: 'blip', retriable: true },
+      })
+      .mockResolvedValue({ ok: true, value: { creativeBrief: CREATIVE_BRIEF } })
+
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(updateStatusMock).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
   })
 })

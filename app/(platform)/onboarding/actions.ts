@@ -7,6 +7,7 @@ import { workforceEngineService } from '@/domains/workforce-engine'
 import { runAIWorkforcePipeline } from '@/infrastructure/ai-workforce/pipeline'
 import { buildBusinessProfileFromMemories } from '@/infrastructure/ai-workforce/build-profile'
 import { env } from '@/shared/config/env'
+import { isRunLimitReached } from './_lib/run-rate-limit'
 
 /**
  * Business Brain onboarding server actions.
@@ -97,6 +98,20 @@ export async function triggerAIWorkforce(): Promise<{
   const workforce = workforcesResult.value.find((w) => w.businessFunction === 'Content Marketing')
   if (!workforce) {
     return { success: false, error: 'No workforce found for this organization' }
+  }
+
+  // Guard against runaway AI provider spend from repeated triggers. Enforce a
+  // per-organization rolling 24h run limit. Fails open on a read error so a
+  // transient outage never blocks a legitimate customer.
+  const existingRunsResult = await workforceEngineService.listEngagementRuns(ctx.organizationId)
+  if (existingRunsResult.ok) {
+    const limit = env.pipeline.dailyRunLimit()
+    if (isRunLimitReached(existingRunsResult.value, new Date(), limit)) {
+      return {
+        success: false,
+        error: `Daily pipeline limit reached (${limit} runs per 24 hours). Please try again tomorrow or contact support to raise your limit.`,
+      }
+    }
   }
 
   const tid = tenantId()

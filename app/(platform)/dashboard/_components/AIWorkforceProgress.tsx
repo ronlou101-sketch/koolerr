@@ -68,10 +68,19 @@ function StatusDot({ status }: { status: StepState['status'] }) {
   )
 }
 
-export function AIWorkforceProgress({ runId }: { runId: string }) {
+interface Props {
+  runId: string
+  onComplete?: () => void
+}
+
+export function AIWorkforceProgress({ runId, onComplete }: Props) {
   const [status, setStatus] = useState<PipelineStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const onCompleteRef = useRef(onComplete)
+  useEffect(() => {
+    onCompleteRef.current = onComplete
+  })
 
   const poll = useCallback(async () => {
     try {
@@ -87,6 +96,7 @@ export function AIWorkforceProgress({ runId }: { runId: string }) {
           clearInterval(intervalRef.current)
           intervalRef.current = null
         }
+        onCompleteRef.current?.()
       }
     } catch {
       setError('Connection error')

@@ -7,6 +7,7 @@ import { isOwner, isOwnerAlwaysPath } from '@/infrastructure/auth/guards'
 import { billingService } from '@/domains/billing'
 import type { BillingStatus } from '@/domains/billing/types'
 import { createSessionServerClient } from '@/shared/lib/supabase-session'
+import { NotificationBell } from './_components/notification-bell'
 
 export const runtime = 'nodejs'
 
@@ -88,6 +89,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
             <Link href="/cto" className="text-sm font-medium text-foreground hover:text-foreground">
               CTO Agent
             </Link>
+            <Link href="/pipeline" className="text-sm text-muted-foreground hover:text-foreground">
+              Pipeline
+            </Link>
             <Link href="/runs" className="text-sm text-muted-foreground hover:text-foreground">
               Runs
             </Link>
@@ -148,11 +152,14 @@ export default async function PlatformLayout({ children }: { children: React.Rea
             )}
           </nav>
         </div>
-        <form action={signOut}>
-          <button type="submit" className="text-sm text-muted-foreground hover:text-foreground">
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-5">
+          {ctx && <NotificationBell organizationId={ctx.organizationId} />}
+          <form action={signOut}>
+            <button type="submit" className="text-sm text-muted-foreground hover:text-foreground">
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
     </header>
   )

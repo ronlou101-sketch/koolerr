@@ -1,7 +1,9 @@
 import { redirect } from 'next/navigation'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
+import { timeAgo } from '@/shared/lib/time'
 import { updateDigitalEmployeeAction, updateWorkforceGoalsAction } from './actions'
+import { computeWorkforceStats } from './_components/workforce-stats'
 
 /**
  * Workforces page — Phase 2 Milestone 5 (Workforce Management).
@@ -22,6 +24,26 @@ interface Props {
   searchParams: Promise<{ edit?: string; editEmployee?: string }>
 }
 
+const RUN_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  running: 'Running',
+  awaiting_approval: 'Awaiting Review',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  completed: 'Completed',
+  failed: 'Failed',
+}
+
+const RUN_STATUS_COLORS: Record<string, string> = {
+  pending: 'text-muted-foreground',
+  running: 'text-blue-600',
+  awaiting_approval: 'text-yellow-600',
+  approved: 'text-green-600',
+  rejected: 'text-destructive',
+  completed: 'text-green-600',
+  failed: 'text-destructive',
+}
+
 const WORKFORCE_STATUS_STYLES = {
   active: 'bg-green-100 text-green-700',
   inactive: 'bg-muted text-muted-foreground',
@@ -38,13 +60,21 @@ export default async function WorkforcesPage({ searchParams }: Props) {
 
   const { edit, editEmployee } = await searchParams
 
-  const workforcesResult = await workforceEngineService.listWorkforces(ctx.organizationId)
+  const [workforcesResult, runsResult] = await Promise.all([
+    workforceEngineService.listWorkforces(ctx.organizationId),
+    workforceEngineService.listEngagementRuns(ctx.organizationId),
+  ])
   const workforces = workforcesResult.ok ? workforcesResult.value : []
+  const allRuns = runsResult.ok ? runsResult.value : []
 
   const teams = await Promise.all(
     workforces.map(async (wf) => {
       const empResult = await workforceEngineService.listDigitalEmployees(wf.id, ctx.organizationId)
-      return { workforce: wf, employees: empResult.ok ? empResult.value : [] }
+      return {
+        workforce: wf,
+        employees: empResult.ok ? empResult.value : [],
+        stats: computeWorkforceStats(wf.id, allRuns),
+      }
     })
   )
 
@@ -70,7 +100,7 @@ export default async function WorkforcesPage({ searchParams }: Props) {
         </div>
       ) : (
         <div className="space-y-6">
-          {teams.map(({ workforce, employees }) => {
+          {teams.map(({ workforce, employees, stats }) => {
             const isEditingWorkforce = edit === workforce.id
 
             return (
@@ -188,6 +218,50 @@ export default async function WorkforcesPage({ searchParams }: Props) {
                     </div>
                   )}
                 </div>
+
+                {/* Workforce Activity — run history and stats */}
+                {stats.totalRuns > 0 && (
+                  <div className="border-b border-border bg-muted/20 px-5 py-3">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span>
+                        <strong className="text-foreground">{stats.totalRuns}</strong>{' '}
+                        {stats.totalRuns === 1 ? 'run' : 'runs'} total
+                      </span>
+                      <span>·</span>
+                      <span>{stats.completedRuns} completed</span>
+                      {stats.failedRuns > 0 && (
+                        <>
+                          <span>·</span>
+                          <span className="text-destructive">{stats.failedRuns} failed</span>
+                        </>
+                      )}
+                      <span>·</span>
+                      <span>{stats.totalDeliverables} deliverables produced</span>
+                      {stats.lastActiveAt && (
+                        <>
+                          <span>·</span>
+                          <span>Last active {timeAgo(stats.lastActiveAt)}</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="mt-2 space-y-0.5">
+                      {stats.recentRuns.map((run) => (
+                        <a
+                          key={run.id}
+                          href={`/runs/${run.id}`}
+                          className="flex items-center justify-between rounded px-1 py-1 text-xs hover:bg-muted"
+                        >
+                          <span className="truncate text-foreground">{run.objective}</span>
+                          <span
+                            className={`ml-4 shrink-0 ${RUN_STATUS_COLORS[run.status] ?? 'text-muted-foreground'}`}
+                          >
+                            {RUN_STATUS_LABELS[run.status] ?? run.status}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Digital Employees */}
                 {employees.length === 0 ? (

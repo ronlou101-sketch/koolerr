@@ -3,32 +3,25 @@ import Link from 'next/link'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
+import { businessBrainService } from '@/domains/business-brain'
 import type { DeliverableFilter } from '@/domains/deliverables/types'
 import type { EngagementRunId } from '@/shared/types'
+import { RUN_STATUS_LABELS, RUN_STATUS_BADGE_COLORS } from '@/shared/lib/run-status'
+import { findRunFailure } from './_lib/run-failure'
+
+const DEPARTMENT_LABELS: Record<string, string> = {
+  research: 'Research',
+  strategy: 'Strategy',
+  creative: 'Creative',
+  video: 'Video Production',
+  publishing: 'Publishing',
+  approval: 'Approval',
+  delivery: 'Delivery',
+}
 
 interface Props {
   params: Promise<{ id: string }>
 }
-
-const STATUS_LABELS = {
-  pending: 'Pending',
-  running: 'Running',
-  awaiting_approval: 'Awaiting Review',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  completed: 'Completed',
-  failed: 'Failed',
-} as const
-
-const STATUS_COLORS = {
-  pending: 'bg-muted text-muted-foreground',
-  running: 'bg-blue-100 text-blue-700',
-  awaiting_approval: 'bg-yellow-100 text-yellow-700',
-  approved: 'bg-green-100 text-green-700',
-  rejected: 'bg-destructive/10 text-destructive',
-  completed: 'bg-green-100 text-green-700',
-  failed: 'bg-destructive/10 text-destructive',
-} as const
 
 export default async function RunDetailPage({ params }: Props) {
   const ctx = await getRequestPlatformContext()
@@ -42,22 +35,35 @@ export default async function RunDetailPage({ params }: Props) {
 
   const run = runResult.value
 
-  // Load all runs to find parent and children (no dedicated repo method needed in Phase 3)
-  const allRunsResult = await workforceEngineService.listEngagementRuns(ctx.organizationId)
-  const allRuns = allRunsResult.ok ? allRunsResult.value : []
+  // These three reads are independent of each other, so fetch them in parallel:
+  //   - all runs (lineage: parent + children)
+  //   - deliverables (filtered to this run)
+  //   - pipeline progress memories (to surface a failure, if any)
+  const filter: DeliverableFilter = { organizationId: ctx.organizationId }
+  const [allRunsResult, allDeliverablesResult, progressResult] = await Promise.all([
+    workforceEngineService.listEngagementRuns(ctx.organizationId),
+    deliverablesService.listDeliverables(filter),
+    businessBrainService.queryMemory({
+      organizationId: ctx.organizationId,
+      relevanceScope: [run.id],
+    }),
+  ])
 
+  const allRuns = allRunsResult.ok ? allRunsResult.value : []
   const parentRun = run.parentRunId ? allRuns.find((r) => r.id === run.parentRunId) : null
   const childRuns = allRuns.filter((r) => r.parentRunId === run.id)
 
-  // Load deliverables for this run
-  const filter: DeliverableFilter = { organizationId: ctx.organizationId }
-  const allDeliverablesResult = await deliverablesService.listDeliverables(filter)
   const runDeliverables = allDeliverablesResult.ok
     ? allDeliverablesResult.value.filter((d) => run.deliverableIds.includes(d.id))
     : []
 
-  const statusLabel = STATUS_LABELS[run.status] ?? run.status
-  const statusColor = STATUS_COLORS[run.status] ?? 'bg-muted text-muted-foreground'
+  const failure =
+    run.status === 'failed' && progressResult.ok
+      ? findRunFailure(progressResult.value.memories)
+      : null
+
+  const statusLabel = RUN_STATUS_LABELS[run.status] ?? run.status
+  const statusColor = RUN_STATUS_BADGE_COLORS[run.status] ?? 'bg-muted text-muted-foreground'
 
   return (
     <div className="space-y-6">
@@ -79,13 +85,30 @@ export default async function RunDetailPage({ params }: Props) {
         </span>
       </div>
 
+      {/* Failure detail — which department stopped the run, and why */}
+      {failure && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <h2 className="mb-1 text-sm font-semibold text-destructive">
+            Pipeline failed at {DEPARTMENT_LABELS[failure.department] ?? failure.department}
+          </h2>
+          <p className="text-sm text-muted-foreground">{failure.reason}</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Earlier steps completed successfully. Relaunch the pipeline to try again.
+          </p>
+        </div>
+      )}
+
       {/* Run metadata */}
       <div className="rounded-lg border bg-card p-4">
         <h2 className="mb-3 text-sm font-medium text-foreground">Run Details</h2>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
           <div>
             <dt className="text-muted-foreground">Workforce</dt>
-            <dd className="font-mono text-xs text-foreground">{run.workforceId}</dd>
+            <dd className="font-mono text-xs">
+              <Link href="/workforces" className="text-foreground hover:underline">
+                {run.workforceId}
+              </Link>
+            </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">Participants</dt>
@@ -134,9 +157,9 @@ export default async function RunDetailPage({ params }: Props) {
                     <p className="font-mono text-xs text-muted-foreground">{parentRun.id}</p>
                   </div>
                   <span
-                    className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[parentRun.status] ?? 'bg-muted text-muted-foreground'}`}
+                    className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${RUN_STATUS_BADGE_COLORS[parentRun.status] ?? 'bg-muted text-muted-foreground'}`}
                   >
-                    {STATUS_LABELS[parentRun.status] ?? parentRun.status}
+                    {RUN_STATUS_LABELS[parentRun.status] ?? parentRun.status}
                   </span>
                 </Link>
               </div>
@@ -162,9 +185,9 @@ export default async function RunDetailPage({ params }: Props) {
                         <p className="font-mono text-xs text-muted-foreground">{child.id}</p>
                       </div>
                       <span
-                        className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[child.status] ?? 'bg-muted text-muted-foreground'}`}
+                        className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${RUN_STATUS_BADGE_COLORS[child.status] ?? 'bg-muted text-muted-foreground'}`}
                       >
-                        {STATUS_LABELS[child.status] ?? child.status}
+                        {RUN_STATUS_LABELS[child.status] ?? child.status}
                       </span>
                     </Link>
                   ))}

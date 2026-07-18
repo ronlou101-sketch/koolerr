@@ -70,6 +70,28 @@ export default async function BrainPage() {
 
   const { memories, totalCount } = result.value
 
+  // Brain health metrics (computed from fetched memories — limit 200)
+  const documentedTypeCount = new Set(memories.map((m) => m.type)).size
+  const coveragePct = Math.round((documentedTypeCount / 12) * 100)
+  const lastUpdatedAt =
+    memories.length > 0
+      ? memories.reduce(
+          (latest, m) => (m.updatedAt > latest ? m.updatedAt : latest),
+          memories[0].updatedAt
+        )
+      : null
+
+  // Pipeline campaign topics — knowledge memories contributed by engagement runs
+  const campaignTopics = memories
+    .filter(
+      (m) =>
+        m.source.startsWith('engagement_run:') &&
+        m.type === 'knowledge' &&
+        typeof m.content.objective === 'string'
+    )
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 10)
+
   // Group memories by type.
   const grouped = new Map<BusinessMemoryType, typeof memories>()
   for (const memory of memories) {
@@ -114,6 +136,25 @@ export default async function BrainPage() {
         </div>
       ) : (
         <>
+          {/* Brain Health — coverage and last updated */}
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
+            <span className="text-sm font-semibold text-foreground">
+              {coveragePct}% type coverage
+            </span>
+            <span className="text-xs text-muted-foreground">·</span>
+            <span className="text-xs text-muted-foreground">
+              {documentedTypeCount} of 12 knowledge types documented
+            </span>
+            {lastUpdatedAt && (
+              <>
+                <span className="text-xs text-muted-foreground">·</span>
+                <span className="text-xs text-muted-foreground">
+                  Last updated {lastUpdatedAt.toLocaleDateString()}
+                </span>
+              </>
+            )}
+          </div>
+
           {/* Business Intelligence summary — Phase 2 Milestone 3 */}
           {intelligence && intelligence.insights.length > 0 && (
             <section className="rounded-lg border border-border bg-muted/30 p-5">
@@ -169,6 +210,33 @@ export default async function BrainPage() {
                     </div>
                   </details>
                 )}
+              </div>
+            </section>
+          )}
+
+          {/* Campaign Topics — what the AI workforce has produced content for */}
+          {campaignTopics.length > 0 && (
+            <section className="rounded-lg border border-border bg-card p-5">
+              <h2 className="mb-1 text-sm font-semibold text-foreground">
+                Campaign Topics Learned
+              </h2>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Topics your AI workforce has produced content for via the pipeline.
+              </p>
+              <div className="space-y-2">
+                {campaignTopics.map((topic, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between rounded-md bg-muted/30 px-3 py-2"
+                  >
+                    <span className="text-sm text-foreground">
+                      {topic.content.objective as string}
+                    </span>
+                    <span className="ml-4 shrink-0 text-xs text-muted-foreground">
+                      {topic.createdAt.toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
               </div>
             </section>
           )}
