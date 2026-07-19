@@ -8,6 +8,8 @@ import { billingService } from '@/domains/billing'
 import type { BillingStatus } from '@/domains/billing/types'
 import { createSessionServerClient } from '@/shared/lib/supabase-session'
 import { NotificationBell } from './_components/notification-bell'
+import { MobileNav } from './_components/mobile-nav'
+import { visibleNavItems } from './_lib/nav-items'
 
 export const runtime = 'nodejs'
 
@@ -71,6 +73,8 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   } = await supabase.auth.getUser()
   const isFounder = authUser?.email === 'ronlou101@gmail.com'
 
+  const navItems = visibleNavItems(isFounder)
+
   const nav = (
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -86,70 +90,19 @@ export default async function PlatformLayout({ children }: { children: React.Rea
             />
           </Link>
           <nav className="hidden items-center gap-6 sm:flex">
-            <Link href="/cto" className="text-sm font-medium text-foreground hover:text-foreground">
-              CTO Agent
-            </Link>
-            <Link href="/pipeline" className="text-sm text-muted-foreground hover:text-foreground">
-              Pipeline
-            </Link>
-            <Link href="/runs" className="text-sm text-muted-foreground hover:text-foreground">
-              Runs
-            </Link>
-            <Link href="/creative" className="text-sm text-muted-foreground hover:text-foreground">
-              Creative
-            </Link>
-            <Link
-              href="/deliverables"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Media
-            </Link>
-            <Link
-              href="/workforces"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Workforces
-            </Link>
-            <Link href="/approvals" className="text-sm text-muted-foreground hover:text-foreground">
-              Approvals
-            </Link>
-            <Link href="/brain" className="text-sm text-muted-foreground hover:text-foreground">
-              Brain
-            </Link>
-            <Link href="/consent" className="text-sm text-muted-foreground hover:text-foreground">
-              Consent
-            </Link>
-            <Link href="/audit" className="text-sm text-muted-foreground hover:text-foreground">
-              Audit
-            </Link>
-            <Link href="/usage" className="text-sm text-muted-foreground hover:text-foreground">
-              Usage
-            </Link>
-            <Link href="/analytics" className="text-sm text-muted-foreground hover:text-foreground">
-              Analytics
-            </Link>
-            <Link href="/revenue" className="text-sm text-muted-foreground hover:text-foreground">
-              Revenue
-            </Link>
-            <Link
-              href="/mission-control"
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Mission Control
-            </Link>
-            <Link href="/billing" className="text-sm text-muted-foreground hover:text-foreground">
-              Billing
-            </Link>
-            {isFounder && (
-              <Link href="/tower" className="text-sm text-muted-foreground hover:text-foreground">
-                Tower
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={
+                  item.primary
+                    ? 'text-sm font-medium text-foreground hover:text-foreground'
+                    : 'text-sm text-muted-foreground hover:text-foreground'
+                }
+              >
+                {item.label}
               </Link>
-            )}
-            {isFounder && (
-              <Link href="/tracker" className="text-sm text-muted-foreground hover:text-foreground">
-                Tracker
-              </Link>
-            )}
+            ))}
           </nav>
         </div>
         <div className="flex items-center gap-5">
@@ -159,6 +112,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               Sign out
             </button>
           </form>
+          <MobileNav items={navItems} />
         </div>
       </div>
     </header>

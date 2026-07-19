@@ -4,6 +4,7 @@ import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { deliverablesService } from '@/domains/deliverables'
 import type { Deliverable } from '@/shared/types'
 import { partitionDeliverables } from './_lib/partition'
+import { EmptyState } from '../_components/empty-state'
 
 const TYPE_LABELS: Record<string, string> = {
   video_script: 'Video Script',
@@ -93,9 +94,7 @@ function Section({
         )}
       </h2>
       {deliverables.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-6 text-center">
-          <p className="text-sm text-muted-foreground">{empty}</p>
-        </div>
+        <EmptyState message={empty} />
       ) : (
         <div className="space-y-2">
           {deliverables.map((d) => (

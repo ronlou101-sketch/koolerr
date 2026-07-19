@@ -134,7 +134,7 @@ export default function PipelinePage() {
           <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
             <p className="text-sm font-medium text-green-800">Pipeline complete</p>
             <p className="mt-0.5 text-xs text-green-700">
-              Your AI workforce has finished. Review the deliverables in the Media Library.
+              Your AI workforce has finished. Review your deliverables below.
             </p>
           </div>
 
@@ -143,7 +143,7 @@ export default function PipelinePage() {
               href="/deliverables"
               className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
-              View Media Library →
+              View Deliverables →
             </Link>
             <Link
               href={`/runs/${runId}`}

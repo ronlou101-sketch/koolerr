@@ -68,3 +68,41 @@ export const logger = {
     log('error', message, context)
   },
 }
+
+export interface SerializedError {
+  name: string
+  message: string
+  stack?: string
+  /** Present on Next.js server errors — correlates the client digest to server logs. */
+  digest?: string
+}
+
+/**
+ * Safely converts an unknown thrown value into a structured shape for logging.
+ *
+ * Additive diagnostics helper (the logger itself is unchanged): callers can do
+ * `logger.error('...', serializeError(e))` to capture an error's name, message,
+ * stack, and Next digest instead of a bare `String(e)`. It never throws and, per the
+ * logging rules above, extracts only standard Error fields — never arbitrary secrets.
+ */
+export function serializeError(error: unknown): SerializedError {
+  if (error instanceof Error) {
+    const result: SerializedError = { name: error.name, message: error.message }
+    if (error.stack) result.stack = error.stack
+    const digest = (error as { digest?: unknown }).digest
+    if (typeof digest === 'string') result.digest = digest
+    return result
+  }
+
+  if (typeof error === 'string') {
+    return { name: 'NonError', message: error }
+  }
+
+  let message: string
+  try {
+    message = JSON.stringify(error) ?? String(error)
+  } catch {
+    message = String(error)
+  }
+  return { name: 'NonError', message }
+}

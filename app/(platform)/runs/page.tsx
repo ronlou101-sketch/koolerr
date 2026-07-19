@@ -4,6 +4,7 @@ import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { timeAgo } from '@/shared/lib/time'
 import { RUN_STATUS_LABELS, RUN_STATUS_BADGE_COLORS } from '@/shared/lib/run-status'
+import { EmptyState } from '../_components/empty-state'
 
 export default async function RunsPage() {
   const ctx = await getRequestPlatformContext()
@@ -36,15 +37,17 @@ export default async function RunsPage() {
       </div>
 
       {sortedRuns.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-8 text-center">
-          <p className="text-sm text-muted-foreground">No runs yet.</p>
-          <Link
-            href="/pipeline"
-            className="mt-4 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            Launch your first pipeline →
-          </Link>
-        </div>
+        <EmptyState
+          message="No runs yet."
+          action={
+            <Link
+              href="/pipeline"
+              className="inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Launch your first pipeline →
+            </Link>
+          }
+        />
       ) : (
         <div className="divide-y divide-border rounded-lg border border-border bg-card">
           {sortedRuns.map((run) => (

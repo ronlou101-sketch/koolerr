@@ -145,7 +145,7 @@ export default function CreativePage() {
               href={`/deliverables/${deliverableId}`}
               className="mt-3 block text-xs text-primary hover:underline"
             >
-              View in Media Library →
+              View in Deliverables →
             </Link>
           )}
           <button

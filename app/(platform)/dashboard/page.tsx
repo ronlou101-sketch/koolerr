@@ -152,11 +152,11 @@ export default async function DashboardPage() {
 
         <div className="rounded-lg border border-border bg-card p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Media Library
+            Deliverables
           </p>
-          <p className="mt-1 text-2xl font-semibold text-foreground">{mediaStats.total}</p>
+          <p className="mt-1 text-2xl font-semibold text-foreground">{allDeliverables.length}</p>
           <Link href="/deliverables" className="mt-1 block text-xs text-primary hover:underline">
-            View library →
+            View all →
           </Link>
         </div>
       </div>
@@ -216,7 +216,7 @@ export default async function DashboardPage() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-medium text-foreground">Media Output</h2>
             <Link href="/deliverables" className="text-xs text-primary hover:underline">
-              View library →
+              View deliverables →
             </Link>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">

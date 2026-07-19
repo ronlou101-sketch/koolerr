@@ -56,4 +56,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Visible keyboard-focus indicator for all interactive elements. Uses the
+     existing --ring design token and only applies to keyboard focus
+     (:focus-visible), so mouse interaction is visually unchanged. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
 }
