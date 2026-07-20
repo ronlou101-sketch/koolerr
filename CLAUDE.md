@@ -161,31 +161,35 @@ public/           — Public-facing static assets
 
 ## Current Phase
 
-This repository is in **Phase 2** of the Development Roadmap.
+The official roadmap is the **Active Execution Roadmap (Phases 7–12)** defined in
+`Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md` and mirrored in `docs/KOOLERR_MASTER_TRACKER.md`
+and `docs/status.json`. That roadmap is the single source of truth for what is built next.
 
-**Foundation Phase 1 is complete.** All platform primitives are built and verified:
-Identity & Access, Business Brain foundation, Model Gateway, Trust Engine foundation,
-Consent & Rights Ledger, Orchestration Engine (with persistence), Deliverable framework,
-Billing foundation, and Content Workforce MVP. Second Workforce (SEO) proved the
-architecture supports additional Workforces without platform changes.
+**Phase 7 — Launch Readiness is ✅ complete** (tagged `phase-7-complete`): mobile navigation,
+terminology consistency, loading/error resilience, critical service-layer test coverage,
+accessibility, and launch-day observability. The full platform foundation, AI Workforce pipeline,
+billing, Business Brain, and multi-Workforce architecture from earlier phases are in place.
 
-**Pre-Phase 2 hardening is complete:**
+**The forward roadmap:**
 
-- Hardening Item 1: Orchestration Engine persistence (write-through cache, Supabase repo, ADR-011)
-- Hardening Item 2: RLS JWT hook — `auth_user_id` on users, `custom_access_token_hook`, ADR-012
-- Hardening Item 3: Test suite expanded from 22 → 76 tests across 5 files
+1. **Phase 8 — Final Product Validation** ⬜ Next — end-to-end workflow validation, real campaign
+   generation, AI provider validation (HeyGen, Higgsfield, ElevenLabs, etc.), performance
+   validation, and production bug fixes found during validation. **No new features** unless
+   required to complete the customer journey.
+2. **Phase 9 — Koolerr Academy** ⬜ — **a required production phase that must be completed before
+   any beta customer is invited**, so every beta customer has full Academy access on Day 1
+   (in-platform searchable knowledge base + HeyGen AI instructor videos; every major feature gets
+   Overview / walkthrough / best practices / common mistakes / troubleshooting).
+3. **Phase 10 — Private Beta** ⬜ · **Phase 11 — Public Launch** ⬜ · **Phase 12 — Scale &
+   Optimization** ⬜.
 
-**Phase 2 scope** (FOUNDATION_003 §Phase 2 — Trust, Autonomy & Customer Experience):
+Do not begin a phase before the current one is approved complete. If a request would introduce a
+later-phase capability out of sequence, say so before proceeding.
 
-1. Trust Engine — Full Implementation (content safety, output validation, autonomy conditions)
-2. Approval Workflows (customer-facing review, approve, reject Deliverables)
-3. Business Brain — Intelligence Layer (pattern synthesis, trend identification)
-4. Customer Dashboard (Workforces, Engagement Runs, Deliverables, Brain health, Consent history)
-5. Workforce Management (configure Workforce goals and Digital Employee responsibilities)
-6. Analytics — Foundation Layer (Engagement Run counts, Deliverable status, Brain additions)
-
-Do not build Phase 3 or Phase 4 capabilities during Phase 2.
-If a request would introduce a Phase 3+ capability, say so before proceeding.
+> **Numbering note:** Earlier revisions of this file and the trackers used different phase
+> numbering (e.g. an architectural Phase 1–5+ in FOUNDATION_003, and a Phase 1–10 delivery scheme
+> in the master tracker). Those are preserved as historical context; the Phase 7–12 sequence above
+> is the sole forward roadmap.
 
 ---
 

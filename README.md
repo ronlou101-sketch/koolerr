@@ -4,6 +4,27 @@ AI Workforce Platform — V1
 
 ---
 
+## Roadmap
+
+The official roadmap is the **Active Execution Roadmap (Phases 7–12)** in
+[`Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md`](Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md),
+mirrored in [`docs/KOOLERR_MASTER_TRACKER.md`](docs/KOOLERR_MASTER_TRACKER.md) and
+[`docs/status.json`](docs/status.json). This is the single source of truth for what is built next.
+
+| Phase  | Name                     | Status                                                     |
+| ------ | ------------------------ | ---------------------------------------------------------- |
+| **7**  | Launch Readiness         | ✅ Complete (`phase-7-complete`)                           |
+| **8**  | Final Product Validation | Next (awaiting approval)                                   |
+| **9**  | Koolerr Academy          | Planned — **required before any beta customer is invited** |
+| **10** | Private Beta             | Planned                                                    |
+| **11** | Public Launch            | Planned                                                    |
+| **12** | Scale & Optimization     | Planned                                                    |
+
+**Koolerr Academy (Phase 9) is a required production phase before onboarding the first customer**,
+so every private-beta customer has full Academy access on Day 1.
+
+---
+
 ## Tech Stack
 
 | Layer      | Technology                |

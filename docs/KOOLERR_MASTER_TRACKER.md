@@ -44,23 +44,24 @@ their Business Brain, and working around the clock.
 
 ## 2. Overall Completion
 
-**~35%** — Phase 1 complete. Phase 2 near-complete. Phase 3 code complete; one operational validation remaining. Phase 4 in progress. Phases 5–10 not started.
+The **official roadmap is the Active Execution Roadmap (Phases 7–12)** defined in
+`Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md`. **Phase 7 (Launch Readiness) is complete**
+and tagged `phase-7-complete`. **Phase 8 (Final Product Validation) is next**, pending founder
+approval.
 
-> ⚠️ Percentage reflects code implementation only. No phase is counted Complete until
-> end-to-end verification in the running application is confirmed.
+> ⚠️ This Phase 7–12 sequence is the sole forward roadmap. It supersedes the earlier delivery
+> numbering (Phases 1–10) used in this tracker's historical sections (Progress Ledger, Session
+> Log, prior Phase Checklists), which are preserved verbatim for history. No phase is counted
+> ✅ Complete until end-to-end verification in the running application is confirmed.
 
-| Phase | Name                    | Status         | Est. Complete |
-| ----- | ----------------------- | -------------- | ------------- |
-| 1     | Production Foundation   | ✅ Complete    | 100%          |
-| 2     | Launch Readiness Review | 🟡 In Progress | ~90%          |
-| 3     | Stripe Integration      | 🟡 In Progress | ~95%          |
-| 4     | AI Integrations         | 🟡 In Progress | ~0%           |
-| 5     | Core V1 Experiences     | ⬜ Not Started | 0%            |
-| 6     | End-to-End Verification | ⬜ Not Started | 0%            |
-| 7     | Internal Dogfooding     | ⬜ Not Started | 0%            |
-| 8     | Beta Launch             | ⬜ Not Started | 0%            |
-| 9     | Public Launch           | ⬜ Not Started | 0%            |
-| 10    | Post-Launch             | ⬜ Not Started | 0%            |
+| Phase | Name                     | Status                                         |
+| ----- | ------------------------ | ---------------------------------------------- |
+| 7     | Launch Readiness         | ✅ Complete                                    |
+| 8     | Final Product Validation | ⬜ Next (awaiting founder approval)            |
+| 9     | Koolerr Academy          | ⬜ Planned — required before any beta customer |
+| 10    | Private Beta             | ⬜ Planned                                     |
+| 11    | Public Launch            | ⬜ Planned                                     |
+| 12    | Scale & Optimization     | ⬜ Planned                                     |
 
 ---
 
@@ -92,42 +93,40 @@ their Business Brain, and working around the clock.
 ## 4. Locked Roadmap 🔒
 
 These phases and their sequence are locked. Do not reorder, compress, or skip phases.
-Any change to the roadmap requires explicit founder approval.
+Any change to the roadmap requires explicit founder approval. This mirrors the Active Execution
+Roadmap in `Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md` and is the single source of truth.
 
-1. **Phase 1 — Production Foundation** ✅
-2. **Phase 2 — Launch Readiness Review** 🟡
-3. **Phase 3 — Stripe Integration** 🟡
-4. **Phase 4 — AI Integrations** ⬜
-5. **Phase 5 — Core V1 Experiences** ⬜
-6. **Phase 6 — End-to-End Verification** ⬜
-7. **Phase 7 — Internal Dogfooding** ⬜
-8. **Phase 8 — Beta Launch** ⬜
-9. **Phase 9 — Public Launch** ⬜
-10. **Phase 10 — Post-Launch** ⬜
+1. **Phase 7 — Launch Readiness** ✅ Complete
+2. **Phase 8 — Final Product Validation** ⬜ Next
+3. **Phase 9 — Koolerr Academy** ⬜ Planned — **required before any beta customer is invited; every beta customer has full Academy access on Day 1**
+4. **Phase 10 — Private Beta** ⬜ Planned
+5. **Phase 11 — Public Launch** ⬜ Planned
+6. **Phase 12 — Scale & Optimization** ⬜ Planned
+
+> **Numbering note:** Earlier revisions of this tracker used a Phase 1–10 delivery scheme
+> (Production Foundation → Post-Launch). That work is complete or folded into the phases above,
+> and is preserved verbatim in the historical sections of this document (Progress Ledger,
+> Session Log, Phase Checklists). The Phase 7–12 sequence above is the sole forward roadmap.
 
 ---
 
 ## 5. Current Phase
 
-**Phase 3 — Stripe Integration** 🟡
+**Phase 7 — Launch Readiness** ✅ Complete (tagged `phase-7-complete`).
 
-All Phase 3 code is complete and deployed. The full billing lifecycle is implemented:
-pre-auth checkout, provisioning, in-app plan change (upgrade and downgrade), cancel at period
-end, webhook-driven DB synchronisation (`planId` sync fix), and subscription enforcement.
+Phase 7 delivered mobile navigation, terminology consistency, loading/error resilience, critical
+service-layer test coverage (Business Brain + Workforce Engine), accessibility, and launch-day
+observability. 833 tests; TypeScript, full suite, and production build all clean. See
+`PHASE_7_COMPLETION.md` for the full report.
 
-Billing code was verified against Stripe Live mode during incremental verification (2026-07-16).
-Two defects were found and fixed: GROW/SCALE CTA copy errors, and missing `items[0][id]` in the
-Stripe subscription update payload (Stripe requires the subscription item ID to modify an existing
-item rather than add a new one). A test-mode subscription ID in the DB caused a temporary
-environment mismatch; this was resolved by reprovisioning the owner account through live Stripe
-checkout.
+**Next phase:** **Phase 8 — Final Product Validation** ⬜ — awaiting explicit founder approval
+before any implementation begins. Scope: end-to-end workflow validation, real campaign
+generation, AI provider validation (HeyGen, Higgsfield, ElevenLabs, etc.), performance
+validation, and production bug fixes discovered during validation. No new features unless
+required to complete the customer journey.
 
-**One operational validation remains:**
-
-- [ ] Live subscription lifecycle end-to-end: BUILD → GROW upgrade, GROW → BUILD downgrade,
-      cancel at period end — executed against a live Stripe subscription on the production account.
-
-**Phase gate:** This validation is required before Phase 4 is marked complete.
+**Phase gate:** **Phase 9 (Koolerr Academy) must be completed before any beta customer is invited
+(Phase 10)**, so every beta customer has full Academy access on Day 1.
 
 ---
 
@@ -444,7 +443,10 @@ state is `unpaid` — it is never displayed to customers as a plan option.
 
 ### Roadmap Order 🔒
 
-Phases 1–10 as defined in Section 4. Sequence cannot be changed without founder approval.
+Phases 7–12 as defined in Section 4 (Launch Readiness → Final Product Validation → Koolerr
+Academy → Private Beta → Public Launch → Scale & Optimization). **Koolerr Academy (Phase 9) is a
+required production phase before any beta customer is onboarded**, so every beta customer has full
+Academy access on Day 1. Sequence cannot be changed without founder approval.
 
 ### Branding 🔒
 
@@ -557,4 +559,4 @@ Before every coding session:
 
 ## Last Updated
 
-**2026-07-08** (Campaign Architect Wizard Steps 1–4 complete — Step 5 is the active mission)
+**2026-07-20** (Roadmap synchronized to the official Phase 7–12 sequence; Phase 7 — Launch Readiness complete and tagged `phase-7-complete`; Phase 8 — Final Product Validation is next, awaiting founder approval)

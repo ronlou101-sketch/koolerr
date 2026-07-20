@@ -2,9 +2,10 @@
 
 # Koolerr Development Roadmap
 
-**Version:** 1.0
+**Version:** 2.0
 **Authority:** FOUNDATION_000_CHARTER.md, FOUNDATION_001_ARCHITECTURE.md, FOUNDATION_002_ENGINEERING_PRINCIPLES.md
 **Status:** Permanent
+**Last Updated:** 2026-07-20 — Added the Active Execution Roadmap (Phases 7–12) as the single source of truth for near-term delivery, per founder direction. The architectural phases (1–5+) below remain the permanent long-term platform-evolution vision.
 
 ---
 
@@ -29,6 +30,82 @@ Skipping a phase, compressing multiple phases together, or building Phase 3 capa
 This document should be read by every engineer, every product decision-maker, and every AI agent contributing to the platform.
 
 When there is pressure to build something out of sequence, return to this document first.
+
+---
+
+## Active Execution Roadmap (Phases 7–12) — Current Source of Truth
+
+> **This section is the single source of truth for all near-term delivery work.** It governs
+> what is built next and in what order. The architectural phases (Phase 1 – Phase 5+) that
+> follow describe the platform's permanent long-term evolution vision; they remain valid, but
+> where near-term sequencing is concerned, this Active Execution Roadmap prevails.
+>
+> Earlier phase-numbering used in historical trackers and completion reports (e.g. the delivery
+> phases in `docs/KOOLERR_MASTER_TRACKER.md`, and the Phase 5 / Phase 6 / Phase 7 labels in
+> `docs/status.json`) reflects prior planning. Those historical records are preserved as-is.
+> For all forward work, the official roadmap is the Phase 7 – Phase 12 sequence below.
+
+| Phase        | Name                     | Status                                                        |
+| ------------ | ------------------------ | ------------------------------------------------------------- |
+| **Phase 7**  | Launch Readiness         | ✅ **Complete**                                               |
+| **Phase 8**  | Final Product Validation | ⬜ Next (awaiting founder approval)                           |
+| **Phase 9**  | Koolerr Academy          | ⬜ Planned — **required before any beta customer is invited** |
+| **Phase 10** | Private Beta             | ⬜ Planned                                                    |
+| **Phase 11** | Public Launch            | ⬜ Planned                                                    |
+| **Phase 12** | Scale & Optimization     | ⬜ Planned                                                    |
+
+### Phase 7 — Launch Readiness ✅ Complete
+
+Product polish, resilience, and launch-confidence work: mobile navigation, terminology
+consistency, loading/error resilience, critical service-layer test coverage, accessibility,
+and launch-day observability. Delivered and tagged `phase-7-complete`. See
+`PHASE_7_COMPLETION.md` for the full report.
+
+### Phase 8 — Final Product Validation
+
+Validate that the end-to-end customer journey works with real providers before any external
+users. Scope:
+
+- End-to-end workflow validation (onboarding → Business Brain → Engagement Run → Deliverables).
+- Real campaign generation.
+- AI provider validation (HeyGen, Higgsfield, ElevenLabs, and other registered providers).
+- Performance validation.
+- Production bug fixes discovered during validation.
+- **No new features** unless required to complete the customer journey.
+
+### Phase 9 — Koolerr Academy — REQUIRED BEFORE BETA
+
+> **Koolerr Academy is a required production phase. It MUST be completed before onboarding the
+> first customer, so that every beta customer has full Academy access on Day 1.** It is not
+> external documentation and it is not optional polish — it is part of the product.
+
+Objectives:
+
+- Build the Koolerr Academy directly into the platform (an integrated product surface, not
+  external docs).
+- Create a searchable knowledge base.
+- Generate AI instructor videos using HeyGen.
+- Every major feature must include: Overview · Step-by-step walkthrough · Best practices ·
+  Common mistakes · Troubleshooting.
+- Create guided onboarding paths by customer type.
+- Support future multilingual content.
+- Design for continual expansion as new features are released.
+
+### Phase 10 — Private Beta
+
+- Invite the first customers.
+- Every beta customer has full Academy access from Day 1 (gated on Phase 9 completion).
+- Gather usage analytics and customer feedback.
+- Fix real-world issues.
+
+### Phase 11 — Public Launch
+
+Open the platform to the public once private beta has validated the journey, the Academy, and
+production stability.
+
+### Phase 12 — Scale & Optimization
+
+Performance, cost, reliability, and capacity work as usage grows.
 
 ---
 
@@ -214,11 +291,11 @@ The Content Workforce is the first proof of the platform.
 
 It must include at minimum:
 
-* A defined set of Digital Employees with clear responsibilities and permission boundaries
-* The ability to accept a business goal and produce a content Deliverable
-* Bidirectional Business Brain integration: reading brand and knowledge context, writing new knowledge back upon completion
-* Full audit trail of every AI action taken during the Engagement Run
-* Customer review and approval of Deliverables before publication
+- A defined set of Digital Employees with clear responsibilities and permission boundaries
+- The ability to accept a business goal and produce a content Deliverable
+- Bidirectional Business Brain integration: reading brand and knowledge context, writing new knowledge back upon completion
+- Full audit trail of every AI action taken during the Engagement Run
+- Customer review and approval of Deliverables before publication
 
 The Content Workforce MVP must not be built by hardcoding content-specific logic into the platform.
 
@@ -228,30 +305,30 @@ If the Content Workforce requires changing core platform architecture to functio
 
 ### Success Criteria
 
-* A real customer can create an Organization, onboard their Business Brain, and hire the Content Workforce.
-* The Content Workforce completes a real Engagement Run and produces a real Deliverable.
-* The Deliverable is reviewed and approved by the customer through the platform.
-* The Engagement Run's outputs are reflected in the Business Brain.
-* All AI actions are logged, attributed, and auditable.
-* Tenant isolation is verified: no cross-tenant data access is possible under any conditions.
-* A second Workforce could be added using only the existing platform primitives—this must be confirmed architecturally before Phase 1 is considered complete.
+- A real customer can create an Organization, onboard their Business Brain, and hire the Content Workforce.
+- The Content Workforce completes a real Engagement Run and produces a real Deliverable.
+- The Deliverable is reviewed and approved by the customer through the platform.
+- The Engagement Run's outputs are reflected in the Business Brain.
+- All AI actions are logged, attributed, and auditable.
+- Tenant isolation is verified: no cross-tenant data access is possible under any conditions.
+- A second Workforce could be added using only the existing platform primitives—this must be confirmed architecturally before Phase 1 is considered complete.
 
 ### Dependencies
 
-* Identity & Access must be complete before any customer-facing capability is built.
-* Model Gateway must be complete before any AI invocation is written.
-* Trust Engine foundation must be complete before any Digital Employee is activated.
-* Business Brain foundation must be complete before any Engagement Run is executed.
-* Consent & Rights Ledger must be active before the first customer is onboarded.
+- Identity & Access must be complete before any customer-facing capability is built.
+- Model Gateway must be complete before any AI invocation is written.
+- Trust Engine foundation must be complete before any Digital Employee is activated.
+- Business Brain foundation must be complete before any Engagement Run is executed.
+- Consent & Rights Ledger must be active before the first customer is onboarded.
 
 ### Exit Criteria
 
 Phase 1 is exited when:
 
-* The Content Workforce has been used by real customers in production.
-* No Phase 1 architectural shortcuts remain that would prevent adding a second Workforce.
-* The engineering team can demonstrate that a second Workforce could be registered without touching platform architecture.
-* All non-negotiable engineering rules from FOUNDATION_002 are met across the Phase 1 codebase.
+- The Content Workforce has been used by real customers in production.
+- No Phase 1 architectural shortcuts remain that would prevent adding a second Workforce.
+- The engineering team can demonstrate that a second Workforce could be registered without touching platform architecture.
+- All non-negotiable engineering rules from FOUNDATION_002 are met across the Phase 1 codebase.
 
 ---
 
@@ -283,10 +360,10 @@ Before any Digital Employee is permitted to take a consequential action autonomo
 
 Phase 2 introduces structured approval workflows that allow customers to:
 
-* Review proposed actions before they execute
-* Approve or reject Deliverables before they are published or sent
-* Grant permission for classes of actions that have been consistently approved
-* Revoke permissions they have previously granted
+- Review proposed actions before they execute
+- Approve or reject Deliverables before they are published or sent
+- Grant permission for classes of actions that have been consistently approved
+- Revoke permissions they have previously granted
 
 Approval Workflows are not bureaucracy.
 
@@ -308,12 +385,12 @@ The dashboard must feel like managing a team—not configuring software.
 
 Customers see:
 
-* Which Workforces are active
-* Which Digital Employees are working and on what
-* Recent Engagement Runs and their outcomes
-* Deliverables produced and their status
-* Business Brain health and recent additions
-* Permissions granted and consent history
+- Which Workforces are active
+- Which Digital Employees are working and on what
+- Recent Engagement Runs and their outcomes
+- Deliverables produced and their status
+- Business Brain health and recent additions
+- Permissions granted and consent history
 
 The dashboard is a window into the operating workforce—not a settings panel.
 
@@ -323,10 +400,10 @@ Customers gain the ability to configure their Workforces without engineering int
 
 This includes:
 
-* Defining the goals and priorities of a Workforce
-* Adjusting the responsibilities of Digital Employees
-* Enabling or disabling specific Engagement Run types
-* Setting operating schedules and constraints
+- Defining the goals and priorities of a Workforce
+- Adjusting the responsibilities of Digital Employees
+- Enabling or disabling specific Engagement Run types
+- Setting operating schedules and constraints
 
 Workforce management does not mean customers write prompts.
 
@@ -342,26 +419,26 @@ Advanced analytics—ROI measurement, performance benchmarking, cross-workforce 
 
 ### Success Criteria
 
-* Customers can manage their Workforces through the dashboard without technical assistance.
-* Digital Employees do not take consequential autonomous actions without established customer approval.
-* Customers can inspect the full audit history of any Digital Employee action.
-* The Business Brain is actively enriched by Workforce activity and visibly more valuable over time.
-* Customers can grant and revoke permissions and see the Consent & Rights Ledger reflect those changes.
+- Customers can manage their Workforces through the dashboard without technical assistance.
+- Digital Employees do not take consequential autonomous actions without established customer approval.
+- Customers can inspect the full audit history of any Digital Employee action.
+- The Business Brain is actively enriched by Workforce activity and visibly more valuable over time.
+- Customers can grant and revoke permissions and see the Consent & Rights Ledger reflect those changes.
 
 ### Dependencies
 
-* Phase 1 must be fully complete and architecturally clean before Phase 2 begins.
-* Trust Engine foundation from Phase 1 must be proven in production before the autonomy expansion of Phase 2 is built on top of it.
-* Sufficient real customer usage from Phase 1 must exist before dashboard analytics have meaningful data to display.
+- Phase 1 must be fully complete and architecturally clean before Phase 2 begins.
+- Trust Engine foundation from Phase 1 must be proven in production before the autonomy expansion of Phase 2 is built on top of it.
+- Sufficient real customer usage from Phase 1 must exist before dashboard analytics have meaningful data to display.
 
 ### Exit Criteria
 
 Phase 2 is exited when:
 
-* Customers can self-manage their Workforces entirely through the platform.
-* The Approval Workflow system has been used in production and customer trust in Digital Employee autonomy has been established.
-* The Business Brain is producing observable Business Intelligence—not just storing facts.
-* The platform can demonstrably support the addition of a second Workforce with no changes to Trust Engine, Orchestration Engine, Model Gateway, or Business Brain architecture.
+- Customers can self-manage their Workforces entirely through the platform.
+- The Approval Workflow system has been used in production and customer trust in Digital Employee autonomy has been established.
+- The Business Brain is producing observable Business Intelligence—not just storing facts.
+- The platform can demonstrably support the addition of a second Workforce with no changes to Trust Engine, Orchestration Engine, Model Gateway, or Business Brain architecture.
 
 ---
 
@@ -419,10 +496,10 @@ Phase 3 establishes the foundational data and patterns required for a Workforce 
 
 This includes:
 
-* Standardized Workforce definition schemas
-* Workforce performance benchmarking
-* Workforce template patterns
-* The concept of Workforce provenance: who built this Workforce, what it has done, and how it has performed
+- Standardized Workforce definition schemas
+- Workforce performance benchmarking
+- Workforce template patterns
+- The concept of Workforce provenance: who built this Workforce, what it has done, and how it has performed
 
 The Marketplace itself is not built in Phase 3.
 
@@ -434,35 +511,35 @@ Phase 3 expands analytics from Workforce-level reporting to Organization-level b
 
 Customers can see:
 
-* Cross-Workforce activity and output
-* Business Brain growth and composition
-* Engagement Run performance trends
-* ROI of specific Workforces and Digital Employees
+- Cross-Workforce activity and output
+- Business Brain growth and composition
+- Engagement Run performance trends
+- ROI of specific Workforces and Digital Employees
 
 Analytics in Phase 3 begin to answer the question: is my Workforce making my business better?
 
 ### Success Criteria
 
-* At least two new Workforces are live in production with real customers.
-* Neither new Workforce required architectural changes to the platform to add.
-* Cross-Workforce Engagement Runs are executing successfully.
-* The Business Brain is demonstrably enriched by multiple Workforces contributing to the same organizational knowledge.
-* The platform can be described, truthfully and specifically, as a multi-Workforce operating system.
+- At least two new Workforces are live in production with real customers.
+- Neither new Workforce required architectural changes to the platform to add.
+- Cross-Workforce Engagement Runs are executing successfully.
+- The Business Brain is demonstrably enriched by multiple Workforces contributing to the same organizational knowledge.
+- The platform can be described, truthfully and specifically, as a multi-Workforce operating system.
 
 ### Dependencies
 
-* Phase 2 must be fully complete, including the full Trust Engine implementation and Approval Workflow system.
-* The Business Brain Intelligence Layer from Phase 2 must be proven before multiple Workforces depend on it.
-* The Orchestration Engine must have been proven at Phase 1 and Phase 2 scale before cross-Workforce coordination is built on top of it.
+- Phase 2 must be fully complete, including the full Trust Engine implementation and Approval Workflow system.
+- The Business Brain Intelligence Layer from Phase 2 must be proven before multiple Workforces depend on it.
+- The Orchestration Engine must have been proven at Phase 1 and Phase 2 scale before cross-Workforce coordination is built on top of it.
 
 ### Exit Criteria
 
 Phase 3 is exited when:
 
-* Multiple Workforces are live in production.
-* Cross-Workforce Engagement Runs are stable and auditable.
-* The Marketplace foundation schema and patterns are documented and agreed upon.
-* The engineering team can add a fourth Workforce using only Workforce registration and Digital Employee definition—with no further platform changes.
+- Multiple Workforces are live in production.
+- Cross-Workforce Engagement Runs are stable and auditable.
+- The Marketplace foundation schema and patterns are documented and agreed upon.
+- The engineering team can add a fourth Workforce using only Workforce registration and Digital Employee definition—with no further platform changes.
 
 ---
 
@@ -488,10 +565,10 @@ The Workforce Marketplace allows customers to browse, evaluate, and hire pre-bui
 
 Each Workforce in the marketplace has:
 
-* A defined set of Digital Employees and their capabilities
-* A defined set of Deliverable types
-* A performance track record derived from the platform's analytics
-* Clear disclosure of what Business Brain permissions it requires
+- A defined set of Digital Employees and their capabilities
+- A defined set of Deliverable types
+- A performance track record derived from the platform's analytics
+- Clear disclosure of what Business Brain permissions it requires
 
 The Marketplace does not change platform architecture.
 
@@ -513,10 +590,10 @@ Phase 4 introduces industry-specific Workforce configurations for priority verti
 
 Industry specialization manifests in:
 
-* Industry-specific Business Memory types
-* Industry-specific Deliverable types
-* Industry-specific Digital Employee responsibilities and knowledge bases
-* Industry-specific compliance and trust configurations
+- Industry-specific Business Memory types
+- Industry-specific Deliverable types
+- Industry-specific Digital Employee responsibilities and knowledge bases
+- Industry-specific compliance and trust configurations
 
 Industry specialization is implemented by extending the platform—not by building separate platforms per industry.
 
@@ -552,10 +629,10 @@ Phase 4 establishes the foundation for external partners to build Workforces on 
 
 This requires:
 
-* Partner authentication and access control
-* Workforce certification standards
-* Revenue sharing infrastructure
-* Partner-facing documentation and tooling
+- Partner authentication and access control
+- Workforce certification standards
+- Revenue sharing infrastructure
+- Partner-facing documentation and tooling
 
 The partner ecosystem is a natural extension of the Marketplace.
 
@@ -563,27 +640,27 @@ It is not a separate product.
 
 ### Success Criteria
 
-* The Workforce Marketplace is live and customers are hiring Workforces from it.
-* At least one industry-specific Workforce configuration is live in production.
-* The public API is documented, versioned, and used by at least one external integration in production.
-* Partner Workforce development is possible using documented primitives and processes.
-* Platform architecture has not changed to support any Phase 4 capability—only extensions have been made.
+- The Workforce Marketplace is live and customers are hiring Workforces from it.
+- At least one industry-specific Workforce configuration is live in production.
+- The public API is documented, versioned, and used by at least one external integration in production.
+- Partner Workforce development is possible using documented primitives and processes.
+- Platform architecture has not changed to support any Phase 4 capability—only extensions have been made.
 
 ### Dependencies
 
-* Phase 3 multi-Workforce architecture must be fully proven before the Marketplace is built on top of it.
-* Workforce Templates require multiple proven Workforces to derive patterns from.
-* Public APIs require a stable, mature platform interface—premature API publication creates obligations that constrain platform evolution.
-* Industry specialization requires the Business Brain to be mature enough to store and retrieve industry-specific knowledge accurately.
+- Phase 3 multi-Workforce architecture must be fully proven before the Marketplace is built on top of it.
+- Workforce Templates require multiple proven Workforces to derive patterns from.
+- Public APIs require a stable, mature platform interface—premature API publication creates obligations that constrain platform evolution.
+- Industry specialization requires the Business Brain to be mature enough to store and retrieve industry-specific knowledge accurately.
 
 ### Exit Criteria
 
 Phase 4 is exited when:
 
-* Koolerr is genuinely operating as an ecosystem—not a single-vendor product.
-* Multiple Workforces are available in the Marketplace, including at least one built by a partner.
-* The public API has been stable across at least one version cycle.
-* The platform is serving customers in multiple distinct industries.
+- Koolerr is genuinely operating as an ecosystem—not a single-vendor product.
+- Multiple Workforces are available in the Marketplace, including at least one built by a partner.
+- The public API has been stable across at least one version cycle.
+- The platform is serving customers in multiple distinct industries.
 
 ---
 
@@ -665,15 +742,19 @@ Every platform decision must be evaluated for how it constrains or enables the n
 
 ---
 
-## Roadmap Summary
+## Roadmap Summary (Long-Term Architectural Evolution)
 
-| Phase | Focus | Proof |
-|---|---|---|
-| Phase 1 | Platform Foundation + Content Workforce MVP | End-to-end Engagement Run on permanent architecture |
-| Phase 2 | Trust, Autonomy + Customer Experience | Self-managed Workforces with earned Digital Employee autonomy |
-| Phase 3 | Multi-Workforce Platform | Multiple Workforces sharing one Business Brain |
-| Phase 4 | Ecosystem + Industry Specialization | Marketplace, APIs, and partner Workforces |
-| Phase 5+ | AI Workforce Operating System | Every business function available as a trusted Workforce |
+> This table describes the **permanent architectural evolution** of the platform. For the
+> **current near-term delivery sequence**, see the **Active Execution Roadmap (Phases 7–12)**
+> near the top of this document — that is the source of truth for what is built next.
+
+| Phase    | Focus                                       | Proof                                                         |
+| -------- | ------------------------------------------- | ------------------------------------------------------------- |
+| Phase 1  | Platform Foundation + Content Workforce MVP | End-to-end Engagement Run on permanent architecture           |
+| Phase 2  | Trust, Autonomy + Customer Experience       | Self-managed Workforces with earned Digital Employee autonomy |
+| Phase 3  | Multi-Workforce Platform                    | Multiple Workforces sharing one Business Brain                |
+| Phase 4  | Ecosystem + Industry Specialization         | Marketplace, APIs, and partner Workforces                     |
+| Phase 5+ | AI Workforce Operating System               | Every business function available as a trusted Workforce      |
 
 ---
 
