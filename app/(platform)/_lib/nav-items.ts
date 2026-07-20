@@ -21,6 +21,7 @@ export const PLATFORM_NAV_ITEMS: NavItem[] = [
   { href: '/creative', label: 'Creative' },
   { href: '/deliverables', label: 'Deliverables' },
   { href: '/workforces', label: 'Workforces' },
+  { href: '/academy', label: 'Academy' },
   { href: '/approvals', label: 'Approvals' },
   { href: '/brain', label: 'Brain' },
   { href: '/consent', label: 'Consent' },

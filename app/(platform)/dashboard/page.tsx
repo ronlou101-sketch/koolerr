@@ -79,6 +79,23 @@ export default async function DashboardPage() {
         <p className="mt-1 text-sm text-muted-foreground">Your workforce is standing by.</p>
       </div>
 
+      {/* Koolerr Academy — new customers start here */}
+      <Link
+        href="/academy"
+        className="flex items-center justify-between gap-4 rounded-lg border border-primary/30 bg-primary/5 px-5 py-4 transition-colors hover:bg-primary/10"
+      >
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">🎓 Koolerr Academy</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            New to Koolerr? Learn to get the most out of your AI workforce — guided courses,
+            walkthroughs, and best practices.
+          </p>
+        </div>
+        <span className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">
+          Open Academy →
+        </span>
+      </Link>
+
       {/* Live workforce activity — shown whenever runs are active */}
       <LiveRunsPanel runs={activeRuns.map((r) => ({ id: r.id, objective: r.objective }))} />
 
