@@ -9,6 +9,7 @@ import type { BillingStatus } from '@/domains/billing/types'
 import { createSessionServerClient } from '@/shared/lib/supabase-session'
 import { NotificationBell } from './_components/notification-bell'
 import { MobileNav } from './_components/mobile-nav'
+import { AccountMenu } from './_components/account-menu'
 import { visibleNavItems } from './_lib/nav-items'
 
 export const runtime = 'nodejs'
@@ -78,8 +79,8 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   const nav = (
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-8">
-          <Link href="/dashboard" className="ml-1 inline-flex items-center">
+        <div className="flex min-w-0 items-center gap-8">
+          <Link href="/dashboard" className="ml-1 inline-flex shrink-0 items-center">
             <Image
               src="/Koolerr_Logo_Trimmed.png"
               alt="Koolerr"
@@ -89,15 +90,15 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               priority
             />
           </Link>
-          <nav className="hidden items-center gap-6 sm:flex">
+          <nav className="hidden min-w-0 items-center gap-6 overflow-x-auto sm:flex">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={
                   item.primary
-                    ? 'text-sm font-medium text-foreground hover:text-foreground'
-                    : 'text-sm text-muted-foreground hover:text-foreground'
+                    ? 'shrink-0 whitespace-nowrap text-sm font-medium text-foreground hover:text-foreground'
+                    : 'shrink-0 whitespace-nowrap text-sm text-muted-foreground hover:text-foreground'
                 }
               >
                 {item.label}
@@ -105,13 +106,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
             ))}
           </nav>
         </div>
-        <div className="flex items-center gap-5">
+        <div className="flex shrink-0 items-center gap-5">
           {ctx && <NotificationBell organizationId={ctx.organizationId} />}
-          <form action={signOut}>
-            <button type="submit" className="text-sm text-muted-foreground hover:text-foreground">
-              Sign out
-            </button>
-          </form>
+          <AccountMenu signOutAction={signOut} email={authUser?.email ?? undefined} />
           <MobileNav items={navItems} />
         </div>
       </div>
