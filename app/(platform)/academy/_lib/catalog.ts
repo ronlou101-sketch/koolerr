@@ -86,6 +86,8 @@ export const COURSES: Course[] = [
             title: 'What is Koolerr?',
             summary: 'The core idea: stop buying software, start hiring an AI workforce.',
             estimatedMinutes: 5,
+            videoUrl:
+              'https://ofq9igptory9j22i.public.blob.vercel-storage.com/academy/what-is-koolerr.mp4',
             content: {
               overview:
                 'Koolerr gives your business a team of AI employees — organized into Workforces — that read from a shared Business Brain and produce real Deliverables. Instead of operating another tool, you delegate outcomes to a workforce that works around the clock.',
