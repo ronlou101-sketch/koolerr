@@ -45,14 +45,14 @@ When there is pressure to build something out of sequence, return to this docume
 > `docs/status.json`) reflects prior planning. Those historical records are preserved as-is.
 > For all forward work, the official roadmap is the Phase 7 – Phase 12 sequence below.
 
-| Phase        | Name                     | Status                                                        |
-| ------------ | ------------------------ | ------------------------------------------------------------- |
-| **Phase 7**  | Launch Readiness         | ✅ **Complete**                                               |
-| **Phase 8**  | Final Product Validation | ⬜ Next (awaiting founder approval)                           |
-| **Phase 9**  | Koolerr Academy          | ⬜ Planned — **required before any beta customer is invited** |
-| **Phase 10** | Private Beta             | ⬜ Planned                                                    |
-| **Phase 11** | Public Launch            | ⬜ Planned                                                    |
-| **Phase 12** | Scale & Optimization     | ⬜ Planned                                                    |
+| Phase        | Name                     | Status                                                                  |
+| ------------ | ------------------------ | ----------------------------------------------------------------------- |
+| **Phase 7**  | Launch Readiness         | ✅ **Complete** (`phase-7-complete`)                                    |
+| **Phase 8**  | Final Product Validation | ✅ **Complete** (`phase-8-complete`)                                    |
+| **Phase 9**  | Koolerr Academy          | ✅ **Complete** (`phase-9-complete`)                                    |
+| **Phase 10** | Private Beta             | 🔄 In progress — **Milestone 1 Complete** (`phase-10-beta-milestone-1`) |
+| **Phase 11** | Public Launch            | ⬜ Planned                                                              |
+| **Phase 12** | Scale & Optimization     | ⬜ Planned                                                              |
 
 ### Phase 7 — Launch Readiness ✅ Complete
 

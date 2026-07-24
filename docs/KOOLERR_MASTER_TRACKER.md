@@ -96,10 +96,10 @@ These phases and their sequence are locked. Do not reorder, compress, or skip ph
 Any change to the roadmap requires explicit founder approval. This mirrors the Active Execution
 Roadmap in `Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md` and is the single source of truth.
 
-1. **Phase 7 — Launch Readiness** ✅ Complete
-2. **Phase 8 — Final Product Validation** ⬜ Next
-3. **Phase 9 — Koolerr Academy** ⬜ Planned — **required before any beta customer is invited; every beta customer has full Academy access on Day 1**
-4. **Phase 10 — Private Beta** ⬜ Planned
+1. **Phase 7 — Launch Readiness** ✅ Complete (tagged `phase-7-complete`)
+2. **Phase 8 — Final Product Validation** ✅ Complete (tagged `phase-8-complete`)
+3. **Phase 9 — Koolerr Academy** ✅ Complete (tagged `phase-9-complete`) — every beta customer has full Academy access on Day 1
+4. **Phase 10 — Private Beta** 🔄 In progress — **Milestone 1 Complete ✅** (tagged `phase-10-beta-milestone-1`)
 5. **Phase 11 — Public Launch** ⬜ Planned
 6. **Phase 12 — Scale & Optimization** ⬜ Planned
 
@@ -112,21 +112,20 @@ Roadmap in `Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md` and is the single 
 
 ## 5. Current Phase
 
-**Phase 7 — Launch Readiness** ✅ Complete (tagged `phase-7-complete`).
+**Phase 10 — Private Beta — Milestone 1 Complete ✅** (tagged `phase-10-beta-milestone-1`).
+Phase 10 (Private Beta) is in progress; Milestone 1 is the first stable checkpoint.
 
-Phase 7 delivered mobile navigation, terminology consistency, loading/error resilience, critical
-service-layer test coverage (Business Brain + Workforce Engine), accessibility, and launch-day
-observability. 833 tests; TypeScript, full suite, and production build all clean. See
-`PHASE_7_COMPLETION.md` for the full report.
+Milestone 1 delivered: the Academy AI-instructor video pipeline operational end-to-end (HeyGen →
+Vercel Blob), with the "What is Koolerr?" lesson video generated, hosted on Vercel Blob, and
+production streaming verified (GET 200 / Range 206 / cache HIT); plus a responsive platform header
+with an always-visible Account Menu so Sign Out is reachable at every viewport width. 847 tests;
+TypeScript, full suite, production build, and production verification all clean.
 
-**Next phase:** **Phase 8 — Final Product Validation** ⬜ — awaiting explicit founder approval
-before any implementation begins. Scope: end-to-end workflow validation, real campaign
-generation, AI provider validation (HeyGen, Higgsfield, ElevenLabs, etc.), performance
-validation, and production bug fixes discovered during validation. No new features unless
-required to complete the customer journey.
+**Current focus:** generate the remaining Academy lesson videos (same HeyGen → Vercel Blob flow),
+awaiting explicit founder go-ahead.
 
-**Phase gate:** **Phase 9 (Koolerr Academy) must be completed before any beta customer is invited
-(Phase 10)**, so every beta customer has full Academy access on Day 1.
+Phases 7 (Launch Readiness), 8 (Final Product Validation), and 9 (Koolerr Academy) are complete
+and tagged. See `PHASE_7_COMPLETION.md` for the Phase 7 report.
 
 ---
 
