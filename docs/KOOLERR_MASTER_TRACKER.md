@@ -121,8 +121,9 @@ production streaming verified (GET 200 / Range 206 / cache HIT); plus a responsi
 with an always-visible Account Menu so Sign Out is reachable at every viewport width. 847 tests;
 TypeScript, full suite, production build, and production verification all clean.
 
-**Current focus:** generate the remaining Academy lesson videos (same HeyGen → Vercel Blob flow),
-awaiting explicit founder go-ahead.
+**Current focus:** Academy lesson videos are COMPLETE — all 5 lessons generated on the restored
+HeyGen config and published to Vercel Blob (verified). Next: production deploy + verification of the
+newly-wired lesson videos, then invite first beta customers.
 
 Phases 7 (Launch Readiness), 8 (Final Product Validation), and 9 (Koolerr Academy) are complete
 and tagged. See `PHASE_7_COMPLETION.md` for the Phase 7 report.

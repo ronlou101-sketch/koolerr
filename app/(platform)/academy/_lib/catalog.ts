@@ -120,6 +120,8 @@ export const COURSES: Course[] = [
             title: 'Build Your Business Brain',
             summary: 'Complete the onboarding wizard so your workforce knows your business.',
             estimatedMinutes: 10,
+            videoUrl:
+              'https://ofq9igptory9j22i.public.blob.vercel-storage.com/academy/build-your-brain.mp4',
             content: {
               overview:
                 'The Business Brain is your organization’s permanent memory — brand, services, audience, and strategy. Every Digital Employee reads from it. A strong Brain is the single biggest driver of output quality.',
@@ -168,6 +170,8 @@ export const COURSES: Course[] = [
             title: 'How Business Memory Works',
             summary: 'Memory types, coverage, and why they matter.',
             estimatedMinutes: 7,
+            videoUrl:
+              'https://ofq9igptory9j22i.public.blob.vercel-storage.com/academy/how-memory-works.mp4',
             content: {
               overview:
                 'The Brain stores discrete units of Business Memory across knowledge types (brand, product, service, pricing, policy, and more). Coverage across types is a signal of how well your workforce understands your business.',
@@ -216,6 +220,8 @@ export const COURSES: Course[] = [
             title: 'Launch Your First Engagement Run',
             summary: 'Trigger the workforce and watch it work through seven departments.',
             estimatedMinutes: 8,
+            videoUrl:
+              'https://ofq9igptory9j22i.public.blob.vercel-storage.com/academy/launch-a-run.mp4',
             content: {
               overview:
                 'An Engagement Run sends your objective through the AI workforce: Research → Strategy → Creative → Video → Publishing → Approval → Delivery. Progress is written to the Brain so you can follow along, and a failure in one department no longer discards completed work.',
@@ -271,6 +277,8 @@ export const COURSES: Course[] = [
             title: 'Review and Approve Deliverables',
             summary: 'Navigate the Deliverables library and the approval workflow.',
             estimatedMinutes: 6,
+            videoUrl:
+              'https://ofq9igptory9j22i.public.blob.vercel-storage.com/academy/review-deliverables.mp4',
             content: {
               overview:
                 'Deliverables are the outputs your workforce produces — scripts, images, videos, reports, and strategic documents. The Deliverables page groups them by type; approvals let you review before anything is treated as final.',
