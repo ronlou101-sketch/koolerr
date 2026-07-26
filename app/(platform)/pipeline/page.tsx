@@ -45,10 +45,9 @@ export default function PipelinePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Launch Pipeline</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Start a Campaign</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Start the full AI content pipeline — Research, Strategy, Creative, Video Production,
-          Publishing, Approval, and Delivery — for a campaign topic.
+          Tell your marketing team what you want, and they&apos;ll handle the rest.
         </p>
       </div>
 
@@ -103,7 +102,7 @@ export default function PipelinePage() {
               disabled={!topic.trim()}
               className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Launch Pipeline
+              Start Campaign
             </button>
           </form>
         </div>
@@ -132,9 +131,9 @@ export default function PipelinePage() {
       {state === 'done' && runId && (
         <div className="space-y-4">
           <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-            <p className="text-sm font-medium text-green-800">Pipeline complete</p>
+            <p className="text-sm font-medium text-green-800">All done</p>
             <p className="mt-0.5 text-xs text-green-700">
-              Your AI workforce has finished. Review your deliverables below.
+              Your marketing team has finished. Review your deliverables below.
             </p>
           </div>
 

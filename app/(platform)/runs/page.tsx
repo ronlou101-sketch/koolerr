@@ -32,7 +32,7 @@ export default async function RunsPage() {
           href="/pipeline"
           className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
-          Launch Pipeline
+          Start Campaign
         </Link>
       </div>
 

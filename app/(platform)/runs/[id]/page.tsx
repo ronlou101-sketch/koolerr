@@ -75,10 +75,9 @@ export default async function RunDetailPage({ params }: Props) {
               Runs
             </Link>
             <span>/</span>
-            <span className="font-mono">{run.id.slice(0, 16)}…</span>
+            <span>Details</span>
           </div>
           <h1 className="text-xl font-semibold text-foreground">{run.objective}</h1>
-          <p className="mt-1 font-mono text-xs text-muted-foreground">{run.id}</p>
         </div>
         <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}>
           {statusLabel}
@@ -103,10 +102,10 @@ export default async function RunDetailPage({ params }: Props) {
         <h2 className="mb-3 text-sm font-medium text-foreground">Run Details</h2>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
           <div>
-            <dt className="text-muted-foreground">Workforce</dt>
-            <dd className="font-mono text-xs">
+            <dt className="text-muted-foreground">Marketing team</dt>
+            <dd className="text-xs">
               <Link href="/workforces" className="text-foreground hover:underline">
-                {run.workforceId}
+                View team
               </Link>
             </dd>
           </div>
@@ -154,7 +153,6 @@ export default async function RunDetailPage({ params }: Props) {
                     <p className="truncate text-sm font-medium text-foreground">
                       {parentRun.objective}
                     </p>
-                    <p className="font-mono text-xs text-muted-foreground">{parentRun.id}</p>
                   </div>
                   <span
                     className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${RUN_STATUS_BADGE_COLORS[parentRun.status] ?? 'bg-muted text-muted-foreground'}`}
@@ -182,7 +180,6 @@ export default async function RunDetailPage({ params }: Props) {
                         <p className="truncate text-sm font-medium text-foreground">
                           {child.objective}
                         </p>
-                        <p className="font-mono text-xs text-muted-foreground">{child.id}</p>
                       </div>
                       <span
                         className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${RUN_STATUS_BADGE_COLORS[child.status] ?? 'bg-muted text-muted-foreground'}`}

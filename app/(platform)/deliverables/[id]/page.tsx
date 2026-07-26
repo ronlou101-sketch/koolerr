@@ -12,9 +12,9 @@ interface Props {
 
 const STATUS_LABELS = {
   draft: 'Draft',
-  pending_review: 'Pending Review',
+  pending_review: 'Ready for you',
   approved: 'Approved',
-  rejected: 'Rejected',
+  rejected: 'Sent back',
   published: 'Published',
 } as const
 
@@ -70,7 +70,7 @@ function VideoScriptContent({ deliverable }: { deliverable: Deliverable }) {
 
       {isReviewable(deliverable) && (
         <section className="space-y-2">
-          <h2 className="text-sm font-medium text-foreground">Generate Video</h2>
+          <h2 className="text-sm font-medium text-foreground">Create Video</h2>
           <GenerateVideoButton deliverableId={deliverable.id} />
         </section>
       )}
@@ -215,7 +215,6 @@ export default async function DeliverablePage({ params, searchParams }: Props) {
             </span>
           </div>
           <h1 className="mt-1 text-2xl font-semibold text-foreground">{deliverable.title}</h1>
-          <p className="mt-1 font-mono text-xs text-muted-foreground">{deliverable.id}</p>
         </div>
         <span
           className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${STATUS_COLORS[deliverable.status] ?? STATUS_COLORS.draft}`}
@@ -230,9 +229,7 @@ export default async function DeliverablePage({ params, searchParams }: Props) {
             approved ? 'bg-green-50 text-green-700' : 'bg-destructive/10 text-destructive'
           }`}
         >
-          {approved
-            ? 'Deliverable approved. Well done, workforce!'
-            : 'Deliverable rejected. The team will be notified.'}
+          {approved ? 'Approved — nice work.' : 'Sent back — your team will revise it.'}
         </div>
       )}
 

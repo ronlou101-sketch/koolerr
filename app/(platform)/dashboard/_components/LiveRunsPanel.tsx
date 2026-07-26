@@ -32,7 +32,7 @@ export function LiveRunsPanel({ runs }: { runs: ActiveRun[] }) {
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-2">
-        <h2 className="text-sm font-medium text-foreground">Live Workforce Activity</h2>
+        <h2 className="text-sm font-medium text-foreground">What your marketing team is doing</h2>
         <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
       </div>
       {runs.map((run) => (

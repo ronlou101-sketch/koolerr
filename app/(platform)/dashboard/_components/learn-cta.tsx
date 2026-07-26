@@ -27,7 +27,8 @@ export function LearnCta() {
       <div className="min-w-0">
         <p className="text-sm font-semibold text-foreground">🎓 Learn</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Get the most out of your AI workforce — guided courses, walkthroughs, and best practices.
+          Get the most out of your marketing team — guided courses, walkthroughs, and best
+          practices.
         </p>
       </div>
       <span className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground">

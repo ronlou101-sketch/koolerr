@@ -227,10 +227,10 @@ const COMPARISON_ROWS: ComparisonRow[] = [
 // ── Display names for active subscription widget ──────────────────────────────
 
 const PACKAGE_DISPLAY_NAMES: Record<string, string> = {
-  unpaid: 'No active package',
-  build: 'BUILD — AI Workforce Package',
-  grow: 'GROW — AI Workforce Package',
-  scale: 'SCALE — AI Workforce Package',
+  unpaid: 'No active plan',
+  build: 'BUILD Plan',
+  grow: 'GROW Plan',
+  scale: 'SCALE Plan',
 }
 
 // ── Plan order for upgrade logic (unpaid is the initial state, never shown as a card) ─────
@@ -271,9 +271,7 @@ export default async function BillingPage({
         <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Koolerr
         </p>
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-          AI Workforce Packages
-        </h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Plans</h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
           Stop buying software. Start hiring AI. Every package gives you a fully-equipped team of AI
           employees — built for your brand, powered by your Business Brain, and working for your
@@ -284,7 +282,7 @@ export default async function BillingPage({
       {/* ── Upgrade confirmation ── */}
       {upgraded && (
         <div className="rounded-lg border border-green-200 bg-green-50 px-5 py-4 text-sm font-medium text-green-800">
-          ✓ Your AI Workforce Package has been updated. Your new team is ready.
+          ✓ Your plan is updated. Your marketing team is ready.
         </div>
       )}
 
@@ -309,7 +307,7 @@ export default async function BillingPage({
         <div className="flex items-start justify-between gap-6 rounded-xl border border-border bg-card p-5">
           <div className="space-y-0.5">
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Active Package
+              Your Plan
             </p>
             <p className="text-xl font-bold text-foreground">
               {PACKAGE_DISPLAY_NAMES[currentPlanId] ?? currentPlanId}
@@ -417,7 +415,7 @@ export default async function BillingPage({
                 <div className="mt-8">
                   {isCurrent ? (
                     <div className="rounded-md bg-white/10 py-2.5 text-center text-sm font-bold">
-                      Your Current Package
+                      Your Current Plan
                     </div>
                   ) : hasStripeSubscription && stripeEnabled ? (
                     <PlanChangeButton
@@ -511,7 +509,7 @@ export default async function BillingPage({
               <div className="mt-8">
                 {isCurrent ? (
                   <div className="rounded-md border border-border py-2.5 text-center text-sm font-semibold text-muted-foreground">
-                    Your Current Package
+                    Your Current Plan
                   </div>
                 ) : hasStripeSubscription && stripeEnabled ? (
                   <PlanChangeButton
@@ -540,7 +538,7 @@ export default async function BillingPage({
 
       {/* ── Comparison table ── */}
       <div>
-        <h2 className="mb-5 text-lg font-bold text-foreground">Package Comparison</h2>
+        <h2 className="mb-5 text-lg font-bold text-foreground">Compare Plans</h2>
         <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-sm">
             <thead>

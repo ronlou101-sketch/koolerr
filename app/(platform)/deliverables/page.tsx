@@ -35,11 +35,19 @@ const STATUS_COLORS: Record<string, string> = {
   published: 'bg-green-100 text-green-700',
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'Draft',
+  pending_review: 'Ready for you',
+  approved: 'Approved',
+  rejected: 'Sent back',
+  published: 'Published',
+}
+
 function StatusBadge({ status }: { status: string }) {
   const cls = STATUS_COLORS[status] ?? 'bg-muted text-muted-foreground'
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${cls}`}>
-      {status.replace(/_/g, ' ')}
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
+      {STATUS_LABELS[status] ?? status.replace(/_/g, ' ')}
     </span>
   )
 }
@@ -65,7 +73,6 @@ function DeliverableRow({ d }: { d: Deliverable }) {
     >
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{d.title}</p>
-        <p className="mt-0.5 font-mono text-xs text-muted-foreground">{d.id}</p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <TypeBadge type={d.type} />
@@ -122,20 +129,20 @@ export default async function DeliverablesPage() {
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Deliverables</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Everything your AI workforce produces — scripts, images, videos, and reports.
+          Everything your marketing team produces — scripts, images, videos, and reports.
         </p>
         <div className="mt-4 flex gap-3">
           <Link
             href="/creative"
             className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Generate Image
+            Create Image
           </Link>
         </div>
       </div>
 
       {all.length === 0 ? (
-        <EmptyState message="Nothing here yet. Launch a campaign and everything your AI workforce produces — scripts, images, videos, and reports — will show up here." />
+        <EmptyState message="Nothing here yet. Start a campaign and everything your marketing team creates — scripts, images, videos, and reports — will show up here." />
       ) : (
         <>
           {scripts.length > 0 && <Section title="Video Scripts" deliverables={scripts} empty="" />}

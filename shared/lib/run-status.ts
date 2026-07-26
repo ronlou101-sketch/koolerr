@@ -7,13 +7,13 @@ import type { EngagementRunStatus } from '@/shared/types'
  * and run detail pages — values are unchanged.
  */
 export const RUN_STATUS_LABELS: Record<EngagementRunStatus, string> = {
-  pending: 'Pending',
-  running: 'Running',
-  awaiting_approval: 'Awaiting Review',
+  pending: 'Queued',
+  running: 'Working on it',
+  awaiting_approval: 'Ready for you',
   approved: 'Approved',
-  rejected: 'Rejected',
-  completed: 'Completed',
-  failed: 'Failed',
+  rejected: 'Sent back',
+  completed: 'Done',
+  failed: "Didn't finish",
 }
 
 /**

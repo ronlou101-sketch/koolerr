@@ -194,7 +194,7 @@ export default function OnboardingPage() {
       setLoading(false)
 
       if (!triggerResult.success) {
-        setError(triggerResult.error ?? 'Failed to start AI Workforce')
+        setError(triggerResult.error ?? "We couldn't start your marketing team. Please try again.")
         setStep('review')
         return
       }
@@ -220,7 +220,7 @@ export default function OnboardingPage() {
     return (
       <div className="mb-6">
         <div className="mb-2 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-foreground">Set up your AI Workforce</h1>
+          <h1 className="text-lg font-semibold text-foreground">Set up your Marketing Team</h1>
           {isWizardStep && step !== 'launching' && (
             <span className="text-sm text-muted-foreground">
               Step {activeIndex + 1} of {wizardTotal}
@@ -260,7 +260,7 @@ export default function OnboardingPage() {
           <div>
             <h2 className="text-base font-medium text-foreground">Tell us about your business</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              This becomes your AI Workforce&apos;s primary brief.
+              This becomes your marketing team&apos;s primary brief.
             </p>
           </div>
           <div>
@@ -599,7 +599,7 @@ export default function OnboardingPage() {
           <div>
             <h2 className="text-base font-medium text-foreground">Your online presence</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              Choose where you want your AI Workforce to publish content.
+              Choose where you want your marketing team to publish content.
             </p>
           </div>
           <div>
@@ -767,8 +767,8 @@ export default function OnboardingPage() {
           <div>
             <h2 className="text-base font-medium text-foreground">Review your profile</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              Your AI Workforce will use this to produce content. You can update it later from your
-              profile settings.
+              Your marketing team will use this to produce content. You can update it later from
+              your profile settings.
             </p>
           </div>
           <dl className="divide-y divide-border text-sm">
@@ -797,11 +797,10 @@ export default function OnboardingPage() {
           </dl>
           <div className="rounded-md border border-primary/20 bg-primary/5 p-4">
             <p className="text-sm font-medium text-foreground">
-              Ready to launch your AI Workforce?
+              Ready to launch your marketing team?
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Clicking Launch will save your profile and start your 7-department AI team — Research,
-              Strategy, Creative, Video, Publishing, Approval, and Delivery — all working on your
+              Clicking Launch will save your profile and put your marketing team to work on your
               behalf.
             </p>
           </div>
@@ -818,7 +817,7 @@ export default function OnboardingPage() {
               disabled={loading}
               className="rounded-md bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Starting…' : 'Launch AI Workforce'}
+              {loading ? 'Starting…' : 'Launch Marketing Team'}
             </button>
           </div>
         </div>
@@ -830,7 +829,9 @@ export default function OnboardingPage() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
-          <h2 className="text-lg font-semibold text-foreground">Launching your AI Workforce…</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            Getting your marketing team started…
+          </h2>
           <p className="text-sm text-muted-foreground">
             Saving your business profile and dispatching your team. You&apos;ll be redirected to
             your dashboard where you can watch the pipeline run in real time.

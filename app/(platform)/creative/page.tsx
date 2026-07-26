@@ -59,9 +59,9 @@ export default function CreativePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Image Generation</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Create an Image</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Generate cinematic images using Higgsfield AI.
+          Describe the image you want and your marketing team will create it.
         </p>
       </div>
 
@@ -86,7 +86,7 @@ export default function CreativePage() {
             disabled={!prompt.trim() || state === 'loading'}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {state === 'loading' ? 'Generating…' : 'Generate image'}
+            {state === 'loading' ? 'Creating…' : 'Create Image'}
           </button>
         </form>
       </div>
@@ -96,11 +96,11 @@ export default function CreativePage() {
           <div className="flex items-center gap-3">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             <span className="text-sm text-muted-foreground">
-              Generating via Higgsfield… {elapsedSecs}s
+              Creating your image… {elapsedSecs}s
             </span>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Cinematic image generation typically takes 1–3 minutes. Please keep this page open.
+            Creating an image usually takes 1–3 minutes. Please keep this page open.
           </p>
           <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
@@ -113,7 +113,7 @@ export default function CreativePage() {
 
       {state === 'error' && error && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <p className="text-sm font-medium text-destructive">Generation failed</p>
+          <p className="text-sm font-medium text-destructive">Couldn&apos;t create the image</p>
           <p className="mt-1 text-xs text-destructive/80">{error}</p>
           <button
             onClick={() => setState('idle')}
@@ -155,7 +155,7 @@ export default function CreativePage() {
             }}
             className="mt-4 text-xs text-muted-foreground underline hover:text-foreground"
           >
-            Generate another
+            Create another
           </button>
         </div>
       )}

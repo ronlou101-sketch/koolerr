@@ -71,9 +71,6 @@ export default async function ApprovalsPage({ searchParams }: Props) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                  <span>
-                    Run: <code className="font-mono text-xs">{req.engagementRunId}</code>
-                  </span>
                   <span>Requested: {req.createdAt.toLocaleString()}</span>
                   {req.expiresAt && (
                     <span className="text-yellow-600">
@@ -81,17 +78,6 @@ export default async function ApprovalsPage({ searchParams }: Props) {
                     </span>
                   )}
                 </div>
-
-                {Object.keys(req.context).length > 0 && (
-                  <details className="text-xs">
-                    <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                      Show context
-                    </summary>
-                    <pre className="mt-2 overflow-auto rounded bg-muted/40 p-3 text-xs text-foreground">
-                      {JSON.stringify(req.context, null, 2)}
-                    </pre>
-                  </details>
-                )}
 
                 <div className="flex flex-wrap items-center gap-3 border-t border-border pt-3">
                   {/* Approve */}

@@ -127,9 +127,9 @@ export default async function UsagePage() {
 
           {/* Model Tokens */}
           <div className="rounded-lg border border-border bg-card p-5">
-            <p className="text-sm font-medium text-foreground">Model Tokens</p>
+            <p className="text-sm font-medium text-foreground">Work Capacity</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              AI tokens consumed across all runs (input + output).
+              How much of your marketing team&apos;s capacity you&apos;ve used this period.
             </p>
             {tokenEntitlement ? (
               <UsageBar used={tokenEntitlement.used} limit={tokenEntitlement.limit} />
