@@ -178,7 +178,6 @@ export default function PipelinePage() {
           <li>Delivery package — final content package ready for your review</li>
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
-          AI provider keys must be configured in Vercel for full pipeline execution.{' '}
           <Link href="/runs" className="text-primary hover:underline">
             View all runs →
           </Link>

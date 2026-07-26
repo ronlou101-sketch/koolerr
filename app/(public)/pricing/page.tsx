@@ -308,7 +308,7 @@ export default function PricingPage() {
           </p>
           <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
-              href="/api/checkout/start?plan=build"
+              href="/api/checkout/start?plan=grow"
               className="w-full rounded-lg bg-background px-8 py-3.5 text-center text-sm font-extrabold text-foreground transition-opacity hover:opacity-90 sm:w-auto"
             >
               Get started →

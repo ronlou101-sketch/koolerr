@@ -134,29 +134,18 @@ export default async function DeliverablesPage() {
         </div>
       </div>
 
-      <Section
-        title="Video Scripts"
-        deliverables={scripts}
-        empty="No video scripts yet. Launch the pipeline to generate scripts."
-      />
-
-      <Section
-        title="Videos"
-        deliverables={videos}
-        empty="No videos yet. Open a Video Script and click Generate Video."
-      />
-
-      <Section
-        title="Images"
-        deliverables={images}
-        empty="No images yet. Use the Generate Image button above."
-      />
-
-      <Section
-        title="Reports & Documents"
-        deliverables={documents}
-        empty="No reports or documents yet. Completed pipeline runs deliver them here."
-      />
+      {all.length === 0 ? (
+        <EmptyState message="Nothing here yet. Launch a campaign and everything your AI workforce produces — scripts, images, videos, and reports — will show up here." />
+      ) : (
+        <>
+          {scripts.length > 0 && <Section title="Video Scripts" deliverables={scripts} empty="" />}
+          {videos.length > 0 && <Section title="Videos" deliverables={videos} empty="" />}
+          {images.length > 0 && <Section title="Images" deliverables={images} empty="" />}
+          {documents.length > 0 && (
+            <Section title="Reports & Documents" deliverables={documents} empty="" />
+          )}
+        </>
+      )}
     </div>
   )
 }

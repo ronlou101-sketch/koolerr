@@ -288,8 +288,8 @@ export default async function BillingPage({
         </div>
       )}
 
-      {/* ── Stripe not configured (internal ops notice) ── */}
-      {!stripeEnabled && (
+      {/* ── Stripe not configured (internal ops notice — dev only, never shown to customers) ── */}
+      {!stripeEnabled && process.env.NODE_ENV !== 'production' && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 [overflow-wrap:anywhere]">
           <strong>Payments not yet active.</strong> Set{' '}
           <code className="rounded bg-amber-100 px-1 font-mono text-xs">STRIPE_SECRET_KEY</code>,{' '}

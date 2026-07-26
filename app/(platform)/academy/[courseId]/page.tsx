@@ -21,7 +21,7 @@ export default async function CoursePage({ params }: Props) {
       <div>
         <div className="mb-1 flex items-center gap-2 text-sm text-muted-foreground">
           <Link href="/academy" className="hover:text-foreground">
-            Academy
+            Learn
           </Link>
           <span>/</span>
           <span>{course.title}</span>

@@ -11,11 +11,8 @@ export default async function AcademyPage() {
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Koolerr Academy</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Learn to get the most out of your AI workforce — courses, walkthroughs, and best practices
-          for every part of the platform.
-        </p>
+        <h1 className="text-2xl font-semibold text-foreground">Learn</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Master Koolerr one step at a time.</p>
       </div>
 
       <OverallProgress />

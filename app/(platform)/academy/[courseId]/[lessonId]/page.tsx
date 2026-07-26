@@ -37,7 +37,7 @@ export default async function LessonPage({ params }: Props) {
       {/* Breadcrumb */}
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         <Link href="/academy" className="hover:text-foreground">
-          Academy
+          Learn
         </Link>
         <span>/</span>
         <Link href={`/academy/${course.id}`} className="hover:text-foreground">

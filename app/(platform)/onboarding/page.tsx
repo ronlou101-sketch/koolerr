@@ -232,11 +232,7 @@ export default function OnboardingPage() {
             <div
               key={i}
               className={`h-1 flex-1 rounded-full transition-colors ${
-                i <= activeIndex - (step === 'review' ? 0 : 0) && step !== 'launching'
-                  ? 'bg-primary'
-                  : i < activeIndex
-                    ? 'bg-primary'
-                    : 'bg-muted'
+                i <= activeIndex && step !== 'launching' ? 'bg-primary' : 'bg-muted'
               }`}
             />
           ))}

@@ -6,6 +6,7 @@ import { deliverablesService } from '@/domains/deliverables'
 import { businessBrainService } from '@/domains/business-brain'
 import { CTO_BUSINESS_FUNCTION } from '@/infrastructure/cto-workforce'
 import { triggerCTORunAction, refreshCTOContextAction } from './actions'
+import { ObjectiveField } from './_components/objective-field'
 
 const DELIVERABLE_TYPE_LABELS: Record<string, string> = {
   implementation_plan: 'Implementation Plan',
@@ -150,26 +151,7 @@ export default async function CTOPage() {
             Describe what you need. Atlas detects the task type and produces the right Deliverable.
           </p>
           <form action={triggerCTORunAction} className="space-y-4">
-            <textarea
-              name="objective"
-              rows={3}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="e.g. Generate implementation plan for Phase 3 Milestone 2"
-              required
-            />
-            <div className="flex flex-wrap gap-2">
-              {OBJECTIVE_PRESETS.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={undefined}
-                  className="rounded border border-border px-2 py-1 text-xs text-muted-foreground hover:border-foreground hover:text-foreground"
-                  aria-label={`Use preset: ${preset}`}
-                >
-                  {preset.length > 60 ? preset.slice(0, 57) + '…' : preset}
-                </button>
-              ))}
-            </div>
+            <ObjectiveField presets={OBJECTIVE_PRESETS} />
             <div className="flex items-center gap-3">
               <button
                 type="submit"

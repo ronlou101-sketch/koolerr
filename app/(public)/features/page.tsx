@@ -160,10 +160,10 @@ const SECTIONS = [
   },
   {
     id: 'academy',
-    badge: 'Academy',
+    badge: 'Learn',
     title: 'Learn how to get the most from your AI workforce',
     description:
-      'Koolerr Academy is a guided learning environment built directly into the platform — helping you and your team understand how to work with AI effectively, build a stronger Business Brain, and run more successful Engagement Runs.',
+      'Learn is a guided learning environment built directly into the platform — helping you and your team understand how to work with AI effectively, build a stronger Business Brain, and run more successful Engagement Runs.',
     items: [
       {
         title: 'Getting Started Tracks',
