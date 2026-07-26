@@ -10,7 +10,8 @@ import { createSessionServerClient } from '@/shared/lib/supabase-session'
 import { NotificationBell } from './_components/notification-bell'
 import { MobileNav } from './_components/mobile-nav'
 import { AccountMenu } from './_components/account-menu'
-import { visibleNavItems } from './_lib/nav-items'
+import { NavDropdown } from './_components/nav-dropdown'
+import { platformNav } from './_lib/nav-items'
 
 export const runtime = 'nodejs'
 
@@ -74,7 +75,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   } = await supabase.auth.getUser()
   const isFounder = authUser?.email === 'ronlou101@gmail.com'
 
-  const navItems = visibleNavItems(isFounder)
+  const { primary, more, owner } = platformNav(isFounder)
 
   const nav = (
     <header className="border-b border-border bg-card">
@@ -90,26 +91,31 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               priority
             />
           </Link>
-          <nav className="hidden min-w-0 items-center gap-6 overflow-x-auto sm:flex">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={
-                  item.primary
-                    ? 'shrink-0 whitespace-nowrap text-sm font-medium text-foreground hover:text-foreground'
-                    : 'shrink-0 whitespace-nowrap text-sm text-muted-foreground hover:text-foreground'
-                }
-              >
-                {item.label}
-              </Link>
-            ))}
+          <nav className="hidden min-w-0 items-center gap-6 sm:flex">
+            {primary.map((item) => {
+              const active = pathname === item.href || pathname.startsWith(item.href + '/')
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`shrink-0 whitespace-nowrap text-sm hover:text-foreground ${
+                    active ? 'font-medium text-foreground' : 'text-muted-foreground'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+            <NavDropdown label="More" items={more} />
+            {owner.length > 0 && (
+              <NavDropdown label="⌘ Owner" items={owner} ariaLabel="Owner tools" />
+            )}
           </nav>
         </div>
         <div className="flex shrink-0 items-center gap-5">
           {ctx && <NotificationBell organizationId={ctx.organizationId} />}
           <AccountMenu signOutAction={signOut} email={authUser?.email ?? undefined} />
-          <MobileNav items={navItems} />
+          <MobileNav primary={primary} more={more} owner={owner} />
         </div>
       </div>
     </header>

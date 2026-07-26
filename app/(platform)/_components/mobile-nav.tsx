@@ -5,16 +5,25 @@ import Link from 'next/link'
 import type { NavItem } from '../_lib/nav-items'
 
 /**
- * Mobile navigation drawer for the platform header.
+ * Mobile navigation drawer for the platform header (Phase 11 grouped IA).
  *
  * Rendered only below the `sm` breakpoint (the desktop bar handles larger screens).
- * A hamburger button opens a right-side drawer listing the same nav items the
- * desktop bar shows; tapping a link or the backdrop closes it.
+ * A hamburger opens a right-side drawer that mirrors the desktop groups: the
+ * primary items first, then a "More" section, then a founder-only "Owner" section.
+ * Tapping a link or the backdrop closes it.
  *
- * Accessibility: the panel is a labelled modal dialog. On open, focus moves into the
- * drawer (the Close button); Escape closes it; on close, focus returns to the trigger.
+ * Accessibility: the panel is a labelled modal dialog. On open, focus moves to the
+ * Close button; Escape closes it; on close, focus returns to the trigger.
  */
-export function MobileNav({ items }: { items: NavItem[] }) {
+export function MobileNav({
+  primary,
+  more,
+  owner,
+}: {
+  primary: NavItem[]
+  more: NavItem[]
+  owner: NavItem[]
+}) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
@@ -31,6 +40,23 @@ export function MobileNav({ items }: { items: NavItem[] }) {
       triggerRef.current?.focus()
     }
   }, [open])
+
+  const renderLink = (item: NavItem) => (
+    <Link
+      key={item.href}
+      href={item.href}
+      onClick={() => setOpen(false)}
+      className="rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+    >
+      {item.label}
+    </Link>
+  )
+
+  const sectionHeader = (label: string) => (
+    <p className="mt-3 px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {label}
+    </p>
+  )
 
   return (
     <div className="sm:hidden">
@@ -96,16 +122,22 @@ export function MobileNav({ items }: { items: NavItem[] }) {
                 </svg>
               </button>
             </div>
-            {items.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className="rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
-              >
-                {item.label}
-              </Link>
-            ))}
+
+            {primary.map(renderLink)}
+
+            {more.length > 0 && (
+              <>
+                {sectionHeader('More')}
+                {more.map(renderLink)}
+              </>
+            )}
+
+            {owner.length > 0 && (
+              <>
+                {sectionHeader('Owner')}
+                {owner.map(renderLink)}
+              </>
+            )}
           </nav>
         </div>
       )}

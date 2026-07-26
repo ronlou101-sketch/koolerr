@@ -1,39 +1,76 @@
 import { describe, it, expect } from 'vitest'
-import { PLATFORM_NAV_ITEMS, visibleNavItems } from './nav-items'
+import { PRIMARY_NAV, MORE_NAV, OWNER_NAV, platformNav } from './nav-items'
 
-describe('visibleNavItems()', () => {
-  it('hides founder-only items from non-founders', () => {
-    const items = visibleNavItems(false)
-    expect(items.some((i) => i.href === '/tower')).toBe(false)
-    expect(items.some((i) => i.href === '/tracker')).toBe(false)
+describe('platformNav()', () => {
+  it('primary bar is exactly Home, Campaigns, Deliverables, Learn', () => {
+    expect(PRIMARY_NAV.map((i) => i.href)).toEqual([
+      '/dashboard',
+      '/runs',
+      '/deliverables',
+      '/academy',
+    ])
+    expect(PRIMARY_NAV.map((i) => i.label)).toEqual(['Home', 'Campaigns', 'Deliverables', 'Learn'])
   })
 
-  it('shows founder-only items to the founder', () => {
-    const items = visibleNavItems(true)
-    expect(items.some((i) => i.href === '/tower')).toBe(true)
-    expect(items.some((i) => i.href === '/tracker')).toBe(true)
+  it('customer primary bar is 4 items', () => {
+    expect(platformNav(false).primary).toHaveLength(4)
   })
 
-  it('always includes the core customer routes for everyone', () => {
-    const hrefs = visibleNavItems(false).map((i) => i.href)
-    expect(hrefs).toEqual(
-      expect.arrayContaining(['/pipeline', '/runs', '/deliverables', '/workforces', '/billing'])
-    )
+  it('hides owner tools from customers (no Owner group, none leaked into primary/more)', () => {
+    const nav = platformNav(false)
+    expect(nav.owner).toHaveLength(0)
+    for (const href of ['/tower', '/tracker', '/mission-control', '/revenue', '/cto']) {
+      expect(nav.primary.some((i) => i.href === href)).toBe(false)
+      expect(nav.more.some((i) => i.href === href)).toBe(false)
+    }
   })
 
-  it('preserves the declared order', () => {
-    const founderHrefs = visibleNavItems(true).map((i) => i.href)
-    expect(founderHrefs).toEqual(PLATFORM_NAV_ITEMS.map((i) => i.href))
+  it('shows owner tools to the founder in declared order', () => {
+    expect(platformNav(true).owner.map((i) => i.href)).toEqual([
+      '/tower',
+      '/tracker',
+      '/mission-control',
+      '/revenue',
+      '/cto',
+    ])
   })
 
-  it('marks exactly one primary item (CTO Agent)', () => {
-    const primary = PLATFORM_NAV_ITEMS.filter((i) => i.primary)
-    expect(primary).toHaveLength(1)
-    expect(primary[0].href).toBe('/cto')
+  it('primary + more are identical for customer and founder', () => {
+    expect(platformNav(true).primary).toEqual(platformNav(false).primary)
+    expect(platformNav(true).more).toEqual(platformNav(false).more)
   })
 
-  it('non-founder list is exactly the full list minus founder-only items', () => {
-    const founderOnlyCount = PLATFORM_NAV_ITEMS.filter((i) => i.founderOnly).length
-    expect(visibleNavItems(false)).toHaveLength(PLATFORM_NAV_ITEMS.length - founderOnlyCount)
+  it('preserves every existing route across the union of groups (no destination dropped)', () => {
+    const all = new Set([...PRIMARY_NAV, ...MORE_NAV, ...OWNER_NAV].map((i) => i.href))
+    const expected = [
+      '/dashboard',
+      '/runs',
+      '/deliverables',
+      '/academy',
+      '/pipeline',
+      '/creative',
+      '/approvals',
+      '/workforces',
+      '/brain',
+      '/analytics',
+      '/billing',
+      '/usage',
+      '/audit',
+      '/consent',
+      '/tower',
+      '/tracker',
+      '/mission-control',
+      '/revenue',
+      '/cto',
+    ]
+    for (const href of expected) expect(all.has(href)).toBe(true)
+    expect(all.size).toBe(expected.length)
+  })
+
+  it('Pipeline, Creative and Approvals remain in navigation (kept until Sprint 3)', () => {
+    const more = MORE_NAV.map((i) => i.href)
+    expect(more).toContain('/pipeline')
+    expect(more).toContain('/creative')
+    expect(more).toContain('/approvals')
   })
 })
