@@ -8,17 +8,19 @@ import { deliverablesService } from '@/domains/deliverables'
 import { approvalWorkflowService } from '@/shared/approval'
 import { LiveRunsPanel } from './_components/LiveRunsPanel'
 import { LearnCta } from './_components/learn-cta'
+import { Greeting } from './_components/greeting'
 import { computeMediaStats } from './_components/media-stats'
 import { timeAgo } from '@/shared/lib/time'
 
+// Customer-facing status wording (display only; underlying statuses unchanged).
 const STATUS_LABELS = {
-  pending: 'Pending',
-  running: 'Running',
-  awaiting_approval: 'Awaiting Review',
+  pending: 'Queued',
+  running: 'Working on it',
+  awaiting_approval: 'Ready for you',
   approved: 'Approved',
-  rejected: 'Rejected',
-  completed: 'Completed',
-  failed: 'Failed',
+  rejected: 'Sent back',
+  completed: 'Done',
+  failed: "Didn't finish",
 } as const
 
 const STATUS_COLORS = {
@@ -66,192 +68,162 @@ export default async function DashboardPage() {
   const mediaStats = computeMediaStats(allDeliverables)
   const workforces = workforcesResult.ok ? workforcesResult.value : []
   const pendingApprovals = approvalsResult.ok ? approvalsResult.value : []
-  const activeWorkforceCount = workforces.filter((w) => w.status === 'active').length
 
   if (memoryCount === 0) {
     redirect('/onboarding')
   }
 
+  // ── Customer-facing derived values (presentation only) ──────────────────────
+  const teamReady = workforces.filter((w) => w.status === 'active').length > 0
+  const activeCount = activeRuns.length
+  const completedCount = allRuns.filter((r) => r.status === 'completed').length
+  const failedCount = allRuns.filter((r) => r.status === 'failed').length
+  const contentCount = allDeliverables.length
+  const attentionCount = pendingApprovals.length + pendingDeliverables.length
+
+  const nextStep =
+    attentionCount > 0
+      ? {
+          title: 'Review the work waiting for you',
+          desc: `${attentionCount} item${attentionCount === 1 ? '' : 's'} ready for your review.`,
+          href: pendingDeliverables.length > 0 ? '/deliverables' : '/approvals',
+          cta: 'Review now',
+        }
+      : activeCount > 0
+        ? {
+            title: 'Your team is on it',
+            desc: `${activeCount} campaign${activeCount === 1 ? '' : 's'} in progress. I'll let you know the moment there's something to review.`,
+            href: '/runs',
+            cta: 'See progress',
+          }
+        : brainCoveragePct < 100
+          ? {
+              title: 'Tell your team more about your business',
+              desc: 'The more they know about you, the sharper your marketing gets.',
+              href: '/brain',
+              cta: 'Add details',
+            }
+          : {
+              title: 'Start a new campaign',
+              desc: 'Tell your marketing team what you want more of, and they’ll take it from there.',
+              href: '/pipeline',
+              cta: 'Start a campaign',
+            }
+
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">{orgName}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Your workforce is standing by.</p>
-      </div>
+      {/* ── Good morning greeting ─────────────────────────────────────────── */}
+      <Greeting subtitle={`Here's what your marketing team has been up to at ${orgName}.`} />
 
-      {/* Learn — new customers start here */}
-      <LearnCta />
-
-      {/* Live workforce activity — shown whenever runs are active */}
-      <LiveRunsPanel runs={activeRuns.map((r) => ({ id: r.id, objective: r.objective }))} />
-
-      {/* Stat cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Brain Memories
+      {/* ── Marketing Team Status ─────────────────────────────────────────── */}
+      <section className="space-y-4">
+        <div className="rounded-lg border border-border bg-card p-5">
+          <h2 className="text-sm font-semibold text-foreground">Your marketing team</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {activeCount > 0
+              ? `Hard at work on ${activeCount} campaign${activeCount === 1 ? '' : 's'} right now.`
+              : teamReady
+                ? 'Ready and standing by. Start a campaign whenever you are.'
+                : 'Getting set up — finish onboarding to put your team to work.'}
           </p>
-          <p className="mt-1 text-2xl font-semibold text-foreground">{memoryCount}</p>
-          {brainCoveragePct > 0 && (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {brainCoveragePct}% type coverage
+        </div>
+        <LiveRunsPanel runs={activeRuns.map((r) => ({ id: r.id, objective: r.objective }))} />
+      </section>
+
+      {/* ── Ready for You ─────────────────────────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Ready for you</h2>
+        {attentionCount === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Nothing needs you right now. Your marketing team will let you know when
+              something&apos;s ready.
             </p>
-          )}
-          <Link href="/brain" className="mt-1 block text-xs text-primary hover:underline">
-            View Brain →
-          </Link>
-        </div>
-
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Active Workforces
-          </p>
-          <p className="mt-1 text-2xl font-semibold text-foreground">{activeWorkforceCount}</p>
-          <Link href="/workforces" className="mt-1 block text-xs text-primary hover:underline">
-            View team →
-          </Link>
-        </div>
-
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Pending Approvals
-          </p>
-          <p
-            className={`mt-1 text-2xl font-semibold ${
-              pendingApprovals.length > 0 ? 'text-yellow-600' : 'text-foreground'
-            }`}
-          >
-            {pendingApprovals.length}
-          </p>
-          {pendingApprovals.length > 0 ? (
-            <Link href="/approvals" className="mt-1 block text-xs text-yellow-600 hover:underline">
-              Review now →
-            </Link>
-          ) : (
-            <p className="mt-1 text-xs text-muted-foreground">All clear</p>
-          )}
-        </div>
-
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Pending Reviews
-          </p>
-          <p
-            className={`mt-1 text-2xl font-semibold ${
-              pendingDeliverables.length > 0 ? 'text-yellow-600' : 'text-foreground'
-            }`}
-          >
-            {pendingDeliverables.length}
-          </p>
-          {pendingDeliverables.length > 0 && (
-            <Link
-              href="/deliverables"
-              className="mt-1 block text-xs text-yellow-600 hover:underline"
-            >
-              Review media →
-            </Link>
-          )}
-        </div>
-
-        <div className="rounded-lg border border-border bg-card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Deliverables
-          </p>
-          <p className="mt-1 text-2xl font-semibold text-foreground">{allDeliverables.length}</p>
-          <Link href="/deliverables" className="mt-1 block text-xs text-primary hover:underline">
-            View all →
-          </Link>
-        </div>
-      </div>
-
-      {/* Pending approvals alert */}
-      {pendingApprovals.length > 0 && (
-        <section className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-yellow-800">
-                {pendingApprovals.length} action{pendingApprovals.length === 1 ? '' : 's'} awaiting
-                your approval
-              </p>
-              <p className="mt-1 text-xs text-yellow-700">
-                {pendingApprovals[0].description}
-                {pendingApprovals.length > 1 && ` and ${pendingApprovals.length - 1} more.`}
-              </p>
-            </div>
-            <Link
-              href="/approvals"
-              className="shrink-0 rounded-md bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
-            >
-              Review
-            </Link>
           </div>
-        </section>
-      )}
-
-      {/* Pending deliverables */}
-      {pendingDeliverables.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-medium text-foreground">Deliverables Awaiting Review</h2>
-          <div className="divide-y divide-border rounded-lg border border-yellow-200 bg-card">
-            {pendingDeliverables.map((d) => (
-              <div key={d.id} className="flex items-center justify-between px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">{d.title}</p>
-                  <p className="mt-0.5 text-xs capitalize text-muted-foreground">
-                    {d.type.replace(/_/g, ' ')}
+        ) : (
+          <div className="space-y-3">
+            {pendingApprovals.length > 0 && (
+              <div className="flex items-start justify-between gap-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                <div>
+                  <p className="text-sm font-medium text-yellow-800">
+                    {pendingApprovals.length} decision{pendingApprovals.length === 1 ? '' : 's'}{' '}
+                    need your OK
+                  </p>
+                  <p className="mt-1 text-xs text-yellow-700">
+                    {pendingApprovals[0].description}
+                    {pendingApprovals.length > 1 && ` and ${pendingApprovals.length - 1} more.`}
                   </p>
                 </div>
                 <Link
-                  href={`/deliverables/${d.id}`}
-                  className="ml-4 shrink-0 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  href="/approvals"
+                  className="shrink-0 rounded-md bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
                 >
                   Review
                 </Link>
               </div>
-            ))}
+            )}
+            {pendingDeliverables.length > 0 && (
+              <div className="divide-y divide-border rounded-lg border border-yellow-200 bg-card">
+                {pendingDeliverables.map((d) => (
+                  <div key={d.id} className="flex items-center justify-between px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{d.title}</p>
+                      <p className="mt-0.5 text-xs capitalize text-muted-foreground">
+                        {d.type.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/deliverables/${d.id}`}
+                      className="ml-4 shrink-0 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                    >
+                      Review
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
-      {/* Media output summary */}
-      {mediaStats.total > 0 && (
-        <section>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-foreground">Media Output</h2>
-            <Link href="/deliverables" className="text-xs text-primary hover:underline">
-              View deliverables →
+      {/* ── Campaign Health ───────────────────────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Campaign health</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-border bg-card px-4 py-3">
+            <p className="text-xs text-muted-foreground">Active campaigns</p>
+            <p className="mt-0.5 text-2xl font-semibold text-foreground">{activeCount}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card px-4 py-3">
+            <p className="text-xs text-muted-foreground">Completed</p>
+            <p className="mt-0.5 text-2xl font-semibold text-foreground">{completedCount}</p>
+          </div>
+          <div className="rounded-lg border border-border bg-card px-4 py-3">
+            <p className="text-xs text-muted-foreground">Content created</p>
+            <p className="mt-0.5 text-2xl font-semibold text-foreground">{contentCount}</p>
+          </div>
+        </div>
+        {mediaStats.total > 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {mediaStats.videos} video{mediaStats.videos === 1 ? '' : 's'}, {mediaStats.images} image
+            {mediaStats.images === 1 ? '' : 's'}, and {mediaStats.scripts} script
+            {mediaStats.scripts === 1 ? '' : 's'} so far.
+          </p>
+        )}
+        {failedCount > 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {failedCount} campaign{failedCount === 1 ? '' : 's'} didn&apos;t finish.{' '}
+            <Link href="/runs" className="text-primary hover:underline">
+              Take a look →
             </Link>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-border bg-card px-4 py-3">
-              <p className="text-xs text-muted-foreground">Video Scripts</p>
-              <p className="mt-0.5 text-lg font-semibold text-foreground">{mediaStats.scripts}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card px-4 py-3">
-              <p className="text-xs text-muted-foreground">Videos</p>
-              <p className="mt-0.5 text-lg font-semibold text-foreground">{mediaStats.videos}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-card px-4 py-3">
-              <p className="text-xs text-muted-foreground">Images</p>
-              <p className="mt-0.5 text-lg font-semibold text-foreground">{mediaStats.images}</p>
-            </div>
-          </div>
-          {mediaStats.approved > 0 && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {mediaStats.approved} approved ·{' '}
-              {mediaStats.pendingReview > 0
-                ? `${mediaStats.pendingReview} pending review`
-                : 'none pending'}
-            </p>
-          )}
-        </section>
-      )}
+          </p>
+        )}
+      </section>
 
-      {/* Recent runs */}
+      {/* ── Recent Activity ───────────────────────────────────────────────── */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground">Recent Runs</h2>
+          <h2 className="text-sm font-semibold text-foreground">Recent activity</h2>
           <Link href="/runs" className="text-xs text-primary hover:underline">
             View all →
           </Link>
@@ -259,12 +231,12 @@ export default async function DashboardPage() {
 
         {recentRuns.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-6 text-center">
-            <p className="text-sm text-muted-foreground">No runs yet.</p>
+            <p className="text-sm text-muted-foreground">Nothing here yet.</p>
             <Link
               href="/pipeline"
               className="mt-3 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
-              Launch your first pipeline
+              Start your first campaign
             </Link>
           </div>
         ) : (
@@ -282,8 +254,8 @@ export default async function DashboardPage() {
                     {run.deliverableIds.length > 0 && (
                       <>
                         {' '}
-                        · {run.deliverableIds.length} deliverable
-                        {run.deliverableIds.length === 1 ? '' : 's'}
+                        · {run.deliverableIds.length} piece
+                        {run.deliverableIds.length === 1 ? '' : 's'} of content
                       </>
                     )}
                   </p>
@@ -296,6 +268,26 @@ export default async function DashboardPage() {
           </div>
         )}
       </section>
+
+      {/* ── Recommended Next Step ─────────────────────────────────────────── */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Recommended next step</h2>
+        <div className="flex items-start justify-between gap-4 rounded-lg border border-primary/30 bg-primary/5 p-5">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">{nextStep.title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{nextStep.desc}</p>
+          </div>
+          <Link
+            href={nextStep.href}
+            className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            {nextStep.cta}
+          </Link>
+        </div>
+      </section>
+
+      {/* ── Learn (gentle footer nudge) ───────────────────────────────────── */}
+      <LearnCta />
     </div>
   )
 }
