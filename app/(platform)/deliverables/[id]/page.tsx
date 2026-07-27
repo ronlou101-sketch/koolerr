@@ -93,9 +93,9 @@ function VideoContent({ deliverable }: { deliverable: Deliverable }) {
               href={videoUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-2 block truncate text-xs text-primary hover:underline"
+              className="mt-2 block text-xs text-primary hover:underline"
             >
-              {videoUrl}
+              Open video ↗
             </a>
           </div>
         </section>
@@ -103,9 +103,9 @@ function VideoContent({ deliverable }: { deliverable: Deliverable }) {
 
       {scriptDeliverableId && (
         <p className="text-xs text-muted-foreground">
-          Generated from script:{' '}
+          Created from your script.{' '}
           <a href={`/deliverables/${scriptDeliverableId}`} className="text-primary hover:underline">
-            {scriptDeliverableId}
+            View the script
           </a>
         </p>
       )}
@@ -133,9 +133,9 @@ function ImageContent({ deliverable }: { deliverable: Deliverable }) {
               href={imageUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-2 block truncate text-xs text-primary hover:underline"
+              className="mt-2 block text-xs text-primary hover:underline"
             >
-              {imageUrl}
+              Open full image ↗
             </a>
           </div>
         </section>
@@ -153,7 +153,7 @@ function GenericContent({ deliverable }: { deliverable: Deliverable }) {
     <div className="space-y-4">
       {body && (
         <section className="space-y-2">
-          <h2 className="text-sm font-medium text-foreground">Final Content</h2>
+          <h2 className="text-sm font-medium text-foreground">Content</h2>
           <div className="rounded-lg border border-border bg-card p-4">
             <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
               {body}
@@ -165,7 +165,7 @@ function GenericContent({ deliverable }: { deliverable: Deliverable }) {
       {brief && (
         <details className="group">
           <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
-            Content Brief (strategist output)
+            The strategy behind this
           </summary>
           <div className="mt-2 rounded-lg border border-border bg-muted/30 p-4">
             <pre className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
@@ -178,7 +178,7 @@ function GenericContent({ deliverable }: { deliverable: Deliverable }) {
       {draft && (
         <details className="group">
           <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
-            First Draft (copywriter output)
+            First draft
           </summary>
           <div className="mt-2 rounded-lg border border-border bg-muted/30 p-4">
             <pre className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">

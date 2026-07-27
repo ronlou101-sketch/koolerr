@@ -183,7 +183,7 @@ export default function OnboardingPage() {
       // Save comprehensive profile to Brain
       const saveResult = await saveBusinessProfile(profile)
       if (!saveResult.success) {
-        setError(saveResult.error ?? 'Failed to save profile')
+        setError(saveResult.error ?? "We couldn't save your profile. Please try again.")
         setStep('review')
         setLoading(false)
         return
@@ -205,7 +205,9 @@ export default function OnboardingPage() {
           : '/dashboard'
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(
+        err instanceof Error ? err.message : "Something didn't work on our end. Please try again."
+      )
       setStep('review')
       setLoading(false)
     }
@@ -474,7 +476,7 @@ export default function OnboardingPage() {
           <div>
             <h2 className="text-base font-medium text-foreground">Define your brand</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              Your copywriter will write in this voice and personality.
+              Your marketing team will write in this voice and personality.
             </p>
           </div>
           <div>

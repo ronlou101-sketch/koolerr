@@ -32,8 +32,8 @@ export function GenerateVideoButton({ deliverableId }: { deliverableId: string }
       } else {
         setState('idle')
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Video generation failed')
+    } catch {
+      setError("We couldn't create your video. Please try again.")
       setState('error')
     } finally {
       clearInterval(timer)

@@ -21,13 +21,13 @@ interface PipelineStatus {
 }
 
 const STEP_LABELS: Record<string, string> = {
-  research: 'Research',
-  strategy: 'Strategy',
-  creative: 'Creative',
-  video: 'Video Production',
-  publishing: 'Publishing',
-  approval: 'Approval',
-  delivery: 'Delivery',
+  research: 'Researching your market',
+  strategy: 'Planning your campaign',
+  creative: 'Writing your content',
+  video: 'Creating your video',
+  publishing: 'Preparing your posts',
+  approval: 'Reviewing quality',
+  delivery: 'Wrapping up',
 }
 
 function StatusDot({ status }: { status: StepState['status'] }) {
@@ -145,7 +145,7 @@ export function AIWorkforceProgress({ runId, onComplete }: Props) {
               : status.isFailed
                 ? 'Your team ran into a problem on this one.'
                 : status.currentStep
-                  ? `${STEP_LABELS[status.currentStep] ?? status.currentStep} in progress…`
+                  ? `${STEP_LABELS[status.currentStep] ?? status.currentStep}…`
                   : 'Getting started…'}
           </p>
         </div>

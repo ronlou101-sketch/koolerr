@@ -21,12 +21,12 @@ export function CheckoutButton({ planId, children, className }: CheckoutButtonPr
       })
       const data = (await res.json()) as { url?: string; error?: string }
       if (!res.ok) {
-        alert(data.error ?? 'Checkout failed. Please try again.')
+        alert(data.error ?? "We couldn't start checkout. Please try again.")
         return
       }
       if (data.url) window.location.href = data.url
     } catch {
-      alert('Something went wrong. Please try again.')
+      alert("We couldn't start checkout. Please try again.")
     } finally {
       setLoading(false)
     }

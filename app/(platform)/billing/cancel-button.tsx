@@ -25,13 +25,13 @@ export function CancelButton({ periodEndIso }: CancelButtonProps) {
       const res = await fetch('/api/billing/cancel', { method: 'POST' })
       const data = (await res.json()) as { error?: string }
       if (!res.ok) {
-        setError(data.error ?? 'Failed to cancel. Please try again.')
+        setError(data.error ?? "We couldn't update your plan. Please try again.")
         return
       }
       setCanceled(true)
       setConfirming(false)
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError("We couldn't update your plan. Please try again.")
     } finally {
       setLoading(false)
     }

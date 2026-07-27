@@ -9,16 +9,6 @@ import type { EngagementRunId } from '@/shared/types'
 import { RUN_STATUS_LABELS, RUN_STATUS_BADGE_COLORS } from '@/shared/lib/run-status'
 import { findRunFailure } from './_lib/run-failure'
 
-const DEPARTMENT_LABELS: Record<string, string> = {
-  research: 'Research',
-  strategy: 'Strategy',
-  creative: 'Creative',
-  video: 'Video Production',
-  publishing: 'Publishing',
-  approval: 'Approval',
-  delivery: 'Delivery',
-}
-
 interface Props {
   params: Promise<{ id: string }>
 }
@@ -88,11 +78,11 @@ export default async function RunDetailPage({ params }: Props) {
       {failure && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
           <h2 className="mb-1 text-sm font-semibold text-destructive">
-            Pipeline failed at {DEPARTMENT_LABELS[failure.department] ?? failure.department}
+            This campaign didn&apos;t finish
           </h2>
           <p className="text-sm text-muted-foreground">{failure.reason}</p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Earlier steps completed successfully. Relaunch the pipeline to try again.
+            Your team completed the earlier work. Start the campaign again to finish.
           </p>
         </div>
       )}

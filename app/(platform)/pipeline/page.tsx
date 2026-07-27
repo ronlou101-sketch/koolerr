@@ -166,15 +166,12 @@ export default function PipelinePage() {
       )}
 
       <div className="rounded-lg border border-border bg-muted/30 p-4">
-        <p className="text-xs font-medium text-foreground">What the pipeline produces</p>
+        <p className="text-xs font-medium text-foreground">What you&apos;ll get</p>
         <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-          <li>Research brief — market analysis, competitor insights, content opportunities</li>
-          <li>Strategy brief — campaign angles, messaging, platform recommendations</li>
-          <li>Creative brief — visual direction, tone, content calendar outline</li>
-          <li>Video production plan — script guidance, platform formats, production notes</li>
-          <li>Publishing package — platform-specific copy, hashtags, scheduling</li>
-          <li>Approval decision — quality review with scores and recommendations</li>
-          <li>Delivery package — final content package ready for your review</li>
+          <li>A content plan tailored to your business and audience</li>
+          <li>Ready-to-post captions, hashtags, and a posting schedule</li>
+          <li>Images and video for your posts</li>
+          <li>A summary you can review before anything goes out</li>
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
           <Link href="/runs" className="text-primary hover:underline">

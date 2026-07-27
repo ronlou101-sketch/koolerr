@@ -48,8 +48,8 @@ export default function CreativePage() {
       setImageUrl(data.imageUrl)
       setDeliverableId(data.deliverableId ?? null)
       setState('success')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Generation failed')
+    } catch {
+      setError("We couldn't create your image. Please try again.")
       setState('error')
     } finally {
       clearInterval(timer)

@@ -24,9 +24,9 @@ export default function PlatformError({
 
   return (
     <div className="mx-auto max-w-md py-16 text-center">
-      <h1 className="text-xl font-semibold text-foreground">Something went wrong</h1>
+      <h1 className="text-xl font-semibold text-foreground">This page didn&apos;t load right</h1>
       <p className="mt-3 text-sm text-muted-foreground">
-        An unexpected error occurred while loading this page. You can try again, or head back to
+        Sorry about that — this page didn&apos;t load the way it should. Try again, or head back to
         your dashboard.
       </p>
       {error.digest && (

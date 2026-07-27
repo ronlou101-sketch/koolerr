@@ -23,12 +23,12 @@ export function PlanChangeButton({ planId, children, className }: PlanChangeButt
       })
       const data = (await res.json()) as { error?: string }
       if (!res.ok) {
-        setError(data.error ?? 'Failed to change plan. Please try again.')
+        setError(data.error ?? "We couldn't change your plan. Please try again.")
         return
       }
       window.location.reload()
     } catch {
-      setError('Something went wrong. Please try again.')
+      setError("We couldn't change your plan. Please try again.")
     } finally {
       setLoading(false)
     }
