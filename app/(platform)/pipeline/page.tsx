@@ -12,6 +12,7 @@ export default function PipelinePage() {
   const [state, setState] = useState<PageState>('idle')
   const [runId, setRunId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [needsProfile, setNeedsProfile] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -19,9 +20,11 @@ export default function PipelinePage() {
 
     setState('loading')
     setError(null)
+    setNeedsProfile(false)
     setRunId(null)
 
     try {
+      // Same engine, same request — only the surface is a conversation now.
       const res = await fetch('/api/pipeline/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -31,13 +34,22 @@ export default function PipelinePage() {
       const data = (await res.json()) as { engagementRunId?: string; error?: string }
 
       if (!res.ok || !data.engagementRunId) {
-        throw new Error(data.error ?? 'Failed to start pipeline')
+        throw new Error(data.error ?? 'could not start')
       }
 
       setRunId(data.engagementRunId)
       setState('running')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to start pipeline')
+      // Detect the "needs onboarding" case from the raw error, but never show
+      // the raw/technical text to the customer — keep the message calm and human.
+      const raw = (err instanceof Error ? err.message : '').toLowerCase()
+      setNeedsProfile(
+        raw.includes('wizard') ||
+          raw.includes('onboarding') ||
+          raw.includes('brain') ||
+          raw.includes('profile')
+      )
+      setError("I couldn't get started just now. Please try again.")
       setState('error')
     }
   }
@@ -47,7 +59,8 @@ export default function PipelinePage() {
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Start a Campaign</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Tell your marketing team what you want, and they&apos;ll handle the rest.
+          Tell me what you&apos;d like your marketing to accomplish, and I&apos;ll take it from
+          there.
         </p>
       </div>
 
@@ -56,14 +69,15 @@ export default function PipelinePage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="topic" className="block text-sm font-medium text-foreground">
-                Campaign topic <span className="text-destructive">*</span>
+                What would you like your marketing to accomplish?{' '}
+                <span className="text-destructive">*</span>
               </label>
               <input
                 id="topic"
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g. Q3 social media launch, holiday gift guide, new service announcement"
+                placeholder="e.g. More weekend bookings, more leads from Google, more repeat customers"
                 required
                 className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
@@ -71,13 +85,14 @@ export default function PipelinePage() {
 
             <div>
               <label htmlFor="brief" className="block text-sm font-medium text-foreground">
-                Brief <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+                Anything specific I should know?{' '}
+                <span className="text-xs font-normal text-muted-foreground">(optional)</span>
               </label>
               <textarea
                 id="brief"
                 value={brief}
                 onChange={(e) => setBrief(e.target.value)}
-                placeholder="Any specific focus, audience notes, tone guidance, or goals for this campaign…"
+                placeholder="Audience, tone, timing, or a particular focus — optional."
                 rows={3}
                 className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
@@ -86,12 +101,12 @@ export default function PipelinePage() {
             {state === 'error' && error && (
               <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2">
                 <p className="text-sm text-destructive">{error}</p>
-                {error.includes('wizard') && (
+                {needsProfile && (
                   <Link
                     href="/onboarding"
                     className="mt-1 block text-xs text-primary hover:underline"
                   >
-                    Complete onboarding wizard →
+                    Finish your business profile first →
                   </Link>
                 )}
               </div>
@@ -111,16 +126,19 @@ export default function PipelinePage() {
       {state === 'loading' && (
         <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-5 py-4">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Starting pipeline…</span>
+          <span className="text-sm text-muted-foreground">Getting started…</span>
         </div>
       )}
 
       {state === 'running' && runId && (
         <div className="space-y-4">
           <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-            <p className="text-sm font-medium text-blue-800">Pipeline launched — {topic}</p>
+            <p className="text-sm font-medium text-blue-800">
+              On it — I&apos;m getting your campaign underway.
+            </p>
             <p className="mt-0.5 text-xs text-blue-700">
-              Seven departments are working in sequence. This takes 2–5 minutes.
+              I&apos;ll research your market, plan the campaign, and create your content. This
+              usually takes 2–5 minutes.
             </p>
           </div>
 
@@ -131,10 +149,10 @@ export default function PipelinePage() {
       {state === 'done' && runId && (
         <div className="space-y-4">
           <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-            <p className="text-sm font-medium text-green-800">All done</p>
-            <p className="mt-0.5 text-xs text-green-700">
-              Your marketing team has finished. Review your deliverables below.
+            <p className="text-sm font-medium text-green-800">
+              All done — here&apos;s what I put together.
             </p>
+            <p className="mt-0.5 text-xs text-green-700">Want to take a look?</p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -142,13 +160,13 @@ export default function PipelinePage() {
               href="/deliverables"
               className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
-              View Deliverables →
+              Review it →
             </Link>
             <Link
               href={`/runs/${runId}`}
               className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              View run details
+              See the details
             </Link>
             <button
               onClick={() => {
@@ -159,7 +177,7 @@ export default function PipelinePage() {
               }}
               className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              Launch another
+              Start another campaign
             </button>
           </div>
         </div>
@@ -175,7 +193,7 @@ export default function PipelinePage() {
         </ul>
         <p className="mt-3 text-xs text-muted-foreground">
           <Link href="/runs" className="text-primary hover:underline">
-            View all runs →
+            See your past campaigns →
           </Link>
         </p>
       </div>
