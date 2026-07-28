@@ -19,7 +19,7 @@ const STATUS_LABELS = {
   awaiting_approval: 'Ready for you',
   approved: 'Approved',
   rejected: 'Sent back',
-  completed: 'Done',
+  completed: 'Completed',
   failed: "Didn't finish",
 } as const
 
@@ -84,28 +84,28 @@ export default async function DashboardPage() {
   const nextStep =
     attentionCount > 0
       ? {
-          title: 'Review the work waiting for you',
-          desc: `${attentionCount} item${attentionCount === 1 ? '' : 's'} ready for your review.`,
+          title: 'Review the work your team finished',
+          desc: `${attentionCount} item${attentionCount === 1 ? '' : 's'} ${attentionCount === 1 ? 'is' : 'are'} ready for your review.`,
           href: pendingDeliverables.length > 0 ? '/deliverables' : '/approvals',
           cta: 'Review now',
         }
       : activeCount > 0
         ? {
-            title: 'Your team is on it',
-            desc: `${activeCount} campaign${activeCount === 1 ? '' : 's'} in progress. I'll let you know the moment there's something to review.`,
+            title: "Sit tight — we're on it",
+            desc: `We're working on your ${activeCount === 1 ? 'campaign' : `${activeCount} campaigns`} and will bring you the results as soon as they're ready.`,
             href: '/runs',
             cta: 'See progress',
           }
         : brainCoveragePct < 100
           ? {
-              title: 'Tell your team more about your business',
-              desc: 'The more they know about you, the sharper your marketing gets.',
+              title: 'Finish your business profile',
+              desc: 'The more we know about your business, the sharper your marketing gets.',
               href: '/brain',
-              cta: 'Add details',
+              cta: 'Finish profile',
             }
           : {
-              title: 'Start a new campaign',
-              desc: 'Tell your marketing team what you want more of, and they’ll take it from there.',
+              title: 'Start your next campaign',
+              desc: 'Tell us what you’d like more of, and we’ll take it from there.',
               href: '/pipeline',
               cta: 'Start a campaign',
             }
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* ── Good morning greeting ─────────────────────────────────────────── */}
-      <Greeting subtitle={`Here's what your marketing team has been up to at ${orgName}.`} />
+      <Greeting subtitle={`Here's today's marketing update for ${orgName}.`} />
 
       {/* ── Marketing Team Status ─────────────────────────────────────────── */}
       <section className="space-y-4">
@@ -121,10 +121,10 @@ export default async function DashboardPage() {
           <h2 className="text-sm font-semibold text-foreground">Your marketing team</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {activeCount > 0
-              ? `Hard at work on ${activeCount} campaign${activeCount === 1 ? '' : 's'} right now.`
+              ? `We're actively working on your ${activeCount === 1 ? 'campaign' : `${activeCount} campaigns`} right now.`
               : teamReady
-                ? 'Ready and standing by. Start a campaign whenever you are.'
-                : 'Getting set up — finish onboarding to put your team to work.'}
+                ? "Your team is ready and waiting. Start a campaign whenever you'd like more."
+                : "We're just getting set up. Finish your profile and we'll get to work."}
           </p>
         </div>
         <LiveRunsPanel runs={activeRuns.map((r) => ({ id: r.id, objective: r.objective }))} />
@@ -136,8 +136,7 @@ export default async function DashboardPage() {
         {attentionCount === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Nothing needs you right now. Your marketing team will let you know when
-              something&apos;s ready.
+              You&apos;re all caught up. We&apos;ll let you know the moment we need you.
             </p>
           </div>
         ) : (
