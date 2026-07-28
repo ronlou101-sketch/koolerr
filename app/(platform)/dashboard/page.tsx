@@ -14,7 +14,7 @@ import { timeAgo } from '@/shared/lib/time'
 
 // Customer-facing status wording (display only; underlying statuses unchanged).
 const STATUS_LABELS = {
-  pending: 'Queued',
+  pending: 'Getting started',
   running: 'Working on it',
   awaiting_approval: 'Ready for you',
   approved: 'Approved',
@@ -53,7 +53,7 @@ export default async function DashboardPage() {
     approvalWorkflowService.listPending(ctx.organizationId, ctx.tenantId),
   ])
 
-  const orgName = orgResult.ok ? orgResult.value.name : 'Your Organization'
+  const orgName = orgResult.ok ? orgResult.value.name : null
   const brainMemories = brainResult.ok ? brainResult.value.memories : []
   const memoryCount = brainResult.ok ? brainResult.value.totalCount : 0
   const brainCoveragePct =
@@ -113,7 +113,13 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* ── Good morning greeting ─────────────────────────────────────────── */}
-      <Greeting subtitle={`Here's today's marketing update for ${orgName}.`} />
+      <Greeting
+        subtitle={
+          orgName
+            ? `Here's today's marketing update for ${orgName}.`
+            : "Here's today's marketing update."
+        }
+      />
 
       {/* ── Marketing Team Status ─────────────────────────────────────────── */}
       <section className="space-y-4">
