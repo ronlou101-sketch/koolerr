@@ -131,13 +131,14 @@ are in `docs/adr/ADR-023-experience-workstream.md`; the Phase 13 plan is
 `docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`. Constitution: the Koolerr North Star (every slice must
 increase Trust · Simplicity · Confidence · Progress · Results **and** reduce customer effort).
 
-| Experience Phase | Name                         | Status                                                    |
-| ---------------- | ---------------------------- | --------------------------------------------------------- |
-| 11               | UX Navigation / IA           | ✅ Complete (`5f57baf`)                                   |
-| 12               | Language & Dashboard         | ✅ Complete (`phase-12.2-complete`; 12.3 preview shipped) |
-| 13               | Experience Redesign          | 🔄 In progress (Slices A & B live; Slice C next)          |
-| └ Slice A        | Unified Review queue         | ✅ Complete — in production 2026-07-29 (`9e56709`)        |
-| └ Slice B        | Review → primary nav + badge | ✅ Complete — in production 2026-07-29 (`d6bb92a`)        |
+| Experience Phase | Name                            | Status                                                    |
+| ---------------- | ------------------------------- | --------------------------------------------------------- |
+| 11               | UX Navigation / IA              | ✅ Complete (`5f57baf`)                                   |
+| 12               | Language & Dashboard            | ✅ Complete (`phase-12.2-complete`; 12.3 preview shipped) |
+| 13               | Experience Redesign             | 🔄 In progress (A & B live; C in preview)                 |
+| └ Slice A        | Unified Review queue            | ✅ Complete — in production 2026-07-29 (`9e56709`)        |
+| └ Slice B        | Review → primary nav + badge    | ✅ Complete — in production 2026-07-29 (`d6bb92a`)        |
+| └ Slice C        | Pipeline → "New campaign" modal | 🔄 Implemented — awaiting founder Preview approval        |
 
 > Surface-only; the backend engine (Census/Strategy/Workforce orchestration, Trust Engine, Business
 > Brain) is untouched. Home dashboard is FROZEN except bug fixes. **Experience Phase 11/12** are
@@ -154,8 +155,10 @@ increase Trust · Simplicity · Confidence · Progress · Results **and** reduce
 **Active build focus (Experience Workstream):** Phase 13 **Slices A and B are complete and live in
 production** (deployed 2026-07-29 to koolerr.vercel.app; `dpl_3iWXh78…`, READY). Slice A = unified
 Review queue (`9e56709`); Slice B = Review promoted to primary nav + live pending badge (`d6bb92a`).
-**Next candidate: Slice C — Pipeline → "New campaign" modal** (not started; re-confirmed with the
-founder before it begins). See `docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`.
+**Slice C — Pipeline → "New campaign" modal — is implemented and awaiting founder Preview approval**
+(Campaigns is now the single entry point for creating a campaign; `/pipeline` route preserved;
+surface-only; tsc + 849 tests + build clean). **Next candidate: Slice D — Creative → "Generate image"
+modal** (not started). See `docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`.
 
 ---
 

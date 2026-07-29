@@ -58,14 +58,16 @@ describe('platformNav()', () => {
     expect(platformNav(true).more).toEqual(platformNav(false).more)
   })
 
-  it('preserves every existing route across the union of groups (no destination dropped)', () => {
+  it('surfaces every customer/founder destination in the nav union', () => {
+    // /pipeline is intentionally NOT surfaced: Slice C replaced it with the
+    // "New campaign" modal on Campaigns. The route is preserved for back-compat
+    // (see app/(platform)/pipeline/page.tsx) but is not a nav destination.
     const all = new Set([...PRIMARY_NAV, ...MORE_NAV, ...OWNER_NAV].map((i) => i.href))
     const expected = [
       '/dashboard',
       '/runs',
       '/deliverables',
       '/academy',
-      '/pipeline',
       '/creative',
       '/approvals',
       '/workforces',
@@ -83,11 +85,14 @@ describe('platformNav()', () => {
     ]
     for (const href of expected) expect(all.has(href)).toBe(true)
     expect(all.size).toBe(expected.length)
+    // Pipeline is delisted from the nav (route still resolves directly).
+    expect(all.has('/pipeline')).toBe(false)
   })
 
-  it('Pipeline and Creative remain under More until their modal replacements land', () => {
+  it('Creative remains under More until its modal replacement lands', () => {
     const more = MORE_NAV.map((i) => i.href)
-    expect(more).toContain('/pipeline')
     expect(more).toContain('/creative')
+    // Pipeline was removed from the nav in Slice C.
+    expect(more).not.toContain('/pipeline')
   })
 })

@@ -5,6 +5,7 @@ import { workforceEngineService } from '@/domains/workforce-engine'
 import { timeAgo } from '@/shared/lib/time'
 import { RUN_STATUS_LABELS, RUN_STATUS_BADGE_COLORS } from '@/shared/lib/run-status'
 import { EmptyState } from '../_components/empty-state'
+import { NewCampaignModal } from './_components/new-campaign-modal'
 
 export default async function RunsPage() {
   const ctx = await getRequestPlatformContext()
@@ -21,32 +22,20 @@ export default async function RunsPage() {
     <div className="space-y-8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Runs</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Campaigns</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {runs.length === 0
-              ? 'No runs yet. Launch the pipeline to start your first one.'
-              : `${runs.length} ${runs.length === 1 ? 'run' : 'runs'} total · ${completedCount} completed${activeCount > 0 ? ` · ${activeCount} active` : ''}`}
+              ? 'No campaigns yet. Start your first one whenever you’re ready.'
+              : `${runs.length} ${runs.length === 1 ? 'campaign' : 'campaigns'} total · ${completedCount} completed${activeCount > 0 ? ` · ${activeCount} active` : ''}`}
           </p>
         </div>
-        <Link
-          href="/pipeline"
-          className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          Start Campaign
-        </Link>
+        <NewCampaignModal />
       </div>
 
       {sortedRuns.length === 0 ? (
         <EmptyState
-          message="No runs yet."
-          action={
-            <Link
-              href="/pipeline"
-              className="inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Launch your first pipeline →
-            </Link>
-          }
+          message="No campaigns yet."
+          action={<NewCampaignModal label="Start your first campaign" variant="ghost" />}
         />
       ) : (
         <div className="divide-y divide-border rounded-lg border border-border bg-card">

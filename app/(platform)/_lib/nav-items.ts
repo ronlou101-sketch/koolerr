@@ -43,12 +43,12 @@ export const PRIMARY_NAV: NavItem[] = [
 
 /**
  * Secondary customer tools — surfaced under the "More" dropdown.
- * Pipeline/Creative remain here until their modal replacements land (later
- * Phase 13 slices); discoverability is never reduced. Review was promoted to
- * the primary bar in Slice B.
+ * Review was promoted to the primary bar in Slice B; Pipeline was removed as a
+ * destination in Slice C (campaigns are now created from the Campaigns page via
+ * the "New campaign" modal — the /pipeline route is preserved for back-compat).
+ * Creative remains here until its modal replacement lands.
  */
 export const MORE_NAV: NavItem[] = [
-  { href: '/pipeline', label: 'Pipeline' },
   { href: '/creative', label: 'Creative' },
   { href: '/workforces', label: 'Workforces' },
   { href: '/brain', label: 'Brain' },
