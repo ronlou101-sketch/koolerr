@@ -50,7 +50,7 @@ When there is pressure to build something out of sequence, return to this docume
 | **Phase 7**  | Launch Readiness         | ✅ **Complete** (`phase-7-complete`)                                    |
 | **Phase 8**  | Final Product Validation | ✅ **Complete** (`phase-8-complete`)                                    |
 | **Phase 9**  | Koolerr Academy          | ✅ **Complete** (`phase-9-complete`)                                    |
-| **Phase 10** | Private Beta             | 🔄 In progress — **Milestone 1 Complete** (`phase-10-beta-milestone-1`) |
+| **Phase 10** | Private Beta             | 🔄 In progress — **Milestone 2 Complete** (`phase-10-beta-milestone-2`) |
 | **Phase 11** | Public Launch            | ⬜ Planned                                                              |
 | **Phase 12** | Scale & Optimization     | ⬜ Planned                                                              |
 
@@ -106,6 +106,44 @@ production stability.
 ### Phase 12 — Scale & Optimization
 
 Performance, cost, reliability, and capacity work as usage grows.
+
+---
+
+## Experience Workstream (parallel to the Launch Roadmap) — North-Star-governed
+
+Since 2026-07-25 a **customer-experience redesign track** runs **in parallel** with the Launch
+Roadmap above. It has its **own** phase axis and does **not** renumber the Launch phases: the Launch
+Roadmap's Phase 11 remains _Public Launch_ and Phase 12 remains _Scale & Optimization_. Rationale,
+alternatives, and the disambiguation convention are recorded in
+`docs/adr/ADR-023-experience-workstream.md`.
+
+**Constitution:** the Koolerr North Star. Every slice must increase at least one of
+**Trust · Simplicity · Confidence · Progress · Results** and must **reduce customer effort**; every
+screen must answer (1) What is my employee doing? (2) Does my employee need anything from me?
+(3) What happens next? Changes that add complexity without adding customer confidence are not built.
+
+**Scope discipline:** surface/display consolidation over the **unchanged** backend engine (Census /
+Strategy / Workforce orchestration, Trust Engine, Business Brain, schema, auth — none are modified).
+Discoverability is never reduced and owner/admin capability is never removed.
+
+| Experience Phase | Name                 | Status                                                          |
+| ---------------- | -------------------- | --------------------------------------------------------------- |
+| 11               | UX Navigation / IA   | ✅ Complete (5 primary + More + ⌘ Owner)                        |
+| 12               | Language & Dashboard | ✅ Complete (customer-language sweep; morning briefing)         |
+| 13               | Experience Redesign  | 🔄 In progress — plan: `docs/PHASE_13_EXPERIENCE_WORKSTREAM.md` |
+
+Phase 13 slices: **Slice A — Unified Review queue** ✅ complete (founder-approved 2026-07-29,
+commit `9e56709`; Preview approved, Production pending); **Slice B — Review as a primary nav
+destination with a live pending badge** 🔄 current (not started). Later candidate slices (C Pipeline
+modal, D Creative modal, E onboarding 6→3 + surface consolidation) are re-confirmed with the founder
+before each begins.
+
+> **Disambiguation:** "Phase 11/12" is ambiguous across tracks — always qualify as
+> **Launch Phase 11** (Public Launch) vs **Experience Phase 11** (UX Nav/IA). See ADR-023.
+
+> **Source of truth:** live current status is `docs/status.json`; the locked roadmap, locked
+> decisions, and verified history are in `docs/KOOLERR_MASTER_TRACKER.md`; this document is the
+> permanent strategic roadmap.
 
 ---
 
