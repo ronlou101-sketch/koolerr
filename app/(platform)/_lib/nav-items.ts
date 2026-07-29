@@ -32,7 +32,7 @@ export const PRIMARY_NAV: NavItem[] = [
 export const MORE_NAV: NavItem[] = [
   { href: '/pipeline', label: 'Pipeline' },
   { href: '/creative', label: 'Creative' },
-  { href: '/approvals', label: 'Approvals' },
+  { href: '/approvals', label: 'Review' },
   { href: '/workforces', label: 'Workforces' },
   { href: '/brain', label: 'Brain' },
   { href: '/analytics', label: 'Analytics' },

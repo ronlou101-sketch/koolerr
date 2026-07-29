@@ -86,7 +86,7 @@ export default async function DashboardPage() {
       ? {
           title: 'Review the work your team finished',
           desc: `${attentionCount} item${attentionCount === 1 ? '' : 's'} ${attentionCount === 1 ? 'is' : 'are'} ready for your review.`,
-          href: pendingDeliverables.length > 0 ? '/deliverables' : '/approvals',
+          href: '/approvals',
           cta: 'Review now',
         }
       : activeCount > 0
@@ -146,47 +146,22 @@ export default async function DashboardPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {pendingApprovals.length > 0 && (
-              <div className="flex items-start justify-between gap-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-                <div>
-                  <p className="text-sm font-medium text-yellow-800">
-                    {pendingApprovals.length} decision{pendingApprovals.length === 1 ? '' : 's'}{' '}
-                    need your OK
-                  </p>
-                  <p className="mt-1 text-xs text-yellow-700">
-                    {pendingApprovals[0].description}
-                    {pendingApprovals.length > 1 && ` and ${pendingApprovals.length - 1} more.`}
-                  </p>
-                </div>
-                <Link
-                  href="/approvals"
-                  className="shrink-0 rounded-md bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
-                >
-                  Review
-                </Link>
-              </div>
-            )}
-            {pendingDeliverables.length > 0 && (
-              <div className="divide-y divide-border rounded-lg border border-yellow-200 bg-card">
-                {pendingDeliverables.map((d) => (
-                  <div key={d.id} className="flex items-center justify-between px-4 py-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">{d.title}</p>
-                      <p className="mt-0.5 text-xs capitalize text-muted-foreground">
-                        {d.type.replace(/_/g, ' ')}
-                      </p>
-                    </div>
-                    <Link
-                      href={`/deliverables/${d.id}`}
-                      className="ml-4 shrink-0 rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                    >
-                      Review
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+            <div>
+              <p className="text-sm font-medium text-yellow-800">
+                {attentionCount} {attentionCount === 1 ? 'thing is' : 'things are'} ready for your
+                review
+              </p>
+              <p className="mt-1 text-xs text-yellow-700">
+                Take a look whenever you have a minute — it&apos;s quick.
+              </p>
+            </div>
+            <Link
+              href="/approvals"
+              className="shrink-0 rounded-md bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
+            >
+              Review now
+            </Link>
           </div>
         )}
       </section>
