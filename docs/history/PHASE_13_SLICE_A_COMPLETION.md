@@ -52,8 +52,8 @@ surface-consolidation slice, not a defect.
   (branch `feat/phase-5-6-launch-integrity`; pushed to origin).
 - **Preview URL:** https://koolerr-bchtehp24-addi-pin.vercel.app (Vercel `readyState: READY`,
   `target: null` = Preview).
-- **Production status:** **Preview approved by founder; awaiting explicit Production approval.**
-  `npx vercel@56.5.0 --prod` has **not** been run.
+- **Production status:** **Deployed to production 2026-07-29** (koolerr.vercel.app; shipped together
+  with Slice B in `dpl_3iWXh78LroBxL9Uoo27dXzeJtciG`, target production, READY, HTTP 200).
 
 ## Lessons learned
 
