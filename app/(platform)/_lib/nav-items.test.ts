@@ -2,18 +2,36 @@ import { describe, it, expect } from 'vitest'
 import { PRIMARY_NAV, MORE_NAV, OWNER_NAV, platformNav } from './nav-items'
 
 describe('platformNav()', () => {
-  it('primary bar is exactly Home, Campaigns, Deliverables, Learn', () => {
+  it('primary bar is exactly Home, Campaigns, Deliverables, Review, Learn', () => {
     expect(PRIMARY_NAV.map((i) => i.href)).toEqual([
       '/dashboard',
       '/runs',
       '/deliverables',
+      '/approvals',
       '/academy',
     ])
-    expect(PRIMARY_NAV.map((i) => i.label)).toEqual(['Home', 'Campaigns', 'Deliverables', 'Learn'])
+    expect(PRIMARY_NAV.map((i) => i.label)).toEqual([
+      'Home',
+      'Campaigns',
+      'Deliverables',
+      'Review',
+      'Learn',
+    ])
   })
 
-  it('customer primary bar is 4 items', () => {
-    expect(platformNav(false).primary).toHaveLength(4)
+  it('customer primary bar is 5 items', () => {
+    expect(platformNav(false).primary).toHaveLength(5)
+  })
+
+  it('Review is a primary destination carrying the live review badge marker', () => {
+    const review = PRIMARY_NAV.find((i) => i.href === '/approvals')
+    expect(review).toBeDefined()
+    expect(review?.label).toBe('Review')
+    expect(review?.badgeKey).toBe('review')
+    // Static config never hardcodes a count; the layout injects it at render time.
+    expect(review?.badge).toBeUndefined()
+    // Review is no longer in the "More" group.
+    expect(MORE_NAV.some((i) => i.href === '/approvals')).toBe(false)
   })
 
   it('hides owner tools from customers (no Owner group, none leaked into primary/more)', () => {
@@ -67,10 +85,9 @@ describe('platformNav()', () => {
     expect(all.size).toBe(expected.length)
   })
 
-  it('Pipeline, Creative and Approvals remain in navigation (kept until Sprint 3)', () => {
+  it('Pipeline and Creative remain under More until their modal replacements land', () => {
     const more = MORE_NAV.map((i) => i.href)
     expect(more).toContain('/pipeline')
     expect(more).toContain('/creative')
-    expect(more).toContain('/approvals')
   })
 })

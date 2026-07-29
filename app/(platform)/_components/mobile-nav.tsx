@@ -46,9 +46,17 @@ export function MobileNav({
       key={item.href}
       href={item.href}
       onClick={() => setOpen(false)}
-      className="rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
+      className="flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-muted"
     >
-      {item.label}
+      <span>{item.label}</span>
+      {item.badge ? (
+        <span
+          aria-label={`${item.badge} awaiting review`}
+          className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-yellow-500 px-1.5 text-xs font-semibold leading-5 text-white"
+        >
+          {item.badge}
+        </span>
+      ) : null}
     </Link>
   )
 

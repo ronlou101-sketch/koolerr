@@ -12,6 +12,7 @@ import { MobileNav } from './_components/mobile-nav'
 import { AccountMenu } from './_components/account-menu'
 import { NavDropdown } from './_components/nav-dropdown'
 import { platformNav } from './_lib/nav-items'
+import { getPendingReviewCount } from './_lib/review-queue'
 
 export const runtime = 'nodejs'
 
@@ -50,10 +51,16 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   // if context or subscription cannot be resolved — prevents blocking legitimate users.
   let accessLevel: AccessLevel = 'full'
   let bannerMessage: string | null = null
+  // Live count for the primary-nav "Review" badge (Experience Phase 13 Slice B).
+  let pendingReviewCount = 0
 
   const ctx = await getRequestPlatformContext()
   if (ctx) {
-    const subResult = await billingService.getSubscription(ctx.organizationId)
+    const [subResult, reviewCount] = await Promise.all([
+      billingService.getSubscription(ctx.organizationId),
+      getPendingReviewCount(ctx.organizationId, ctx.tenantId),
+    ])
+    pendingReviewCount = reviewCount
     const sub = subResult.ok
       ? {
           status: subResult.value.status,
@@ -76,6 +83,10 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   const isFounder = authUser?.email === 'ronlou101@gmail.com'
 
   const { primary, more, owner } = platformNav(isFounder)
+  // Resolve the live badge count onto whichever primary item declares it.
+  const primaryNav = primary.map((item) =>
+    item.badgeKey === 'review' ? { ...item, badge: pendingReviewCount } : item
+  )
 
   const nav = (
     <header className="border-b border-border bg-card">
@@ -92,17 +103,25 @@ export default async function PlatformLayout({ children }: { children: React.Rea
             />
           </Link>
           <nav className="hidden min-w-0 items-center gap-6 sm:flex">
-            {primary.map((item) => {
+            {primaryNav.map((item) => {
               const active = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`shrink-0 whitespace-nowrap text-sm hover:text-foreground ${
+                  className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-sm hover:text-foreground ${
                     active ? 'font-medium text-foreground' : 'text-muted-foreground'
                   }`}
                 >
                   {item.label}
+                  {item.badge ? (
+                    <span
+                      aria-label={`${item.badge} awaiting review`}
+                      className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-yellow-500 px-1.5 text-xs font-semibold leading-5 text-white"
+                    >
+                      {item.badge}
+                    </span>
+                  ) : null}
                 </Link>
               )
             })}
@@ -115,7 +134,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         <div className="flex shrink-0 items-center gap-5">
           {ctx && <NotificationBell organizationId={ctx.organizationId} />}
           <AccountMenu signOutAction={signOut} email={authUser?.email ?? undefined} />
-          <MobileNav primary={primary} more={more} owner={owner} />
+          <MobileNav primary={primaryNav} more={more} owner={owner} />
         </div>
       </div>
     </header>

@@ -14,25 +14,42 @@
 export interface NavItem {
   href: string
   label: string
+  /**
+   * Optional marker for a live count badge. When set, the platform layout
+   * resolves the count for this key at render time and populates `badge`. The
+   * static config only declares the marker; it never hardcodes a number.
+   */
+  badgeKey?: 'review'
+  /**
+   * Runtime-resolved count injected by the layout (not part of the static
+   * config). Rendered as a small pill next to the label when greater than 0.
+   */
+  badge?: number
 }
 
-/** Primary customer navigation — always visible in the header bar. */
+/**
+ * Primary customer navigation — always visible in the header bar.
+ * "Review" is a primary destination (Experience Phase 13 Slice B) carrying a
+ * live pending-count badge, so "does my employee need anything from me?" is
+ * answered without the customer hunting for it.
+ */
 export const PRIMARY_NAV: NavItem[] = [
   { href: '/dashboard', label: 'Home' },
   { href: '/runs', label: 'Campaigns' },
   { href: '/deliverables', label: 'Deliverables' },
+  { href: '/approvals', label: 'Review', badgeKey: 'review' },
   { href: '/academy', label: 'Learn' },
 ]
 
 /**
  * Secondary customer tools — surfaced under the "More" dropdown.
- * Pipeline/Creative/Approvals remain here until Sprint 3 introduces their
- * modal/unified-Review replacements (discoverability is never reduced).
+ * Pipeline/Creative remain here until their modal replacements land (later
+ * Phase 13 slices); discoverability is never reduced. Review was promoted to
+ * the primary bar in Slice B.
  */
 export const MORE_NAV: NavItem[] = [
   { href: '/pipeline', label: 'Pipeline' },
   { href: '/creative', label: 'Creative' },
-  { href: '/approvals', label: 'Review' },
   { href: '/workforces', label: 'Workforces' },
   { href: '/brain', label: 'Brain' },
   { href: '/analytics', label: 'Analytics' },

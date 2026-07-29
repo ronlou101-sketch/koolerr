@@ -130,13 +130,13 @@ are in `docs/adr/ADR-023-experience-workstream.md`; the Phase 13 plan is
 `docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`. Constitution: the Koolerr North Star (every slice must
 increase Trust · Simplicity · Confidence · Progress · Results **and** reduce customer effort).
 
-| Experience Phase | Name                         | Status                                                     |
-| ---------------- | ---------------------------- | ---------------------------------------------------------- |
-| 11               | UX Navigation / IA           | ✅ Complete (`5f57baf`)                                    |
-| 12               | Language & Dashboard         | ✅ Complete (`phase-12.2-complete`; 12.3 preview shipped)  |
-| 13               | Experience Redesign          | 🔄 In progress                                             |
-| └ Slice A        | Unified Review queue         | ✅ Complete — founder-approved 2026-07-29 (`9e56709`)      |
-| └ Slice B        | Review → primary nav + badge | 🔄 **Current** — not started; first task awaiting approval |
+| Experience Phase | Name                         | Status                                                    |
+| ---------------- | ---------------------------- | --------------------------------------------------------- |
+| 11               | UX Navigation / IA           | ✅ Complete (`5f57baf`)                                   |
+| 12               | Language & Dashboard         | ✅ Complete (`phase-12.2-complete`; 12.3 preview shipped) |
+| 13               | Experience Redesign          | 🔄 In progress                                            |
+| └ Slice A        | Unified Review queue         | ✅ Complete — founder-approved 2026-07-29 (`9e56709`)     |
+| └ Slice B        | Review → primary nav + badge | 🔄 Implemented — awaiting founder Preview approval        |
 
 > Surface-only; the backend engine (Census/Strategy/Workforce orchestration, Trust Engine, Business
 > Brain) is untouched. Home dashboard is FROZEN except bug fixes. **Experience Phase 11/12** are
@@ -152,9 +152,10 @@ increase Trust · Simplicity · Confidence · Progress · Results **and** reduce
 
 **Active build focus (Experience Workstream):** Phase 13 Slice A (unified Review queue) is ✅
 complete and founder-approved (commit `9e56709`; Preview approved, awaiting Production approval).
-**Phase 13 Slice B — Review as a primary nav destination with a live pending badge — is the current
-phase** (not started; first implementation task awaiting founder approval). See
-`docs/history/PHASE_13_SLICE_A_COMPLETION.md` and `docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`.
+**Phase 13 Slice B — Review as a primary nav destination with a live pending badge — is implemented
+(B1 nav promotion + B2 live badge) and awaiting founder Preview approval** (tsc + 849 tests + build
+clean; surface-only). See `docs/history/PHASE_13_SLICE_A_COMPLETION.md` and
+`docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`.
 
 ---
 
