@@ -1,5 +1,5 @@
-import { err, ok, PlatformErrorCode } from '@/shared/types'
-import type { OrganizationId, PlatformResult } from '@/shared/types'
+import { err, ok } from '@/shared/types'
+import type { DigitalEmployeeId, OrganizationId, PlatformResult } from '@/shared/types'
 import { businessBrainService, type IBusinessBrainService } from '@/domains/business-brain'
 import { pickDefaultAmbassador } from './library'
 import type {
@@ -28,8 +28,10 @@ export interface IBrandAmbassadorService {
 
   /**
    * Assign the organization's default Brand Ambassador (BUILD behavior): a
-   * distinct library spokesperson, deterministic and persistent. Idempotent —
-   * if an identity already exists, it is returned unchanged.
+   * distinct library spokesperson, deterministic and persistent. Mints a stable
+   * ambassador id (a standalone first-class Digital Employee — NOT enrolled in
+   * the Workforce Engine). Idempotent — if an identity already exists, it is
+   * returned unchanged.
    */
   assignDefaultBrandAmbassador(
     input: AssignDefaultBrandAmbassadorInput
@@ -65,8 +67,11 @@ export class BrandAmbassadorService implements IBrandAmbassadorService {
     if (!existing.ok) return existing
     if (existing.value) return ok(existing.value)
 
+    // Mint a stable id for this standalone first-class Digital Employee. It lives
+    // only in the Business Brain — no Workforce Engine row is created.
+    const ambassadorId = `ambassador_${crypto.randomUUID()}` as DigitalEmployeeId
     const entry = pickDefaultAmbassador(input.organizationId)
-    const identity = buildDefaultIdentity(entry, input.ambassadorEmployeeId)
+    const identity = buildDefaultIdentity(entry, ambassadorId)
 
     const stored = await this.brain.storeMemory({
       tenantId: input.tenantId,
@@ -85,13 +90,13 @@ export class BrandAmbassadorService implements IBrandAmbassadorService {
   }
 }
 
-/** Build a provider-agnostic identity from a library entry for a specific employee. */
+/** Build a provider-agnostic identity from a library entry for a minted ambassador id. */
 function buildDefaultIdentity(
   entry: BrandAmbassadorLibraryEntry,
-  ambassadorEmployeeId: AssignDefaultBrandAmbassadorInput['ambassadorEmployeeId']
+  ambassadorId: DigitalEmployeeId
 ): BrandAmbassadorIdentity {
   return {
-    ambassadorEmployeeId,
+    ambassadorId,
     libraryId: entry.id,
     displayName: entry.displayName,
     role: entry.role,

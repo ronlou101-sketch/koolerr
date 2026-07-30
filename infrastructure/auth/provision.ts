@@ -165,12 +165,12 @@ export async function provisionPlatformAccount(
   })
 
   // ------------------------------------------------------------------
-  // Step 6c: Provision the Brand Ambassador — a first-class Digital Employee
-  //          (in its own "Brand" workforce, not the Content Workforce) with a
-  //          persistent, provider-agnostic identity in the Business Brain.
-  //          Every organization must have a recognizable spokesperson.
+  // Step 6c: Provision the Brand Ambassador — a standalone, first-class Digital
+  //          Employee persisted in the Business Brain (a `visual_identity`
+  //          memory). NOT enrolled in the Workforce Engine (no workforce/employee
+  //          row). Every organization must have a recognizable spokesperson.
   // ------------------------------------------------------------------
-  await provisionBrandAmbassador(organization.id, tenantId, userId)
+  await provisionBrandAmbassador(organization.id, tenantId)
 
   // ------------------------------------------------------------------
   // Step 7: Create subscription + set default entitlements (unpaid tier)

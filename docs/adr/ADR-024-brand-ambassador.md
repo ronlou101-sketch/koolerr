@@ -19,11 +19,13 @@ must never be coupled to a render provider (HeyGen/Higgsfield/ElevenLabs/future)
 
 ## Decision
 
-1. **The Brand Ambassador is a first-class Digital Employee**, provisioned in its
-   own dedicated **"Brand" workforce** (`businessFunction: 'Brand Representation'`)
-   — alongside the Digital Workforce but not inside the Content Workforce, because
-   the spokesperson spans marketing, sales, support, onboarding, and future
-   conversational experiences.
+1. **The Brand Ambassador is a standalone, first-class Digital Employee** — a
+   sibling of the Digital Workforce under the Organization, not a member of it.
+   It has a persistent identity (minted stable id, name, role, personality,
+   appearance, voice, provider references) but is **not enrolled in the operational
+   Workforce Engine**: it has **no `workforces` row and no `digital_employees`
+   row**. Its id is typed as `DigitalEmployeeId` so it can attribute rendered
+   deliverables (`attributed_to` is a `text[]` with no FK to `digital_employees`).
 2. **Identity lives in the Business Brain**, provider-agnostic, as a new
    `visual_identity` Business Memory (latest-wins per org, mirroring
    `company_identity`). It holds persona, personality, appearance, voice, brand
@@ -37,29 +39,47 @@ must never be coupled to a render provider (HeyGen/Higgsfield/ElevenLabs/future)
    `spokesperson_video` entitlement (BUILD 5 / GROW 30 / SCALE 100 / unpaid 0) is
    added to the existing entitlement framework; it is applied automatically by the
    existing provisioning and checkout entitlement loops.
-5. **Provisioning is essential and idempotent.** `provisionBrandAmbassador` runs
-   in the account-provisioning sequence (Step 6c); it reuses an existing Brand
-   workforce and never creates a second identity.
+5. **Provisioning is a single additive Business-Brain write.**
+   `provisionBrandAmbassador` calls `assignDefaultBrandAmbassador`, which mints the
+   id and stores the `visual_identity` memory. Idempotent (never creates a second
+   identity). The Business Brain already exists by this point in provisioning.
+
+## Why not enroll it in the Workforce Engine
+
+An earlier revision created a dedicated "Brand Representation" workforce plus a
+`digital_employees` row. That made the Ambassador flow into **every** consumer that
+enumerates workforces/employees — the customer Workforces page (a new editable
+card), `/revenue` and `/mission-control` counts, all Tower rollups, `/api/readiness`,
+and Atlas's cross-workforce readiness report. The Workforce Engine models
+**operational runners of Engagement Runs**; the Brand Ambassador is an
+identity/persona, not a runner. Keeping it out of that engine removes all of those
+side effects while still making it a first-class Digital Employee.
 
 ## Alternatives considered
 
-- **Add the Ambassador to the Content Workforce.** Rejected — it represents the
-  whole company, not one department (founder decision).
-- **New dedicated `brand_identities` table.** Rejected for now — the Business
-  Brain already models per-org knowledge; a `visual_identity` memory is additive
-  and honors "all knowledge lives in the Brain, never on the employee."
-- **Add appearance/voice columns to `digital_employees`.** Rejected — the
-  architecture keeps identity/memory off the employee row.
+- **Enroll it as a dedicated Brand workforce + employee.** Rejected — introduces a
+  customer-manageable operational workforce and inflates workforce/reporting counts.
+- **Add it to the Content Workforce.** Rejected — it represents the whole company,
+  not one department, and re-couples it to content operations.
+- **Filter the Brand workforce out of every enumerator.** Rejected — fragile,
+  touches many consumers, easy to miss one.
+- **New dedicated `brand_identities` table.** Rejected — the Business Brain already
+  models per-org knowledge; a `visual_identity` memory is additive and honors
+  "all knowledge lives in the Brain."
 
 ## Consequences
 
 - **Positive:** every org gets a distinct, persistent spokesperson from Day 1;
-  identity is provider-neutral and future-proof; no destructive changes; reuses
-  the entitlement framework as the budget control.
-- **Cost / follow-ups:** the Library's `providerRefs` are intentionally
-  un-curated (no invented provider ids); concrete provider assets are mapped when
-  rendering is wired (Slice 2). Existing organizations need a one-time **backfill**
-  (no domain org-listing method exists yet; near-zero external orgs pre-Beta).
-  Rendering, gateway per-request identity injection, and GROW/SCALE management UI
-  are explicitly **out of scope for Slice 1** and gated on separate approval.
-- Ghost `campaign_*` tables are left untouched (cleanup deferred to post-Beta).
+  identity is provider-neutral and future-proof; no operational workforce, so no
+  workforce card / count / Tower / readiness inflation; provisioning is one
+  low-risk write; no destructive changes.
+- **Footprint (intentional):** exactly one additional Business-Brain memory
+  (`visual_identity`) per org. It is excluded from the Brain page's rendered list
+  and inflates no workforce/employee/run counts (Tower's memory-type view reflects
+  it, as expected for the source of truth).
+- **Follow-ups (out of scope for Slice 1):** rendering, gateway per-request
+  identity injection, a dedicated read-only "Brand Ambassador / Team" surface
+  (never the operational Workforces page), and GROW/SCALE management. The Library's
+  `providerRefs` are intentionally un-curated (no invented provider ids). Existing
+  orgs need a one-time backfill (no domain org-listing method yet; near-zero
+  external orgs pre-Beta). Ghost `campaign_*` tables are left untouched.

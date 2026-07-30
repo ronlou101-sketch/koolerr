@@ -42,8 +42,13 @@ export type BrandAmbassadorSource = 'auto-assigned' | 'library-selected' | 'cust
 
 /** The provider-agnostic identity stored as a `visual_identity` Business Memory. */
 export interface BrandAmbassadorIdentity {
-  /** The first-class Digital Employee this identity belongs to. */
-  ambassadorEmployeeId: DigitalEmployeeId
+  /**
+   * Stable id for this first-class Digital Employee. Minted at assignment and
+   * persisted in the Business Brain — it is NOT a row in the operational
+   * Workforce Engine (`digital_employees`). Typed as DigitalEmployeeId so it can
+   * attribute rendered deliverables (`attributedTo`) without a workforce row.
+   */
+  ambassadorId: DigitalEmployeeId
   /** The library entry this identity was seeded from (null once fully custom-trained). */
   libraryId: string | null
   displayName: string
@@ -83,5 +88,4 @@ export interface BrandAmbassadorLibraryEntry {
 export interface AssignDefaultBrandAmbassadorInput {
   tenantId: TenantId
   organizationId: OrganizationId
-  ambassadorEmployeeId: DigitalEmployeeId
 }
