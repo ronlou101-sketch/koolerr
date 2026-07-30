@@ -53,6 +53,12 @@ export const ENTITLEMENT_FEATURES = {
   engagementRun: 'engagement_run',
   /** Model tokens consumed per billing period (sum of input + output tokens). */
   modelInvocation: 'model_invocation',
+  /**
+   * Brand Ambassador spokesperson videos rendered per billing period.
+   * This IS the package-level budget control for real video rendering — there is
+   * no separate render budget. Enforced via checkEntitlement() before each render.
+   */
+  spokespersonVideo: 'spokesperson_video',
 } as const
 
 /**
@@ -76,17 +82,21 @@ export const PLAN_ENTITLEMENTS: Record<PlanId, Record<string, number>> = {
   unpaid: {
     [ENTITLEMENT_FEATURES.engagementRun]: 10,
     [ENTITLEMENT_FEATURES.modelInvocation]: 50_000,
+    [ENTITLEMENT_FEATURES.spokespersonVideo]: 0,
   },
   build: {
     [ENTITLEMENT_FEATURES.engagementRun]: 250,
     [ENTITLEMENT_FEATURES.modelInvocation]: 500_000,
+    [ENTITLEMENT_FEATURES.spokespersonVideo]: 5,
   },
   grow: {
     [ENTITLEMENT_FEATURES.engagementRun]: Infinity,
     [ENTITLEMENT_FEATURES.modelInvocation]: 5_000_000,
+    [ENTITLEMENT_FEATURES.spokespersonVideo]: 30,
   },
   scale: {
     [ENTITLEMENT_FEATURES.engagementRun]: Infinity,
     [ENTITLEMENT_FEATURES.modelInvocation]: Infinity,
+    [ENTITLEMENT_FEATURES.spokespersonVideo]: 100,
   },
 }

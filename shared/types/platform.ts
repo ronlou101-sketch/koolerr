@@ -107,6 +107,8 @@ export type BusinessMemoryType =
   | 'knowledge'
   | 'preference'
   | 'decision'
+  // Brand Ambassador — provider-agnostic persistent visual/spokesperson identity.
+  | 'visual_identity'
 
 export interface BusinessMemory {
   id: BusinessMemoryId

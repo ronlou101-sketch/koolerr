@@ -46,6 +46,7 @@ const ALL_MEMORY_TYPES: BusinessMemoryType[] = [
   'knowledge',
   'preference',
   'decision',
+  'visual_identity',
 ]
 
 /**

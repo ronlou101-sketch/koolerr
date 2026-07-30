@@ -30,6 +30,7 @@ import { billingService, PLAN_ENTITLEMENTS, PLAN_IDS } from '@/domains/billing'
 import { logger } from '@/shared/lib/logger'
 import { provisionContentWorkforce } from '@/infrastructure/content-workforce'
 import { provisionCTOWorkforce, seedCTOContext } from '@/infrastructure/cto-workforce'
+import { provisionBrandAmbassador } from '@/infrastructure/brand-ambassador'
 import { bootstrapPlatform, isPlatformBootstrapped } from '@/infrastructure/platform'
 
 export interface ProvisionResult {
@@ -162,6 +163,14 @@ export async function provisionPlatformAccount(
       error: String(err),
     })
   })
+
+  // ------------------------------------------------------------------
+  // Step 6c: Provision the Brand Ambassador — a first-class Digital Employee
+  //          (in its own "Brand" workforce, not the Content Workforce) with a
+  //          persistent, provider-agnostic identity in the Business Brain.
+  //          Every organization must have a recognizable spokesperson.
+  // ------------------------------------------------------------------
+  await provisionBrandAmbassador(organization.id, tenantId, userId)
 
   // ------------------------------------------------------------------
   // Step 7: Create subscription + set default entitlements (unpaid tier)

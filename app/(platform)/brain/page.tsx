@@ -28,6 +28,7 @@ const TYPE_LABELS: Record<BusinessMemoryType, string> = {
   knowledge: 'Knowledge',
   preference: 'Preferences',
   decision: 'Decisions',
+  visual_identity: 'Brand Ambassador',
 }
 
 const TYPE_ORDER: BusinessMemoryType[] = [
