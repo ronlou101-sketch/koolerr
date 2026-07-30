@@ -7,6 +7,22 @@ import { AIWorkforceProgress } from '../dashboard/_components/AIWorkforceProgres
 type FlowState = 'idle' | 'loading' | 'running' | 'done' | 'error'
 
 /**
+ * Common business goals the customer can hand to their AI team with one tap,
+ * instead of inventing a goal in a blank field. Each label IS the topic string
+ * sent to the unchanged engine (the old field was already free-form natural
+ * language). "other" is the only option that reveals a free-text input.
+ */
+const GOALS = [
+  { key: 'leads', label: 'Get me more leads' },
+  { key: 'calls', label: 'Get me more phone calls' },
+  { key: 'appointments', label: 'Book more appointments' },
+  { key: 'service', label: 'Promote a specific service' },
+  { key: 'awareness', label: 'Build brand awareness' },
+  { key: 'repeat', label: 'Increase repeat customers' },
+  { key: 'other', label: 'Something else…' },
+] as const
+
+/**
  * The campaign-creation flow (Experience Phase 13).
  *
  * Extracted verbatim from the former /pipeline page so the SAME flow can be
@@ -22,16 +38,23 @@ type FlowState = 'idle' | 'loading' | 'running' | 'done' | 'error'
  *   can refresh a server-rendered list to reveal the new campaign.
  */
 export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
-  const [topic, setTopic] = useState('')
-  const [brief, setBrief] = useState('')
+  const [goal, setGoal] = useState('')
+  const [customTopic, setCustomTopic] = useState('')
+  const [focus, setFocus] = useState('')
   const [state, setState] = useState<FlowState>('idle')
   const [runId, setRunId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [needsProfile, setNeedsProfile] = useState(false)
 
+  // The exact topic string the engine receives — a preset goal's label, or the
+  // customer's own words when "Something else…" is chosen. Unchanged contract.
+  const topic =
+    goal === 'other' ? customTopic.trim() : (GOALS.find((g) => g.key === goal)?.label ?? '')
+  const canSubmit = topic.length > 0
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!topic.trim() || state === 'loading') return
+    if (!canSubmit || state === 'loading') return
 
     setState('loading')
     setError(null)
@@ -43,7 +66,7 @@ export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
       const res = await fetch('/api/pipeline/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic: topic.trim(), brief: brief.trim() || undefined }),
+        body: JSON.stringify({ topic, brief: focus.trim() || undefined }),
       })
 
       const data = (await res.json()) as { engagementRunId?: string; error?: string }
@@ -73,33 +96,62 @@ export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
   return (
     <div className="space-y-6">
       {(state === 'idle' || state === 'error') && (
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label htmlFor="topic" className="block text-sm font-medium text-foreground">
-              What would you like your marketing to accomplish?{' '}
-              <span className="text-destructive">*</span>
-            </label>
-            <input
-              id="topic"
-              type="text"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g. More weekend bookings, more leads from Google, more repeat customers"
-              required
-              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <fieldset>
+            <legend className="text-sm font-medium text-foreground">
+              What do you want your AI marketing team to do?
+            </legend>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {GOALS.map((g) => (
+                <label
+                  key={g.key}
+                  className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground hover:border-foreground/40 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:font-medium has-[:checked]:text-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+                >
+                  <input
+                    type="radio"
+                    name="goal"
+                    value={g.key}
+                    checked={goal === g.key}
+                    onChange={() => setGoal(g.key)}
+                    className="peer sr-only"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="h-4 w-4 shrink-0 rounded-full border-2 border-muted-foreground/40 transition-all peer-checked:border-[5px] peer-checked:border-primary"
+                  />
+                  {g.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {goal === 'other' && (
+            <div>
+              <label htmlFor="customTopic" className="block text-sm font-medium text-foreground">
+                Tell me what you&apos;d like to accomplish
+              </label>
+              <input
+                id="customTopic"
+                type="text"
+                value={customTopic}
+                onChange={(e) => setCustomTopic(e.target.value)}
+                placeholder="e.g. More weekend bookings, sign-ups for our new class, fill Tuesday slots"
+                autoFocus
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          )}
 
           <div>
-            <label htmlFor="brief" className="block text-sm font-medium text-foreground">
-              Anything specific I should know?{' '}
+            <label htmlFor="focus" className="block text-sm font-medium text-foreground">
+              Anything you&apos;d like me to focus on?{' '}
               <span className="text-xs font-normal text-muted-foreground">(optional)</span>
             </label>
             <textarea
-              id="brief"
-              value={brief}
-              onChange={(e) => setBrief(e.target.value)}
-              placeholder="Audience, tone, timing, or a particular focus — optional."
+              id="focus"
+              value={focus}
+              onChange={(e) => setFocus(e.target.value)}
+              placeholder="Examples: audience, location, timing, promotion, budget, seasonality"
               rows={3}
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
@@ -121,10 +173,10 @@ export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
 
           <button
             type="submit"
-            disabled={!topic.trim()}
+            disabled={!canSubmit}
             className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Start campaign
+            Create campaign
           </button>
         </form>
       )}
@@ -178,8 +230,9 @@ export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
               type="button"
               onClick={() => {
                 setState('idle')
-                setTopic('')
-                setBrief('')
+                setGoal('')
+                setCustomTopic('')
+                setFocus('')
                 setRunId(null)
               }}
               className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
