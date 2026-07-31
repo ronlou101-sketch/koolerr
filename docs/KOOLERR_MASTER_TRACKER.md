@@ -132,18 +132,46 @@ are in `docs/adr/ADR-023-experience-workstream.md`; the Phase 13 plan is
 `docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`. Constitution: the Koolerr North Star (every slice must
 increase Trust · Simplicity · Confidence · Progress · Results **and** reduce customer effort).
 
-| Experience Phase | Name                            | Status                                                       |
-| ---------------- | ------------------------------- | ------------------------------------------------------------ |
-| 11               | UX Navigation / IA              | ✅ Complete (`5f57baf`)                                      |
-| 12               | Language & Dashboard            | ✅ Complete (`phase-12.2-complete`; 12.3 preview shipped)    |
-| 13               | Experience Redesign             | 🔄 In progress (A, B & C live; D next)                       |
-| └ Slice A        | Unified Review queue            | ✅ Complete — in production 2026-07-29 (`9e56709`)           |
-| └ Slice B        | Review → primary nav + badge    | ✅ Complete — in production 2026-07-29 (`d6bb92a`)           |
-| └ Slice C        | Pipeline → "New campaign" modal | ✅ Complete — in production 2026-07-30 (`fc47ee0`+`442db98`) |
+| Experience Phase | Name                              | Status                                                                                  |
+| ---------------- | --------------------------------- | --------------------------------------------------------------------------------------- |
+| 11               | UX Navigation / IA                | ✅ Complete (`5f57baf`)                                                                 |
+| 12               | Language & Dashboard              | ✅ Complete (`phase-12.2-complete`; 12.3 preview shipped)                               |
+| 13               | Experience Redesign               | 🔄 In progress (A, B & C live; D/E DEFERRED)                                            |
+| └ Slice A        | Unified Review queue              | ✅ Complete — in production 2026-07-29 (`9e56709`)                                      |
+| └ Slice B        | Review → primary nav + badge      | ✅ Complete — in production 2026-07-29 (`d6bb92a`)                                      |
+| └ Slice C        | Pipeline → "New campaign" modal   | ✅ Complete — in production 2026-07-30 (`fc47ee0`+`442db98`)                            |
+| └ Slice D        | Creative → "Generate image" modal | ⏸ **DEFERRED** — parked while the Brand Identity + Rendering initiative is active (§4b) |
+| └ Slice E        | Onboarding 6→3 + consolidation    | ⏸ **DEFERRED** — parked while §4b is active                                             |
 
 > Surface-only; the backend engine (Census/Strategy/Workforce orchestration, Trust Engine, Business
 > Brain) is untouched. Home dashboard is FROZEN except bug fixes. **Experience Phase 11/12** are
 > distinct from **Launch Phase 11 (Public Launch) / 12 (Scale)** — see ADR-023.
+
+---
+
+## 4b. Brand Identity + Rendering initiative 🔒 (parallel to the Experience Workstream)
+
+A capability initiative that surfaced from the 2026-07-30 architectural review (Private Beta blocker:
+completed campaigns produced only a blank text report — no real media — and there was no persistent
+per-customer visual identity, only a single global HeyGen avatar). It **supersedes the priority** of
+Experience Slices D/E, which are deferred until this initiative ships. Governed by the North Star and
+`docs/adr/ADR-024-brand-ambassador.md`.
+
+> **Numbering disambiguation:** this initiative uses **Slice 1–4** (Arabic numerals). Those are
+> **distinct** from the Experience Workstream's **Slice A–E** (letters) above. "Slice 1" here is NOT
+> Experience "Slice A". When both are in view, qualify as "Brand Identity Slice 1" vs "Experience
+> Slice A".
+
+| Slice | Name                        | Status                                                                                                                                                                                                                                                                              |
+| ----- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Brand Ambassador Foundation | ✅ **Complete on branch** (`f801175`, migration 022 applied) — additive; provider-agnostic `visual_identity` in the Business Brain; standalone Digital Employee (NOT enrolled in the Workforce Engine); `spokesperson_video` entitlement 5/30/100/0. Preview READY; awaiting merge. |
+| 2     | Campaign Rendering          | ⬜ Planned — wire the existing HeyGen/Higgsfield render path into the campaign pipeline (branded by the ambassador); real image/video deliverables. Not started.                                                                                                                    |
+| 3     | GROW team management        | ⬜ Planned — choose ambassador from Library, choose voice, upload logo/brand colors/reference images.                                                                                                                                                                               |
+| 4     | SCALE custom spokesperson   | ⬜ Planned — upload likeness → private avatar + voice clone; multi-ambassador groundwork.                                                                                                                                                                                           |
+
+> Additive only; no destructive migrations; ghost `campaign_*` tables untouched (cleanup deferred to
+> post-Beta). Brand Ambassador identity lives only in the Business Brain — never coupled to a render
+> provider. See ADR-024.
 
 ---
 
@@ -153,12 +181,15 @@ increase Trust · Simplicity · Confidence · Progress · Results **and** reduce
 
 **Launch Roadmap:** Phase 10 — Private Beta — in progress (tagged `phase-10-beta-milestone-2`).
 
-**Active build focus (Experience Workstream):** Phase 13 **Slices A, B, and C are complete and live in
-production.** Slice A = unified Review queue (`9e56709`); Slice B = Review promoted to primary nav +
-live pending badge (`d6bb92a`), both deployed 2026-07-29 (`dpl_3iWXh78…`). Slice C = Pipeline → "New
-campaign" modal on Campaigns + guided-goal creation UX (`fc47ee0`+`442db98`), deployed 2026-07-30
-(`dpl_5bASrnEJ…`, READY). **Next candidate: Slice D — Creative → "Generate image" modal** (not
-started; re-confirmed with the founder before it begins). See `docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`.
+**Experience Workstream:** Phase 13 Slices A, B, and C are complete and live in production
+(`9e56709` / `d6bb92a` / `fc47ee0`+`442db98`). Experience Slices D and E are **DEFERRED** (§4a) while
+the Brand Identity + Rendering initiative is active.
+
+**Active build focus — Brand Identity + Rendering initiative (§4b):** **Slice 1 — Brand Ambassador
+Foundation — is complete on branch** (`f801175`; additive migration 022 applied and confirmed; Preview
+READY at https://koolerr-hpzoqjbsm-addi-pin.vercel.app; awaiting merge). **Next: Slice 2 — Campaign
+Rendering** (not started; requires founder approval before it begins). See ADR-024 and
+`docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`. Live status of record: `docs/status.json`.
 
 ---
 
@@ -611,6 +642,8 @@ Before every coding session:
 ---
 
 ## Last Updated
+
+**2026-07-31** (Doc sync only. Recorded the **Brand Identity + Rendering initiative** (§4b, ADR-024) that surfaced from the 2026-07-30 architectural review; **Slice 1 — Brand Ambassador Foundation — complete on branch** (`f801175`, migration 022 applied; Preview READY; awaiting merge). Experience Slices D/E marked **DEFERRED** while this initiative is active. Initiative uses Slice 1–4 (distinct from Experience Slice A–E). No code/migration/status.json/ADR changes.)
 
 **2026-07-30** (Phase 13 **Slice C shipped to production** — Pipeline → "New campaign" modal on Campaigns + guided-goal creation UX; `fc47ee0`+`442db98`, `dpl_5bASrnEJ…`, READY. Next candidate: Slice D — Creative → "Generate image" modal (not started).)
 
