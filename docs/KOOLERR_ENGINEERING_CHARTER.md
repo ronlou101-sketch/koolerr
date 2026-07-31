@@ -4,14 +4,14 @@
 > operates — not _what_ we build. It applies to every engineer, human or AI, and to every
 > technical decision, regardless of the current initiative.
 
-| Field                  | Value                                                                                                                                               |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Canonical path**     | `docs/KOOLERR_ENGINEERING_CHARTER.md`                                                                                                               |
-| **Document Owner**     | Chief Technology Officer                                                                                                                            |
-| **Approval Authority** | Founder                                                                                                                                             |
-| **Status**             | Published — living constitutional document, edited in place with a permanent revision history                                                       |
-| **Version**            | v1.0.0                                                                                                                                              |
-| **Ratification**       | Founder Approval Pending. v1.0.0 is CTO-approved and Published; formal Founder ratification is not yet recorded (see §11 and the Revision History). |
+| Field                  | Value                                                                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Canonical path**     | `docs/KOOLERR_ENGINEERING_CHARTER.md`                                                                                                     |
+| **Document Owner**     | Chief Technology Officer                                                                                                                  |
+| **Approval Authority** | Founder                                                                                                                                   |
+| **Status**             | Published — living constitutional document, edited in place with a permanent revision history                                             |
+| **Version**            | v1.0.0                                                                                                                                    |
+| **Ratification**       | Ratified. v1.0.0 is CTO-approved and Founder-approved, and is Published (Founder Approval → Published, per §11 and the Revision History). |
 
 ---
 
@@ -750,6 +750,6 @@ must reference it; if it affects roadmap sequencing, the roadmap must reference 
 
 | Version | Date       | Summary                                                                                                                                                                                                                                                                                                                                                                                                                                               | Author                                                         | CTO Review   | Founder Approval |
 | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------ | ---------------- |
-| v1.0.0  | 2026-07-31 | Initial Engineering Charter drafted from the founder governance interview; then revised to incorporate the CTO review change requests (Architecture First; explicit Investigation phase; Read-Only Investigation Mode; investigation re-approval gate; Duty to challenge; strengthened CTO certification; expanded Simplicity; No Hero Engineering; Reality over Assumption; Engineering Truth; Evidence Hierarchy; expanded Engineering Philosophy). | AI implementing engineer (Claude), under Founder/CTO direction | **Approved** | Pending          |
+| v1.0.0  | 2026-07-31 | Initial Engineering Charter drafted from the founder governance interview; then revised to incorporate the CTO review change requests (Architecture First; explicit Investigation phase; Read-Only Investigation Mode; investigation re-approval gate; Duty to challenge; strengthened CTO certification; expanded Simplicity; No Hero Engineering; Reality over Assumption; Engineering Truth; Evidence Hierarchy; expanded Engineering Philosophy). | AI implementing engineer (Claude), under Founder/CTO direction | **Approved** | **Approved**     |
 
-> **v1.0.0 is CTO-approved and Published; Founder Approval Pending** (§11).
+> **v1.0.0 is CTO-approved, Founder-approved, and Published — ratified** (§11).
