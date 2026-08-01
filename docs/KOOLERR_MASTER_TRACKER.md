@@ -162,12 +162,12 @@ Experience Slices D/E, which are deferred until this initiative ships. Governed 
 > Experience "Slice A". When both are in view, qualify as "Brand Identity Slice 1" vs "Experience
 > Slice A".
 
-| Slice | Name                        | Status                                                                                                                                                                                                                                                                              |
-| ----- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1     | Brand Ambassador Foundation | ✅ **Complete on branch** (`f801175`, migration 022 applied) — additive; provider-agnostic `visual_identity` in the Business Brain; standalone Digital Employee (NOT enrolled in the Workforce Engine); `spokesperson_video` entitlement 5/30/100/0. Preview READY; awaiting merge. |
-| 2     | Campaign Rendering          | ⬜ Planned — wire the existing HeyGen/Higgsfield render path into the campaign pipeline (branded by the ambassador); real image/video deliverables. Not started.                                                                                                                    |
-| 3     | GROW team management        | ⬜ Planned — choose ambassador from Library, choose voice, upload logo/brand colors/reference images.                                                                                                                                                                               |
-| 4     | SCALE custom spokesperson   | ⬜ Planned — upload likeness → private avatar + voice clone; multi-ambassador groundwork.                                                                                                                                                                                           |
+| Slice | Name                        | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Brand Ambassador Foundation | ✅ **Complete on branch** (`f801175`, migration 022 applied) — additive; provider-agnostic `visual_identity` in the Business Brain; standalone Digital Employee (NOT enrolled in the Workforce Engine); `spokesperson_video` entitlement 5/30/100/0. Preview READY; awaiting merge.                                                                                                                                                                                                                                                                                         |
+| 2     | Campaign Rendering          | 🔄 **In progress** — decomposed into slices **CR-1…CR-n** (see `docs/CAMPAIGN_RENDERING_IMPLEMENTATION_PLAN.md`). **CR-1 — Gateway Brand-Identity Contract ✅ complete** (`780373b`, pushed to origin; founder-approved): optional provider-agnostic `BrandIdentity` on the Model Gateway; HeyGen consumes avatar/voice with env fallback, Higgsfield maps the verified Soul `seed`; additive/backward-compatible; tsc + 871 tests + build clean. No ambassador resolution, entitlement, orchestration, or migration yet. **CR-2+ not started** (require founder approval). |
+| 3     | GROW team management        | ⬜ Planned — choose ambassador from Library, choose voice, upload logo/brand colors/reference images.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| 4     | SCALE custom spokesperson   | ⬜ Planned — upload likeness → private avatar + voice clone; multi-ambassador groundwork.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 > Additive only; no destructive migrations; ghost `campaign_*` tables untouched (cleanup deferred to
 > post-Beta). Brand Ambassador identity lives only in the Business Brain — never coupled to a render
@@ -187,9 +187,12 @@ the Brand Identity + Rendering initiative is active.
 
 **Active build focus — Brand Identity + Rendering initiative (§4b):** **Slice 1 — Brand Ambassador
 Foundation — is complete on branch** (`f801175`; additive migration 022 applied and confirmed; Preview
-READY at https://koolerr-hpzoqjbsm-addi-pin.vercel.app; awaiting merge). **Next: Slice 2 — Campaign
-Rendering** (not started; requires founder approval before it begins). See ADR-024 and
-`docs/PHASE_13_EXPERIENCE_WORKSTREAM.md`. Live status of record: `docs/status.json`.
+READY at https://koolerr-hpzoqjbsm-addi-pin.vercel.app; awaiting merge). **Slice 2 — Campaign Rendering
+is in progress:** its first slice **CR-1 — Gateway Brand-Identity Contract is ✅ complete and pushed**
+(`780373b`, founder-approved; ADR-025 §1/§3). **Next: CR-2** (render orchestration / consumer wiring —
+not started; requires founder approval before it begins). Governed by ADR-025 and
+`docs/CAMPAIGN_RENDERING_IMPLEMENTATION_PLAN.md`; slice plan
+`docs/CAMPAIGN_RENDERING_SLICE_1_GATEWAY_IDENTITY_PLAN.md`. Live status of record: `docs/status.json`.
 
 ---
 
@@ -642,6 +645,8 @@ Before every coding session:
 ---
 
 ## Last Updated
+
+**2026-08-01** (Brand Identity + Rendering **Slice 2 — Campaign Rendering** started. **CR-1 — Gateway Brand-Identity Contract implemented, founder-approved, and pushed** (`780373b`, ADR-025 §1/§3): optional provider-agnostic `BrandIdentity` on `NormalizedModelRequest`/`GatewayRequest`; gateway forwards it verbatim; HeyGen consumes avatar/voice with env fallback; Higgsfield maps the verified Soul `seed` (referenceImageUrls intentionally not mapped — Soul uses `custom_reference_id`, not URLs). Additive/backward-compatible; no ambassador resolution, entitlement, orchestration, or migration. tsc + 871 tests + build clean. Docs governed by `docs/CAMPAIGN_RENDERING_IMPLEMENTATION_PLAN.md` + slice plan `docs/CAMPAIGN_RENDERING_SLICE_1_GATEWAY_IDENTITY_PLAN.md`. **CR-2 not started (awaiting founder approval).** Not recorded in the Progress Ledger (§3) as CR-1 is a foundational contract with no runtime demonstration yet.)
 
 **2026-07-31** (Doc sync only. Recorded the **Brand Identity + Rendering initiative** (§4b, ADR-024) that surfaced from the 2026-07-30 architectural review; **Slice 1 — Brand Ambassador Foundation — complete on branch** (`f801175`, migration 022 applied; Preview READY; awaiting merge). Experience Slices D/E marked **DEFERRED** while this initiative is active. Initiative uses Slice 1–4 (distinct from Experience Slice A–E). No code/migration/status.json/ADR changes.)
 
