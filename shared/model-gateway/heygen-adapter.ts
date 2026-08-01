@@ -63,21 +63,28 @@ export class HeyGenAdapter implements IModelProviderAdapter {
           'Set HEYGEN_API_KEY to enable AI video generation via HeyGen.'
       )
     }
-    if (!this.avatarId) {
+
+    // Brand-identity references override the env defaults when present; when
+    // absent, fall back to the global env avatar/voice — preserving the prior
+    // "no ambassador → global default" behavior (ADR-025 §1, §7).
+    const avatarId = request.brandIdentity?.avatarId ?? this.avatarId
+    const voiceId = request.brandIdentity?.voiceId ?? this.voiceId
+
+    if (!avatarId) {
       throw new Error(
-        '[HEYGEN_ADAPTER] HEYGEN_AVATAR_ID is not set. ' +
-          'Set HEYGEN_AVATAR_ID to the avatar ID from your HeyGen account.'
+        '[HEYGEN_ADAPTER] No avatar id available. ' +
+          'Provide one via the brand identity or set HEYGEN_AVATAR_ID to the avatar ID from your HeyGen account.'
       )
     }
-    if (!this.voiceId) {
+    if (!voiceId) {
       throw new Error(
-        '[HEYGEN_ADAPTER] HEYGEN_VOICE_ID is not set. ' +
-          'Set HEYGEN_VOICE_ID to the voice ID for the spokesperson.'
+        '[HEYGEN_ADAPTER] No voice id available. ' +
+          'Provide one via the brand identity or set HEYGEN_VOICE_ID to the voice ID for the spokesperson.'
       )
     }
 
     const startMs = Date.now()
-    const { video_id } = await this.createVideo(request.prompt)
+    const { video_id } = await this.createVideo(request.prompt, avatarId, voiceId)
     const { video_url } = await this.pollForCompletion(video_id)
 
     return {
@@ -88,19 +95,23 @@ export class HeyGenAdapter implements IModelProviderAdapter {
     }
   }
 
-  private async createVideo(script: string): Promise<HeyGenVideoCreated> {
+  private async createVideo(
+    script: string,
+    avatarId: string,
+    voiceId: string
+  ): Promise<HeyGenVideoCreated> {
     const body = {
       video_inputs: [
         {
           character: {
             type: 'avatar',
-            avatar_id: this.avatarId,
+            avatar_id: avatarId,
             avatar_style: 'normal',
           },
           voice: {
             type: 'text',
             input_text: script,
-            voice_id: this.voiceId,
+            voice_id: voiceId,
           },
         },
       ],

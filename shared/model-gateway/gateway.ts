@@ -163,6 +163,8 @@ class ModelGateway implements IModelGateway {
       model: request.model,
       maxTokens: request.maxTokens,
       systemContext: request.systemContext,
+      // Forwarded verbatim; the adapter maps it to provider params (ADR-025 §1, §3).
+      brandIdentity: request.brandIdentity,
     })
 
     const gatewayResponse: GatewayResponse = {

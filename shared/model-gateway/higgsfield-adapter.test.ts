@@ -142,4 +142,43 @@ describe('HiggsfieldAdapter', () => {
     const adapter = new HiggsfieldAdapter({ pollIntervalMs: 10, pollTimeoutMs: 50 })
     await expect(adapter.invoke(REQUEST)).rejects.toThrow('did not complete')
   })
+
+  // ── Brand identity (ADR-025 §1) ─────────────────────────────────────────────
+
+  describe('brand identity', () => {
+    function submittedParams(mockFetch: ReturnType<typeof makeFetch>): Record<string, unknown> {
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+      return (JSON.parse(init.body as string) as { params: Record<string, unknown> }).params
+    }
+
+    it('omits seed and leaves the request body unchanged when no brand identity is present', async () => {
+      process.env.HIGGSFIELD_API_KEY = 'test_id:test_secret'
+      const mockFetch = makeFetch([SUBMIT_COMPLETED])
+      vi.stubGlobal('fetch', mockFetch)
+      await new HiggsfieldAdapter().invoke(REQUEST)
+      const params = submittedParams(mockFetch)
+      expect(params).toEqual({ prompt: REQUEST.prompt, width_and_height: '1536x1536' })
+      expect(params).not.toHaveProperty('seed')
+    })
+
+    it('maps brandIdentity.seed to params.seed when present', async () => {
+      process.env.HIGGSFIELD_API_KEY = 'test_id:test_secret'
+      const mockFetch = makeFetch([SUBMIT_COMPLETED])
+      vi.stubGlobal('fetch', mockFetch)
+      await new HiggsfieldAdapter().invoke({ ...REQUEST, brandIdentity: { seed: 777 } })
+      expect(submittedParams(mockFetch).seed).toBe(777)
+    })
+
+    it('does not send reference image URLs (Soul uses custom_reference_id, not URLs)', async () => {
+      process.env.HIGGSFIELD_API_KEY = 'test_id:test_secret'
+      const mockFetch = makeFetch([SUBMIT_COMPLETED])
+      vi.stubGlobal('fetch', mockFetch)
+      await new HiggsfieldAdapter().invoke({
+        ...REQUEST,
+        brandIdentity: { referenceImageUrls: ['https://cdn.example.com/logo.png'] },
+      })
+      const params = submittedParams(mockFetch)
+      expect(params).toEqual({ prompt: REQUEST.prompt, width_and_height: '1536x1536' })
+    })
+  })
 })

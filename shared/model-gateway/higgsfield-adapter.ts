@@ -68,6 +68,21 @@ export class HiggsfieldAdapter implements IModelProviderAdapter {
     const baseUrl = (process.env.HIGGSFIELD_API_URL ?? DEFAULT_BASE_URL).replace(/\/$/, '')
     const startMs = Date.now()
 
+    // Brand identity: the Soul endpoint accepts a deterministic `seed` for
+    // reproducible generation, mapped from the provider-agnostic identity when
+    // present (ADR-025 §1). Absent → seed is omitted and the request body is
+    // unchanged. Note: `referenceImageUrls` is NOT mapped here — the Soul API
+    // takes character references by pre-registered `custom_reference_id`, not by
+    // URL, so it is a field this adapter does not consume (ADR-025 §1: "adapters
+    // consume only the fields relevant to them").
+    const params: Record<string, unknown> = {
+      prompt: request.prompt,
+      width_and_height: DEFAULT_SIZE,
+    }
+    if (request.brandIdentity?.seed !== undefined) {
+      params.seed = request.brandIdentity.seed
+    }
+
     logger.info('[HIGGSFIELD_ADAPTER] Submitting generation request', {
       endpoint: SUBMIT_ENDPOINT,
     })
@@ -78,7 +93,7 @@ export class HiggsfieldAdapter implements IModelProviderAdapter {
         'Content-Type': 'application/json',
         Authorization: `Key ${apiKey}`,
       },
-      body: JSON.stringify({ params: { prompt: request.prompt, width_and_height: DEFAULT_SIZE } }),
+      body: JSON.stringify({ params }),
     })
 
     if (!submitResponse.ok) {

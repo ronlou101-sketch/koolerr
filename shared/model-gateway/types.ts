@@ -31,6 +31,33 @@ export interface IModelProviderAdapter {
 }
 
 // ---------------------------------------------------------------------------
+// Brand identity
+//
+// Provider-agnostic brand-identity payload injected into a render invocation.
+// Carries resolved provider references and visual-consistency hints only —
+// never a provider SDK type — so no provider-specific type crosses the gateway
+// boundary (ADR-025 §1, §3; FOUNDATION_001 §6.3).
+//
+// The payload is deliberately optional and additive: an invocation without a
+// BrandIdentity behaves exactly as before. Each adapter consumes only the
+// fields relevant to its provider and falls back to environment defaults when a
+// field is absent (ADR-025 §1). The render path populates this from the
+// organization's Brand Ambassador (ADR-024) in a later slice — the gateway does
+// not resolve it.
+// ---------------------------------------------------------------------------
+
+export interface BrandIdentity {
+  /** Resolved spokesperson avatar reference (e.g. HeyGen avatar id). */
+  avatarId?: string
+  /** Resolved spokesperson voice reference (e.g. HeyGen voice id). */
+  voiceId?: string
+  /** Reference image URLs, for providers that accept URL-based visual references. */
+  referenceImageUrls?: string[]
+  /** Deterministic seed for reproducible generation. */
+  seed?: number
+}
+
+// ---------------------------------------------------------------------------
 // Normalized request / response
 // Internal types that adapters translate to/from provider-specific formats.
 // Domains only ever see these types — never provider API types.
@@ -42,6 +69,12 @@ export interface NormalizedModelRequest {
   maxTokens?: number
   /** System-level context injected by the gateway before forwarding. */
   systemContext?: string
+  /**
+   * Optional provider-agnostic brand identity. When present, adapters map the
+   * fields relevant to their provider; when absent, adapters use env defaults
+   * and behavior is unchanged (ADR-025 §1).
+   */
+  brandIdentity?: BrandIdentity
 }
 
 export interface NormalizedModelResponse {
@@ -76,6 +109,12 @@ export interface GatewayRequest {
   provider?: ModelProvider
   model?: string
   maxTokens?: number
+  /**
+   * Optional provider-agnostic brand identity, forwarded verbatim to the
+   * provider adapter. Absent → unchanged behavior (ADR-025 §1). The gateway
+   * performs no provider-specific handling of this payload; the adapter maps it.
+   */
+  brandIdentity?: BrandIdentity
 }
 
 export interface GatewayResponse {

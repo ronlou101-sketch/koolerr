@@ -195,6 +195,32 @@ describe('ModelGateway.invoke()', () => {
       expect(res.content).toBeDefined()
     })
   })
+
+  // ── Brand identity forwarding (ADR-025 §1) ──────────────────────────────────
+
+  describe('brand identity forwarding', () => {
+    it('forwards the brandIdentity payload verbatim to the adapter', async () => {
+      vi.mocked(trustEngine.check).mockResolvedValue(PERMITTED)
+      const adapter = makeMockAdapter('heygen')
+      _registerProvider(adapter)
+
+      const brandIdentity = { avatarId: 'avatar_x', voiceId: 'voice_y', seed: 42 }
+      await modelGateway.invoke({ ...BASE_REQUEST, provider: 'heygen', brandIdentity })
+
+      expect(adapter.invoke).toHaveBeenCalledWith(expect.objectContaining({ brandIdentity }))
+    })
+
+    it('passes brandIdentity undefined when the request omits it (backward compatible)', async () => {
+      vi.mocked(trustEngine.check).mockResolvedValue(PERMITTED)
+      const adapter = makeMockAdapter('openai')
+      _registerProvider(adapter)
+
+      await modelGateway.invoke({ ...BASE_REQUEST, provider: 'openai' })
+
+      const forwarded = adapter.invoke.mock.calls[0][0]
+      expect(forwarded.brandIdentity).toBeUndefined()
+    })
+  })
 })
 
 describe('ModelGateway.registeredProviders()', () => {
