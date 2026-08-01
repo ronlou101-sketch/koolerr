@@ -26,8 +26,9 @@ export type {
   VideoProductionProviderStatus,
 } from './types'
 
-export type { IVideoProductionDepartmentService } from './service'
+export type { IVideoProductionDepartmentService, SpokespersonVideoRenderRequest } from './service'
 export { VideoProductionDepartmentService, videoProductionDepartment } from './service'
+export type { RenderError, RenderErrorCode, RenderJobResult } from '../render'
 export {
   buildVideoProductionPrompt,
   parseVideoProductionBrief,

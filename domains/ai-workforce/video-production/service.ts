@@ -10,7 +10,10 @@ import type {
   Result,
   TrustRule,
 } from '@/shared/types'
+import type { DeliverableId } from '@/shared/types'
 import { WORKFORCE_REGISTRY } from '../employees'
+import { executeRenderJob } from '../render'
+import type { RenderError, RenderJobResult } from '../render'
 import {
   buildVideoProductionPrompt,
   parseVideoProductionBrief,
@@ -23,6 +26,22 @@ import type {
   VideoProductionJob,
   VideoProductionRequest,
 } from './types'
+
+const VIDEO_EMPLOYEE_ID = 'video-producer' as DigitalEmployeeId
+const HEYGEN_VIDEO_ACTION = 'generate_heygen_video'
+
+/** Input for rendering a branded spokesperson video from an approved script. */
+export interface SpokespersonVideoRenderRequest {
+  organizationId: OrganizationId
+  /** The video script text used as the render prompt. */
+  script: string
+  /** Source `video_script` deliverable this render was produced from. */
+  scriptDeliverableId: DeliverableId
+  /** Originating creative, when known. */
+  creativeId: string | null
+  /** Title for the stored `video` deliverable. */
+  title: string
+}
 
 const MAX_RETRIES = 3
 const VIDEO_PRODUCTION_ACTION = 'plan_video_production'
@@ -38,6 +57,14 @@ export interface IVideoProductionDepartmentService {
   planProduction(
     request: VideoProductionRequest
   ): Promise<Result<VideoProductionJob, VideoProductionError>>
+  /**
+   * Renders a spokesperson video from an approved script through the shared render
+   * path (ADR-025 §2). Authoritative implementation for the HeyGen video render;
+   * the standalone route delegates here.
+   */
+  renderSpokespersonVideo(
+    request: SpokespersonVideoRenderRequest
+  ): Promise<Result<RenderJobResult, RenderError>>
   getJob(jobId: string): VideoProductionJob | undefined
   listJobs(): VideoProductionJob[]
 }
@@ -250,6 +277,35 @@ export class VideoProductionDepartmentService implements IVideoProductionDepartm
       return 'INVALID_RESPONSE'
     }
     return 'MAX_RETRIES_EXCEEDED'
+  }
+
+  async renderSpokespersonVideo(
+    request: SpokespersonVideoRenderRequest
+  ): Promise<Result<RenderJobResult, RenderError>> {
+    return executeRenderJob(
+      {
+        organizationId: request.organizationId,
+        employeeId: VIDEO_EMPLOYEE_ID,
+        action: HEYGEN_VIDEO_ACTION,
+        trustRuleId: `heygen-video-${request.organizationId}`,
+        provider: 'heygen',
+        prompt: request.script,
+        runObjective: `HeyGen video generation for script: ${request.scriptDeliverableId}`,
+        runContext: {
+          type: 'heygen-video-generation',
+          scriptDeliverableId: request.scriptDeliverableId,
+        },
+        deliverableType: 'video',
+        deliverableTitle: request.title,
+        buildContent: (videoUrl) => ({
+          videoUrl,
+          scriptDeliverableId: request.scriptDeliverableId,
+          creativeId: request.creativeId,
+        }),
+        logLabel: 'HEYGEN_GENERATE',
+      },
+      this.gateway
+    )
   }
 
   getJob(jobId: string): VideoProductionJob | undefined {

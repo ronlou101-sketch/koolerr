@@ -26,7 +26,8 @@ export type {
   CreativeProviderStatus,
 } from './types'
 
-export type { ICreativeDepartmentService } from './service'
+export type { ICreativeDepartmentService, ImageRenderRequest } from './service'
 export { CreativeDepartmentService, creativeDepartment } from './service'
+export type { RenderError, RenderErrorCode, RenderJobResult } from '../render'
 export { buildCreativePrompt, parseCreativeBrief, CREATIVE_SYSTEM_CONTEXT } from './prompt'
 export { getCreativeDepartmentHealth } from './health'

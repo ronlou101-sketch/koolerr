@@ -11,6 +11,8 @@ import type {
   TrustRule,
 } from '@/shared/types'
 import { WORKFORCE_REGISTRY } from '../employees'
+import { executeRenderJob } from '../render'
+import type { RenderError, RenderJobResult } from '../render'
 import { buildCreativePrompt, parseCreativeBrief, CREATIVE_SYSTEM_CONTEXT } from './prompt'
 import type {
   CreativeBrief,
@@ -19,6 +21,18 @@ import type {
   CreativeJob,
   CreativeRequest,
 } from './types'
+
+const IMAGE_EMPLOYEE_ID = 'creative-video-director' as DigitalEmployeeId
+const IMAGE_ACTION = 'generate_image'
+
+/** Input for rendering a branded image from a prompt. */
+export interface ImageRenderRequest {
+  organizationId: OrganizationId
+  /** The image prompt used for the render. */
+  prompt: string
+  /** Originating creative, when known. */
+  creativeId: string | null
+}
 
 const MAX_RETRIES = 3
 const CREATIVE_ACTION = 'create_creative_brief'
@@ -31,6 +45,12 @@ const CREATIVE_TEXT_PROVIDERS: ModelProvider[] = ['openai', 'anthropic']
 /** Public interface consumed by the orchestrator and downstream departments. */
 export interface ICreativeDepartmentService {
   createBrief(request: CreativeRequest): Promise<Result<CreativeJob, CreativeError>>
+  /**
+   * Renders an image from a prompt through the shared render path (ADR-025 §2).
+   * Authoritative implementation for the Higgsfield image render; the standalone
+   * route delegates here.
+   */
+  renderImage(request: ImageRenderRequest): Promise<Result<RenderJobResult, RenderError>>
   getJob(jobId: string): CreativeJob | undefined
   listJobs(): CreativeJob[]
 }
@@ -203,6 +223,27 @@ export class CreativeDepartmentService implements ICreativeDepartmentService {
       return 'INVALID_RESPONSE'
     }
     return 'MAX_RETRIES_EXCEEDED'
+  }
+
+  async renderImage(request: ImageRenderRequest): Promise<Result<RenderJobResult, RenderError>> {
+    const title = request.prompt.length > 80 ? `${request.prompt.slice(0, 77)}...` : request.prompt
+    return executeRenderJob(
+      {
+        organizationId: request.organizationId,
+        employeeId: IMAGE_EMPLOYEE_ID,
+        action: IMAGE_ACTION,
+        trustRuleId: `higgsfield-image-${request.organizationId}`,
+        provider: 'higgsfield',
+        prompt: request.prompt,
+        runObjective: `Higgsfield image generation: ${request.prompt.slice(0, 100)}`,
+        runContext: { type: 'higgsfield-image-generation', creativeId: request.creativeId },
+        deliverableType: 'image',
+        deliverableTitle: title,
+        buildContent: (imageUrl) => ({ imageUrl, creativeId: request.creativeId }),
+        logLabel: 'HIGGSFIELD_GENERATE',
+      },
+      this.gateway
+    )
   }
 
   getJob(jobId: string): CreativeJob | undefined {
