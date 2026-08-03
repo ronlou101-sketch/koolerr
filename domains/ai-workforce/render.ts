@@ -1,7 +1,9 @@
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
+import { brandAmbassadorService } from '@/domains/brand-ambassador'
+import type { BrandAmbassadorIdentity } from '@/domains/brand-ambassador'
 import { modelGateway } from '@/shared/model-gateway'
-import type { IModelGateway } from '@/shared/model-gateway'
+import type { BrandIdentity, IModelGateway } from '@/shared/model-gateway'
 import { trustEngine } from '@/shared/trust'
 import { env } from '@/shared/config/env'
 import { logger } from '@/shared/lib/logger'
@@ -25,13 +27,17 @@ import type {
  * implementation; the routes and the department services call this single path
  * (Charter Principles 2/3 — one system, single source of truth).
  *
- * It is behavior-preserving: it performs the same steps, in the same order, with the
- * same messages, as the routes did — resolve the Content Marketing workforce, trigger
- * an engagement run, register the trust rule, invoke the Model Gateway (provider value
- * only — no provider SDK; ADR-025 §3), update run status, and store the deliverable.
+ * Steps: resolve the Content Marketing workforce, trigger an engagement run, register
+ * the trust rule, resolve the organization's Brand Ambassador and inject its identity,
+ * invoke the Model Gateway (provider value + provider-agnostic identity only — no
+ * provider SDK; ADR-025 §1/§3), update run status, and store the deliverable.
  *
- * Brand-identity injection (ADR-025 §1/§7) is intentionally NOT performed here — that
- * arrives in a later slice (CR-3); this slice only consolidates the existing path.
+ * Brand-identity injection (ADR-025 §1/§7, Slice CR-3): every render resolves the
+ * organization's ambassador via `resolveBrandAmbassador(orgId)` and maps it to the
+ * gateway's provider-agnostic `BrandIdentity`, so all campaign media is branded with
+ * the org's single spokesperson. If no ambassador is found — or resolution fails —
+ * the render falls back to the platform env default (adapters' env fallback) and logs;
+ * identity resolution never breaks a render. No new identity storage is introduced.
  */
 
 export type RenderErrorCode = 'WORKFORCE_NOT_FOUND' | 'RUN_TRIGGER_FAILED' | 'RENDER_FAILED'
@@ -115,6 +121,10 @@ export async function executeRenderJob(
     autonomyLevel: 'autonomous',
   })
 
+  // Brand the render with the org's single spokesperson (ADR-025 §1/§7). Falls back
+  // to the platform env default (adapters' env fallback) when unavailable.
+  const brandIdentity = await resolveBrandIdentity(request.organizationId)
+
   let assetUrl: string
   try {
     const response = await gateway.invoke({
@@ -126,6 +136,7 @@ export async function executeRenderJob(
       action: request.action,
       provider: request.provider,
       prompt: request.prompt,
+      brandIdentity,
     })
     assetUrl = response.content
   } catch (error) {
@@ -167,4 +178,54 @@ export async function executeRenderJob(
     deliverableId: storeResult.ok ? storeResult.value.id : null,
     engagementRunId,
   })
+}
+
+/**
+ * Resolves the organization's Brand Ambassador and maps it to the gateway's
+ * provider-agnostic BrandIdentity (ADR-025 §1/§7). Returns undefined — so adapters
+ * fall back to their env defaults — when no ambassador is assigned, resolution
+ * fails, or resolution throws. Identity resolution must never break a render.
+ */
+async function resolveBrandIdentity(
+  organizationId: OrganizationId
+): Promise<BrandIdentity | undefined> {
+  try {
+    const result = await brandAmbassadorService.resolveBrandAmbassador(organizationId)
+    if (!result.ok) {
+      logger.warn(
+        '[RENDER] Brand Ambassador resolve failed — falling back to platform default identity',
+        { organizationId, error: result.error.message }
+      )
+      return undefined
+    }
+    if (!result.value) {
+      logger.info('[RENDER] No Brand Ambassador assigned — using platform default identity', {
+        organizationId,
+      })
+      return undefined
+    }
+    return toBrandIdentity(result.value)
+  } catch (error) {
+    logger.warn(
+      '[RENDER] Brand Ambassador resolve threw — falling back to platform default identity',
+      { organizationId, error: error instanceof Error ? error.message : String(error) }
+    )
+    return undefined
+  }
+}
+
+/**
+ * Maps the provider-agnostic Brand Ambassador identity to the gateway BrandIdentity.
+ * Only fields the gateway contract carries (ADR-025 §1) are mapped; the Higgsfield
+ * character reference (`providerRefs.higgsfield.characterId`) is not part of that
+ * contract and is not mapped here.
+ */
+function toBrandIdentity(identity: BrandAmbassadorIdentity): BrandIdentity {
+  const referenceImageUrls = identity.appearance.referenceImageUrls
+  return {
+    avatarId: identity.providerRefs.heygen?.avatarId,
+    voiceId: identity.providerRefs.heygen?.voiceId,
+    referenceImageUrls: referenceImageUrls.length > 0 ? referenceImageUrls : undefined,
+    seed: identity.seed,
+  }
 }

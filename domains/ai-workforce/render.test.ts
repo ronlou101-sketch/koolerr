@@ -11,6 +11,9 @@ vi.mock('@/domains/deliverables', () => ({
   deliverablesService: { storeDeliverable: vi.fn() },
 }))
 vi.mock('@/shared/trust', () => ({ trustEngine: { registerRule: vi.fn() } }))
+vi.mock('@/domains/brand-ambassador', () => ({
+  brandAmbassadorService: { resolveBrandAmbassador: vi.fn() },
+}))
 vi.mock('@/shared/config/env', () => ({
   env: { platform: { tenantId: vi.fn().mockReturnValue('tenant_test') } },
 }))
@@ -22,6 +25,7 @@ import { executeRenderJob } from './render'
 import type { RenderJobRequest } from './render'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
+import { brandAmbassadorService } from '@/domains/brand-ambassador'
 import { trustEngine } from '@/shared/trust'
 import { logger } from '@/shared/lib/logger'
 import type { DigitalEmployeeId, EngagementRunId, OrganizationId } from '@/shared/types'
@@ -79,6 +83,11 @@ describe('executeRenderJob', () => {
     vi.mocked(deliverablesService.storeDeliverable).mockResolvedValue({
       ok: true,
       value: { id: 'del_video_1' } as never,
+    })
+    // Default: no ambassador assigned (fallback path) unless a test overrides.
+    vi.mocked(brandAmbassadorService.resolveBrandAmbassador).mockResolvedValue({
+      ok: true,
+      value: null,
     })
   })
 
@@ -174,5 +183,72 @@ describe('executeRenderJob', () => {
     expect(result.value.assetUrl).toBe(ASSET_URL)
     expect(result.value.deliverableId).toBeNull()
     expect(logger.warn).toHaveBeenCalled()
+  })
+
+  // ── Brand Ambassador injection (ADR-025 §1/§7 — Slice CR-3) ──────────────────
+
+  it('injects the resolved ambassador identity into the gateway request', async () => {
+    vi.mocked(brandAmbassadorService.resolveBrandAmbassador).mockResolvedValue({
+      ok: true,
+      value: {
+        ambassadorId: 'ambassador_1' as DigitalEmployeeId,
+        libraryId: 'lib_1',
+        displayName: 'Ava',
+        role: 'Spokesperson',
+        persona: 'warm',
+        personalityTraits: [],
+        appearance: { description: 'friendly', referenceImageUrls: ['https://cdn/x.png'] },
+        voice: { description: 'calm' },
+        branding: {},
+        seed: 4242,
+        source: 'auto-assigned',
+        providerRefs: { heygen: { avatarId: 'av_brand', voiceId: 'vo_brand' } },
+      } as never,
+    })
+    const gateway = makeGateway()
+    await executeRenderJob(makeRequest(), gateway)
+
+    expect(gateway.invoke).toHaveBeenCalledWith(
+      expect.objectContaining({
+        brandIdentity: {
+          avatarId: 'av_brand',
+          voiceId: 'vo_brand',
+          referenceImageUrls: ['https://cdn/x.png'],
+          seed: 4242,
+        },
+      })
+    )
+  })
+
+  it('falls back (no brandIdentity) and logs when no ambassador is assigned', async () => {
+    // beforeEach default: resolve → ok(null)
+    const gateway = makeGateway()
+    await executeRenderJob(makeRequest(), gateway)
+
+    expect(gateway.invoke).toHaveBeenCalledWith(
+      expect.objectContaining({ brandIdentity: undefined })
+    )
+    expect(logger.info).toHaveBeenCalledWith(
+      expect.stringContaining('No Brand Ambassador assigned'),
+      expect.anything()
+    )
+  })
+
+  it('falls back (no brandIdentity) and warns when ambassador resolution fails', async () => {
+    vi.mocked(brandAmbassadorService.resolveBrandAmbassador).mockResolvedValue({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR' as never, message: 'brain down' },
+    })
+    const gateway = makeGateway()
+    const result = await executeRenderJob(makeRequest(), gateway)
+
+    expect(result.ok).toBe(true)
+    expect(gateway.invoke).toHaveBeenCalledWith(
+      expect.objectContaining({ brandIdentity: undefined })
+    )
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Brand Ambassador resolve failed'),
+      expect.anything()
+    )
   })
 })

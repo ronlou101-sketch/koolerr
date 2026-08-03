@@ -22,6 +22,11 @@ vi.mock('@/shared/model-gateway', () => ({
 vi.mock('@/shared/trust', () => ({
   trustEngine: { registerRule: vi.fn() },
 }))
+vi.mock('@/domains/brand-ambassador', () => ({
+  brandAmbassadorService: {
+    resolveBrandAmbassador: vi.fn(async () => ({ ok: true, value: null })),
+  },
+}))
 vi.mock('@/shared/config/env', () => ({
   env: { platform: { tenantId: vi.fn().mockReturnValue('tenant_test') } },
 }))
