@@ -326,7 +326,12 @@ export interface ModelResponse {
 // See FOUNDATION_001 §2.14.
 // ---------------------------------------------------------------------------
 
-export type UsageEventType = 'engagement_run' | 'deliverable' | 'model_invocation' | 'storage'
+export type UsageEventType =
+  | 'engagement_run'
+  | 'deliverable'
+  | 'model_invocation'
+  | 'storage'
+  | 'spokesperson_video'
 
 export interface UsageEvent {
   id: UsageEventId

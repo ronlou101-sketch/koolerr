@@ -64,7 +64,12 @@ export async function POST(request: Request) {
   })
 
   if (!result.ok) {
-    const status = result.error.code === 'WORKFORCE_NOT_FOUND' ? 404 : 500
+    const status =
+      result.error.code === 'WORKFORCE_NOT_FOUND'
+        ? 404
+        : result.error.code === 'ENTITLEMENT_EXCEEDED'
+          ? 402
+          : 500
     return NextResponse.json({ error: result.error.message }, { status })
   }
 

@@ -14,6 +14,9 @@ vi.mock('@/shared/trust', () => ({ trustEngine: { registerRule: vi.fn() } }))
 vi.mock('@/domains/brand-ambassador', () => ({
   brandAmbassadorService: { resolveBrandAmbassador: vi.fn() },
 }))
+vi.mock('@/domains/billing', () => ({
+  billingService: { checkEntitlement: vi.fn(), recordUsageEvent: vi.fn() },
+}))
 vi.mock('@/shared/config/env', () => ({
   env: { platform: { tenantId: vi.fn().mockReturnValue('tenant_test') } },
 }))
@@ -26,6 +29,7 @@ import type { RenderJobRequest } from './render'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
 import { brandAmbassadorService } from '@/domains/brand-ambassador'
+import { billingService } from '@/domains/billing'
 import { trustEngine } from '@/shared/trust'
 import { logger } from '@/shared/lib/logger'
 import type { DigitalEmployeeId, EngagementRunId, OrganizationId } from '@/shared/types'
@@ -89,6 +93,12 @@ describe('executeRenderJob', () => {
       ok: true,
       value: null,
     })
+    // Default: entitlement allowed (well under limit) unless a test overrides.
+    vi.mocked(billingService.checkEntitlement).mockResolvedValue({
+      ok: true,
+      value: { organizationId: ORG_ID, feature: 'spokesperson_video', limit: 5, used: 0 },
+    })
+    vi.mocked(billingService.recordUsageEvent).mockResolvedValue({ ok: true, value: {} as never })
   })
 
   it('renders, stores the deliverable, and returns the asset on the happy path', async () => {
@@ -248,6 +258,71 @@ describe('executeRenderJob', () => {
     )
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Brand Ambassador resolve failed'),
+      expect.anything()
+    )
+  })
+
+  // ── Entitlement enforcement (ADR-025 §4 — Slice CR-4) ────────────────────────
+
+  const metered = (): RenderJobRequest => makeRequest({ meteredFeature: 'spokesperson_video' })
+
+  it('gates a metered render under limit → renders and meters one usage event', async () => {
+    vi.mocked(billingService.checkEntitlement).mockResolvedValue({
+      ok: true,
+      value: { organizationId: ORG_ID, feature: 'spokesperson_video', limit: 5, used: 2 },
+    })
+    const gateway = makeGateway()
+    const result = await executeRenderJob(metered(), gateway)
+
+    expect(result.ok).toBe(true)
+    expect(gateway.invoke).toHaveBeenCalledOnce()
+    expect(billingService.recordUsageEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: ORG_ID,
+        type: 'spokesperson_video',
+        quantity: 1,
+      })
+    )
+  })
+
+  it('rejects an over-limit metered render before dispatch (non-spending)', async () => {
+    vi.mocked(billingService.checkEntitlement).mockResolvedValue({
+      ok: true,
+      value: { organizationId: ORG_ID, feature: 'spokesperson_video', limit: 5, used: 5 },
+    })
+    const gateway = makeGateway()
+    const result = await executeRenderJob(metered(), gateway)
+
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.error.code).toBe('ENTITLEMENT_EXCEEDED')
+    // Non-spending: no run created, no gateway call, no usage recorded.
+    expect(workforceEngineService.triggerEngagementRun).not.toHaveBeenCalled()
+    expect(gateway.invoke).not.toHaveBeenCalled()
+    expect(billingService.recordUsageEvent).not.toHaveBeenCalled()
+  })
+
+  it('does not gate or meter a render without a metered feature (e.g. image)', async () => {
+    const gateway = makeGateway()
+    await executeRenderJob(makeRequest(), gateway)
+
+    expect(billingService.checkEntitlement).not.toHaveBeenCalled()
+    expect(billingService.recordUsageEvent).not.toHaveBeenCalled()
+    expect(gateway.invoke).toHaveBeenCalledOnce()
+  })
+
+  it('proceeds (does not block) when the entitlement check itself errors', async () => {
+    vi.mocked(billingService.checkEntitlement).mockResolvedValue({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR' as never, message: 'billing down' },
+    })
+    const gateway = makeGateway()
+    const result = await executeRenderJob(metered(), gateway)
+
+    expect(result.ok).toBe(true)
+    expect(gateway.invoke).toHaveBeenCalledOnce()
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Entitlement check failed'),
       expect.anything()
     )
   })

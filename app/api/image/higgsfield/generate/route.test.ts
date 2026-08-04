@@ -27,6 +27,15 @@ vi.mock('@/domains/brand-ambassador', () => ({
     resolveBrandAmbassador: vi.fn(async () => ({ ok: true, value: null })),
   },
 }))
+vi.mock('@/domains/billing', () => ({
+  billingService: {
+    checkEntitlement: vi.fn(async () => ({
+      ok: false,
+      error: { message: 'should not be called' },
+    })),
+    recordUsageEvent: vi.fn(async () => ({ ok: true, value: {} })),
+  },
+}))
 vi.mock('@/shared/config/env', () => ({
   env: { platform: { tenantId: vi.fn().mockReturnValue('tenant_test') } },
 }))
@@ -35,6 +44,7 @@ import { POST } from './route'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
+import { billingService } from '@/domains/billing'
 import { modelGateway } from '@/shared/model-gateway'
 import type { DeliverableId, EngagementRunId, OrganizationId, TenantId } from '@/shared/types'
 
@@ -224,6 +234,15 @@ describe('POST /api/image/higgsfield/generate', () => {
     expect(body.imageUrl).toBe(IMAGE_URL)
     expect(body.deliverableId).toBe(IMAGE_DELIVERABLE_ID)
     expect(body.engagementRunId).toBe(ENGAGEMENT_RUN_ID)
+  })
+
+  it('does not gate or meter image renders (no spokesperson_video entitlement)', async () => {
+    vi.mocked(getRequestPlatformContext).mockResolvedValue(makeCtx())
+
+    await POST(request({ prompt: PROMPT }))
+
+    expect(billingService.checkEntitlement).not.toHaveBeenCalled()
+    expect(billingService.recordUsageEvent).not.toHaveBeenCalled()
   })
 
   it('marks engagement run as completed on success', async () => {

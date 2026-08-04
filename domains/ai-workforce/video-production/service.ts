@@ -303,6 +303,8 @@ export class VideoProductionDepartmentService implements IVideoProductionDepartm
           creativeId: request.creativeId,
         }),
         logLabel: 'HEYGEN_GENERATE',
+        // Spokesperson video renders are entitlement-gated + metered (ADR-025 §4).
+        meteredFeature: 'spokesperson_video',
       },
       this.gateway
     )

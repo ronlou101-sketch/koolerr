@@ -28,6 +28,12 @@ vi.mock('@/domains/brand-ambassador', () => ({
     resolveBrandAmbassador: vi.fn(async () => ({ ok: true, value: null })),
   },
 }))
+vi.mock('@/domains/billing', () => ({
+  billingService: {
+    checkEntitlement: vi.fn(),
+    recordUsageEvent: vi.fn(async () => ({ ok: true, value: {} })),
+  },
+}))
 vi.mock('@/shared/config/env', () => ({
   env: { platform: { tenantId: vi.fn().mockReturnValue('tenant_test') } },
 }))
@@ -36,6 +42,7 @@ import { POST } from './route'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
+import { billingService } from '@/domains/billing'
 import { modelGateway } from '@/shared/model-gateway'
 import type { DeliverableId, EngagementRunId, OrganizationId, TenantId } from '@/shared/types'
 
@@ -158,6 +165,15 @@ describe('POST /api/video/heygen/generate', () => {
       tokensUsed: 0,
       latencyMs: 15000,
     })
+    vi.mocked(billingService.checkEntitlement).mockResolvedValue({
+      ok: true,
+      value: {
+        organizationId: ORG_ID,
+        feature: 'spokesperson_video',
+        limit: 5,
+        used: 0,
+      },
+    })
   })
 
   it('returns 401 when no auth context', async () => {
@@ -279,6 +295,22 @@ describe('POST /api/video/heygen/generate', () => {
     expect(workforceEngineService.updateEngagementRunStatus).toHaveBeenCalledWith(
       expect.objectContaining({ id: ENGAGEMENT_RUN_ID, status: 'failed' })
     )
+  })
+
+  it('returns 402 when the spokesperson_video entitlement is exhausted', async () => {
+    vi.mocked(getRequestPlatformContext).mockResolvedValue(makeCtx())
+    vi.mocked(billingService.checkEntitlement).mockResolvedValue({
+      ok: true,
+      value: { organizationId: ORG_ID, feature: 'spokesperson_video', limit: 5, used: 5 },
+    })
+
+    const res = await POST(request({ deliverableId: SCRIPT_DELIVERABLE_ID }))
+
+    expect(res.status).toBe(402)
+    const body = await res.json()
+    expect(body.error).toMatch(/limit/i)
+    // Non-spending: the gateway is never invoked for an over-limit request.
+    expect(modelGateway.invoke).not.toHaveBeenCalled()
   })
 
   it('returns videoUrl, deliverableId, and engagementRunId on success', async () => {

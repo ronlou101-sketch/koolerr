@@ -2,6 +2,7 @@ import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
 import { brandAmbassadorService } from '@/domains/brand-ambassador'
 import type { BrandAmbassadorIdentity } from '@/domains/brand-ambassador'
+import { billingService } from '@/domains/billing'
 import { modelGateway } from '@/shared/model-gateway'
 import type { BrandIdentity, IModelGateway } from '@/shared/model-gateway'
 import { trustEngine } from '@/shared/trust'
@@ -16,6 +17,7 @@ import type {
   ModelProvider,
   OrganizationId,
   Result,
+  UsageEventType,
 } from '@/shared/types'
 
 /**
@@ -38,9 +40,20 @@ import type {
  * the org's single spokesperson. If no ambassador is found — or resolution fails —
  * the render falls back to the platform env default (adapters' env fallback) and logs;
  * identity resolution never breaks a render. No new identity storage is introduced.
+ *
+ * Entitlement enforcement (ADR-025 §4, Slice CR-4): a render that carries a
+ * `meteredFeature` is gated on that billing entitlement BEFORE dispatch — an
+ * over-limit request is rejected with `ENTITLEMENT_EXCEEDED` and never invokes the
+ * gateway (non-spending). A successful metered render records one usage event so the
+ * plan cap is consumed. Only spokesperson video renders are metered; image renders
+ * carry no `meteredFeature` and are not gated (ADR-025 §4 boundary).
  */
 
-export type RenderErrorCode = 'WORKFORCE_NOT_FOUND' | 'RUN_TRIGGER_FAILED' | 'RENDER_FAILED'
+export type RenderErrorCode =
+  | 'WORKFORCE_NOT_FOUND'
+  | 'RUN_TRIGGER_FAILED'
+  | 'RENDER_FAILED'
+  | 'ENTITLEMENT_EXCEEDED'
 
 export interface RenderError {
   code: RenderErrorCode
@@ -73,6 +86,12 @@ export interface RenderJobRequest {
   buildContent: (assetUrl: string) => Record<string, unknown>
   /** Log prefix for the store-failure warning (preserves the routes' prior log labels). */
   logLabel: string
+  /**
+   * When set, this render is gated on the given billing entitlement before dispatch
+   * and metered as one usage event of the same type on success (ADR-025 §4). Only
+   * spokesperson video renders set this; image renders leave it undefined.
+   */
+  meteredFeature?: UsageEventType
 }
 
 /**
@@ -96,6 +115,30 @@ export async function executeRenderJob(
   const workforce = workforcesResult.value.find((w) => w.businessFunction === 'Content Marketing')
   if (!workforce) {
     return err({ code: 'WORKFORCE_NOT_FOUND', message: 'Content Marketing workforce not found.' })
+  }
+
+  // Entitlement gate (ADR-025 §4): reject a confirmed over-limit render BEFORE any
+  // engagement run is created or the gateway is invoked — a non-spending rejection.
+  if (request.meteredFeature) {
+    const check = await billingService.checkEntitlement({
+      organizationId: request.organizationId,
+      feature: request.meteredFeature,
+      quantityRequested: 1,
+    })
+    if (check.ok && check.value.used + 1 > check.value.limit) {
+      return err({
+        code: 'ENTITLEMENT_EXCEEDED',
+        message: "You've reached your spokesperson video limit for this billing period.",
+      })
+    }
+    if (!check.ok) {
+      // Can't confirm over-limit — do not block a legitimate render on a billing read error.
+      logger.warn('[RENDER] Entitlement check failed — proceeding without gate', {
+        organizationId: request.organizationId,
+        feature: request.meteredFeature,
+        error: check.error.message,
+      })
+    }
   }
 
   const tenantId = env.platform.tenantId()
@@ -156,6 +199,23 @@ export async function executeRenderJob(
     status: 'completed',
     updatedAt: new Date(),
   })
+
+  // Meter the successful render so the plan cap is consumed (ADR-025 §4). Metering is
+  // a side effect — a failure to record never invalidates a render that already ran.
+  if (request.meteredFeature) {
+    const usage = await billingService.recordUsageEvent({
+      tenantId,
+      organizationId: request.organizationId,
+      type: request.meteredFeature,
+      quantity: 1,
+    })
+    if (!usage.ok) {
+      logger.warn(`[${request.logLabel}] Failed to record usage — render succeeded`, {
+        engagementRunId,
+        error: usage.error.message,
+      })
+    }
+  }
 
   const storeResult = await deliverablesService.storeDeliverable({
     tenantId,
