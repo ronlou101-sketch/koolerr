@@ -278,6 +278,40 @@ export async function runAIWorkforcePipeline(
     })
   }
 
+  // ── Spokesperson video script (additive, bounded, non-fatal) ────────────────
+  // Emit the canonical script artifact for the campaign — one `video_script`
+  // deliverable — so a branded spokesperson video can later be rendered from it
+  // (ADR-025 §2/§6). Best-effort: a failure here never fails the campaign, and the
+  // script generator already falls back across text providers internally.
+  const scriptResult = await videoProductionDepartment.writeScript({
+    tenantId,
+    organizationId,
+    workforceId,
+    engagementRunId,
+    creativeBrief,
+  })
+  if (scriptResult.ok) {
+    await deliverablesService.storeDeliverable({
+      tenantId,
+      organizationId,
+      engagementRunId,
+      type: 'video_script',
+      title: scriptResult.value.title,
+      content: {
+        script: scriptResult.value.script,
+        platform: scriptResult.value.platform,
+        estimatedDurationSec: scriptResult.value.estimatedDurationSec,
+        creativeId: null,
+      },
+      attributedTo: ['video-producer' as DigitalEmployeeId],
+    })
+  } else {
+    logger.info('AI Workforce pipeline skipped video script', {
+      runId: engagementRunId,
+      reason: scriptResult.error.message,
+    })
+  }
+
   // ── Step 5: Publishing ──────────────────────────────────────────────────────
   await recordProgress(ctx, 'publishing', 'running')
   const publishing = await attemptStep(

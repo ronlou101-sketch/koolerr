@@ -16,7 +16,7 @@ vi.mock('@/domains/ai-workforce/creative', () => ({
   creativeDepartment: { createBrief: vi.fn() },
 }))
 vi.mock('@/domains/ai-workforce/video-production', () => ({
-  videoProductionDepartment: { planProduction: vi.fn() },
+  videoProductionDepartment: { planProduction: vi.fn(), writeScript: vi.fn() },
   buildSkippedVideoProductionBrief: (creativeBrief: unknown) => ({
     productionPlan: 'Video production was skipped for this run.',
     sourceCreativeBrief: creativeBrief,
@@ -98,6 +98,7 @@ describe('runAIWorkforcePipeline()', () => {
   let strategyMock: ReturnType<typeof vi.fn>
   let creativeMock: ReturnType<typeof vi.fn>
   let videoMock: ReturnType<typeof vi.fn>
+  let writeScriptMock: ReturnType<typeof vi.fn>
   let publishingMock: ReturnType<typeof vi.fn>
   let approvalMock: ReturnType<typeof vi.fn>
   let deliveryMock: ReturnType<typeof vi.fn>
@@ -123,6 +124,7 @@ describe('runAIWorkforcePipeline()', () => {
     strategyMock = vi.mocked(strategyMod.strategyDepartment.developStrategy)
     creativeMock = vi.mocked(creativeMod.creativeDepartment.createBrief)
     videoMock = vi.mocked(videoMod.videoProductionDepartment.planProduction)
+    writeScriptMock = vi.mocked(videoMod.videoProductionDepartment.writeScript)
     publishingMock = vi.mocked(publishingMod.publishingDepartment.preparePackages)
     approvalMock = vi.mocked(approvalMod.approvalDepartment.reviewPackages)
     deliveryMock = vi.mocked(deliveryMod.deliveryDepartment.prepareDelivery)
@@ -136,6 +138,15 @@ describe('runAIWorkforcePipeline()', () => {
     strategyMock.mockResolvedValue({ ok: true, value: { strategyBrief: STRATEGY_BRIEF } })
     creativeMock.mockResolvedValue({ ok: true, value: { creativeBrief: CREATIVE_BRIEF } })
     videoMock.mockResolvedValue({ ok: true, value: { videoProductionBrief: VIDEO_BRIEF } })
+    writeScriptMock.mockResolvedValue({
+      ok: true,
+      value: {
+        title: 'Spokesperson Script',
+        script: 'Call us today.',
+        platform: 'facebook',
+        estimatedDurationSec: 45,
+      },
+    })
     publishingMock.mockResolvedValue({ ok: true, value: PUBLISHING_JOB })
     approvalMock.mockResolvedValue({ ok: true, value: { approvalDecision: APPROVAL_DECISION } })
     deliveryMock.mockResolvedValue({ ok: true, value: { deliveryPackage: DELIVERY_PACKAGE } })
@@ -198,6 +209,39 @@ describe('runAIWorkforcePipeline()', () => {
     const { runAIWorkforcePipeline } = await import('./pipeline')
     await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('emits a video_script deliverable from the generated script (CR-6a)', async () => {
+    setupHappyPath()
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(writeScriptMock).toHaveBeenCalledWith(
+      expect.objectContaining({ creativeBrief: CREATIVE_BRIEF })
+    )
+    expect(storeDeliverableMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'video_script',
+        engagementRunId: TEST_CTX.engagementRunId,
+        content: expect.objectContaining({ script: 'Call us today.', creativeId: null }),
+      })
+    )
+  })
+
+  it('is non-fatal when script generation fails: report still stored, run completes', async () => {
+    setupHappyPath()
+    writeScriptMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'no provider', retriable: true },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    // No video_script stored, but the report is, and the run completes.
+    const storedTypes = storeDeliverableMock.mock.calls.map((c) => c[0].type)
+    expect(storedTypes).not.toContain('video_script')
+    expect(storedTypes).toContain('report')
     expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
   })
 

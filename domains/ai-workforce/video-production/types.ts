@@ -1,6 +1,24 @@
 import type { EngagementRunId, OrganizationId, TenantId, WorkforceId } from '@/shared/types'
 import type { CreativeBrief } from '../creative/types'
 
+// ── Video script ─────────────────────────────────────────────────────────────
+
+/**
+ * A spokesperson video script — the spoken text a HeyGen render turns into video.
+ *
+ * This is the canonical source artifact for a spokesperson video: the pipeline
+ * persists it as a `video_script` deliverable (`content.script`), which the branded,
+ * entitlement-gated render path (CR-2/CR-3/CR-4) consumes. Derived from the
+ * CreativeBrief; the briefs carry no spoken-script field, so it is generated.
+ */
+export interface VideoScript {
+  title: string
+  /** The spoken script — the render prompt for a HeyGen spokesperson video. */
+  script: string
+  platform: string
+  estimatedDurationSec: number
+}
+
 // ── Output ─────────────────────────────────────────────────────────────────────
 
 /**

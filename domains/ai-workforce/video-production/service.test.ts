@@ -590,4 +590,59 @@ describe('VideoProductionDepartmentService', () => {
       expect(service.listJobs()).toEqual([])
     })
   })
+
+  describe('writeScript()', () => {
+    const SCRIPT_REQUEST = {
+      tenantId: TEST_REQUEST.tenantId,
+      organizationId: TEST_REQUEST.organizationId,
+      workforceId: TEST_REQUEST.workforceId,
+      engagementRunId: TEST_REQUEST.engagementRunId,
+      creativeBrief: TEST_CREATIVE_BRIEF,
+    }
+
+    it('parses a JSON script response into a VideoScript', async () => {
+      const json = JSON.stringify({
+        title: 'Same-Day Hero',
+        script: 'Got a burst pipe? We fix it today. Call Sunrise Plumbing now.',
+        platform: 'instagram',
+        estimatedDurationSec: 30,
+      })
+      const service = new VideoProductionDepartmentService(makeGateway(json))
+
+      const result = await service.writeScript(SCRIPT_REQUEST)
+
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+      expect(result.value).toEqual({
+        title: 'Same-Day Hero',
+        script: 'Got a burst pipe? We fix it today. Call Sunrise Plumbing now.',
+        platform: 'instagram',
+        estimatedDurationSec: 30,
+      })
+    })
+
+    it('is lenient: a plain-text (non-JSON) response becomes the script with defaults', async () => {
+      const service = new VideoProductionDepartmentService(
+        makeGateway('Call Sunrise Plumbing today for same-day service.')
+      )
+
+      const result = await service.writeScript(SCRIPT_REQUEST)
+
+      expect(result.ok).toBe(true)
+      if (!result.ok) return
+      expect(result.value.script).toBe('Call Sunrise Plumbing today for same-day service.')
+      expect(result.value.platform).toBe('facebook')
+      expect(result.value.estimatedDurationSec).toBe(45)
+    })
+
+    it('returns an error when all providers fail', async () => {
+      const service = new VideoProductionDepartmentService(makeFailingGateway('provider exploded'))
+
+      const result = await service.writeScript(SCRIPT_REQUEST)
+
+      expect(result.ok).toBe(false)
+      if (result.ok) return
+      expect(result.error.message).toMatch(/Video script generation failed/)
+    })
+  })
 })

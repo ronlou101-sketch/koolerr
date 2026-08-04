@@ -1,5 +1,5 @@
 import type { CreativeBrief } from '../creative/types'
-import type { VideoProductionBrief } from './types'
+import type { VideoProductionBrief, VideoScript } from './types'
 
 /**
  * System context injected into every video production plan invocation.
@@ -149,6 +149,89 @@ Requirements:
 - voiceAssignments must reference ElevenLabs voice settings
 - exportTargets must list every deliverable with platform and technical spec
 - approvalChecklist must cover brand alignment, technical quality, and content accuracy`
+}
+
+// ── Video script writer ──────────────────────────────────────────────────────
+
+/**
+ * System context for spokesperson video-script generation. Requests a compact JSON
+ * object carrying the spoken script and its delivery metadata.
+ */
+export const VIDEO_SCRIPT_WRITER_SYSTEM_CONTEXT = `You are Koolerr's spokesperson script writer.
+You turn a Creative Brief into a single, spoken video script for an on-camera brand spokesperson.
+Write natural, spoken words only — what the spokesperson says to camera — not stage directions or scene notes.
+Keep it tight: a 30-60 second script (roughly 70-150 words) that opens with a hook and ends with the call to action.
+You MUST respond with valid JSON only. No prose. No markdown. No code fences.`
+
+/**
+ * Builds the spokesperson video-script prompt from a CreativeBrief. Requests JSON
+ * with the spoken script plus platform and estimated duration.
+ */
+export function buildVideoScriptPrompt(creativeBrief: CreativeBrief): string {
+  const business = creativeBrief.sourceStrategyBrief.sourceResearchBrief.sourceProfile.businessName
+
+  return `Write one spokesperson video script for ${business}, using ONLY the creative brief below.
+
+=== CREATIVE BRIEF ===
+${summariseCreative(creativeBrief)}
+
+=== YOUR TASK ===
+Return a JSON object with this exact structure (no markdown, no code fences):
+
+{
+  "title": "Short title for this script",
+  "script": "The full spoken script — natural spoken words only, opening with a hook from the brief's Hook Variations and closing with the Call to Action",
+  "platform": "the primary target platform, e.g. facebook, instagram, tiktok, youtube",
+  "estimatedDurationSec": 45
+}
+
+Requirements:
+- "script" is what the spokesperson says out loud — no scene directions, no camera notes, no labels.
+- Ground the message in this business's brief; do not invent offers not supported by it.
+- 70-150 words; end on the brief's Call to Action.`
+}
+
+/**
+ * Parses the raw provider response into a VideoScript. Lenient by design — a plain
+ * (non-JSON) response is treated as the script itself, with sensible defaults — so a
+ * usable script is always produced rather than failing the artifact.
+ */
+export function parseVideoScript(rawContent: string): VideoScript {
+  const cleaned = rawContent
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/, '')
+    .trim()
+
+  let parsed: Record<string, unknown> | null = null
+  try {
+    parsed = JSON.parse(cleaned) as Record<string, unknown>
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    if (match) {
+      try {
+        parsed = JSON.parse(match[0]) as Record<string, unknown>
+      } catch {
+        parsed = null
+      }
+    }
+  }
+
+  const script =
+    typeof parsed?.script === 'string' && parsed.script.trim() ? (parsed.script as string) : cleaned
+  const title =
+    typeof parsed?.title === 'string' && parsed.title.trim()
+      ? (parsed.title as string)
+      : 'Spokesperson Script'
+  const platform =
+    typeof parsed?.platform === 'string' && parsed.platform.trim()
+      ? (parsed.platform as string)
+      : 'facebook'
+  const estimatedDurationSec =
+    typeof parsed?.estimatedDurationSec === 'number' && parsed.estimatedDurationSec > 0
+      ? (parsed.estimatedDurationSec as number)
+      : 45
+
+  return { title, script, platform, estimatedDurationSec }
 }
 
 /**

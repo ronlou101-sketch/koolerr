@@ -5,10 +5,13 @@ import { logger } from '@/shared/lib/logger'
 import { ok, err } from '@/shared/types'
 import type {
   DigitalEmployeeId,
+  EngagementRunId,
   ModelProvider,
   OrganizationId,
   Result,
+  TenantId,
   TrustRule,
+  WorkforceId,
 } from '@/shared/types'
 import type { DeliverableId } from '@/shared/types'
 import { WORKFORCE_REGISTRY } from '../employees'
@@ -16,19 +19,34 @@ import { executeRenderJob } from '../render'
 import type { RenderError, RenderJobResult } from '../render'
 import {
   buildVideoProductionPrompt,
+  buildVideoScriptPrompt,
   parseVideoProductionBrief,
+  parseVideoScript,
   VIDEO_PRODUCTION_SYSTEM_CONTEXT,
+  VIDEO_SCRIPT_WRITER_SYSTEM_CONTEXT,
 } from './prompt'
+import type { CreativeBrief } from '../creative/types'
 import type {
   VideoProductionBrief,
   VideoProductionError,
   VideoProductionErrorCode,
   VideoProductionJob,
   VideoProductionRequest,
+  VideoScript,
 } from './types'
 
 const VIDEO_EMPLOYEE_ID = 'video-producer' as DigitalEmployeeId
 const HEYGEN_VIDEO_ACTION = 'generate_heygen_video'
+const WRITE_SCRIPT_ACTION = 'write_video_script'
+
+/** Input for generating a spokesperson video script from a Creative Brief. */
+export interface WriteScriptRequest {
+  tenantId: TenantId
+  organizationId: OrganizationId
+  workforceId: WorkforceId
+  engagementRunId: EngagementRunId
+  creativeBrief: CreativeBrief
+}
 
 /** Input for rendering a branded spokesperson video from an approved script. */
 export interface SpokespersonVideoRenderRequest {
@@ -65,6 +83,12 @@ export interface IVideoProductionDepartmentService {
   renderSpokespersonVideo(
     request: SpokespersonVideoRenderRequest
   ): Promise<Result<RenderJobResult, RenderError>>
+  /**
+   * Generates the spokesperson video script (the spoken text) from a Creative Brief.
+   * Canonical script generator for the customer pipeline (ADR-025 §2/§6). The
+   * pipeline persists the result as a `video_script` deliverable.
+   */
+  writeScript(request: WriteScriptRequest): Promise<Result<VideoScript, VideoProductionError>>
   getJob(jobId: string): VideoProductionJob | undefined
   listJobs(): VideoProductionJob[]
 }
@@ -238,12 +262,16 @@ export class VideoProductionDepartmentService implements IVideoProductionDepartm
     return parseVideoProductionBrief(response.content, request.creativeBrief)
   }
 
-  private ensureTrustRule(employeeId: DigitalEmployeeId, organizationId: OrganizationId): void {
+  private ensureTrustRule(
+    employeeId: DigitalEmployeeId,
+    organizationId: OrganizationId,
+    action: string = VIDEO_PRODUCTION_ACTION
+  ): void {
     const rule: TrustRule = {
-      id: `video-production-${employeeId}-${VIDEO_PRODUCTION_ACTION}`,
+      id: `video-production-${employeeId}-${action}`,
       organizationId,
       digitalEmployeeId: employeeId,
-      action: VIDEO_PRODUCTION_ACTION,
+      action,
       requiresApproval: false,
       autonomyLevel: 'autonomous',
     }
@@ -308,6 +336,42 @@ export class VideoProductionDepartmentService implements IVideoProductionDepartm
       },
       this.gateway
     )
+  }
+
+  async writeScript(
+    request: WriteScriptRequest
+  ): Promise<Result<VideoScript, VideoProductionError>> {
+    this.ensureTrustRule(VIDEO_EMPLOYEE_ID, request.organizationId, WRITE_SCRIPT_ACTION)
+    const prompt = buildVideoScriptPrompt(request.creativeBrief)
+
+    let lastError = ''
+    // Try the text providers in order; the pipeline adds outer retry via attemptStep.
+    for (const providerId of VIDEO_PLAN_PROVIDERS) {
+      try {
+        const response = await this.gateway.invoke({
+          tenantId: request.tenantId,
+          organizationId: request.organizationId,
+          workforceId: request.workforceId,
+          digitalEmployeeId: VIDEO_EMPLOYEE_ID,
+          engagementRunId: request.engagementRunId,
+          action: WRITE_SCRIPT_ACTION,
+          prompt,
+          systemContext: VIDEO_SCRIPT_WRITER_SYSTEM_CONTEXT,
+          provider: providerId,
+          maxTokens: 2048,
+        })
+        return ok(parseVideoScript(response.content))
+      } catch (error) {
+        lastError = String(error)
+        if (this.isNonRetriable(lastError)) break
+      }
+    }
+
+    return err({
+      code: this.classifyError(lastError),
+      message: `Video script generation failed: ${lastError}`,
+      retriable: true,
+    })
   }
 
   getJob(jobId: string): VideoProductionJob | undefined {
