@@ -4,6 +4,7 @@ import { deliverablesService } from '@/domains/deliverables'
 import type { Deliverable, DeliverableId } from '@/shared/types'
 import { approveDeliverable, rejectDeliverable } from './actions'
 import { GenerateVideoButton } from './generate-video-button'
+import { isReportViewEmpty, toReportView } from './report-view'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -144,6 +145,44 @@ function ImageContent({ deliverable }: { deliverable: Deliverable }) {
   )
 }
 
+function ReportContent({ deliverable }: { deliverable: Deliverable }) {
+  const view = toReportView(deliverable.content)
+
+  // Legacy/edge reports with none of the expected fields fall back to the generic
+  // renderer rather than showing an empty page.
+  if (isReportViewEmpty(view)) {
+    return <GenericContent deliverable={deliverable} />
+  }
+
+  return (
+    <div className="space-y-4">
+      {view.summary && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-medium text-foreground">Summary</h2>
+          <div className="rounded-lg border border-border bg-card p-4">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+              {view.summary}
+            </p>
+          </div>
+        </section>
+      )}
+
+      {view.sections.map((section) => (
+        <section key={section.label} className="space-y-2">
+          <h2 className="text-sm font-medium text-foreground">{section.label}</h2>
+          <ul className="space-y-1 rounded-lg border border-border bg-card p-4">
+            {section.items.map((item, index) => (
+              <li key={index} className="text-sm leading-relaxed text-foreground">
+                {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  )
+}
+
 function GenericContent({ deliverable }: { deliverable: Deliverable }) {
   const body = deliverable.content.body as string | undefined
   const brief = deliverable.content.contentBrief as string | undefined
@@ -236,9 +275,11 @@ export default async function DeliverablePage({ params, searchParams }: Props) {
       {deliverable.type === 'video_script' && <VideoScriptContent deliverable={deliverable} />}
       {deliverable.type === 'video' && <VideoContent deliverable={deliverable} />}
       {deliverable.type === 'image' && <ImageContent deliverable={deliverable} />}
+      {deliverable.type === 'report' && <ReportContent deliverable={deliverable} />}
       {deliverable.type !== 'video_script' &&
         deliverable.type !== 'video' &&
-        deliverable.type !== 'image' && <GenericContent deliverable={deliverable} />}
+        deliverable.type !== 'image' &&
+        deliverable.type !== 'report' && <GenericContent deliverable={deliverable} />}
 
       {reviewable && (
         <section className="space-y-4 rounded-lg border border-border bg-card p-6">
