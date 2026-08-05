@@ -5,6 +5,7 @@ import {
   asDigitalEmployeeId,
   asEngagementRunId,
   asOrganizationId,
+  asRenderJobId,
   asTenantId,
   asUserId,
   asWorkforceId,
@@ -27,6 +28,7 @@ describe('ID factories', () => {
     { name: 'asDigitalEmployeeId', fn: asDigitalEmployeeId },
     { name: 'asEngagementRunId', fn: asEngagementRunId },
     { name: 'asDeliverableId', fn: asDeliverableId },
+    { name: 'asRenderJobId', fn: asRenderJobId },
     { name: 'asBusinessBrainId', fn: asBusinessBrainId },
   ] as const
 

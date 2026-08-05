@@ -5,6 +5,10 @@ import {
 } from '@/domains/billing'
 import { _configureBusinessBrainRepository } from '@/domains/business-brain'
 import { _configureDeliverablesRepository } from '@/domains/deliverables'
+import {
+  _configureRenderJobsRepository,
+  SupabaseRenderJobsRepository,
+} from '@/domains/ai-workforce/render-jobs'
 import { _configureDogfoodingRepository } from '@/domains/dogfooding'
 import { SupabaseDogfoodingRepository } from '@/domains/dogfooding/supabase-repository'
 import { _configureIdentityRepository } from '@/domains/identity'
@@ -132,6 +136,7 @@ export async function bootstrapPlatform(): Promise<PlatformBootstrapResult> {
   _configureBusinessBrainRepository(new SupabaseBusinessBrainRepository(supabase))
   _configureWorkforceEngineRepository(new SupabaseWorkforceEngineRepository(supabase))
   _configureDeliverablesRepository(new SupabaseDeliverablesRepository(supabase))
+  _configureRenderJobsRepository(new SupabaseRenderJobsRepository(supabase))
   _configureBillingRepository(new SupabaseBillingRepository(supabase))
   _configureConsentRepository(new SupabaseConsentRepository(supabase, getTenantId))
   _configureDogfoodingRepository(new SupabaseDogfoodingRepository(supabase))

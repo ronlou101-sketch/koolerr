@@ -18,6 +18,7 @@ import type {
   DigitalEmployeeId,
   EngagementRunId,
   OrganizationId,
+  RenderJobId,
   TenantId,
   UserId,
   WorkforceId,
@@ -56,6 +57,11 @@ export function asEngagementRunId(raw: string): EngagementRunId {
 export function asDeliverableId(raw: string): DeliverableId {
   if (!raw) throw new Error('DeliverableId must be a non-empty string')
   return raw as DeliverableId
+}
+
+export function asRenderJobId(raw: string): RenderJobId {
+  if (!raw) throw new Error('RenderJobId must be a non-empty string')
+  return raw as RenderJobId
 }
 
 export function asBusinessBrainId(raw: string): BusinessBrainId {

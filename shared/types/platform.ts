@@ -38,6 +38,7 @@ export type WorkforceId = Branded<string, 'WorkforceId'>
 export type DigitalEmployeeId = Branded<string, 'DigitalEmployeeId'>
 export type EngagementRunId = Branded<string, 'EngagementRunId'>
 export type DeliverableId = Branded<string, 'DeliverableId'>
+export type RenderJobId = Branded<string, 'RenderJobId'>
 export type ConsentId = Branded<string, 'ConsentId'>
 export type UsageEventId = Branded<string, 'UsageEventId'>
 export type WorkflowId = Branded<string, 'WorkflowId'>
