@@ -89,4 +89,14 @@ export const env = {
       return Number.isInteger(parsed) && parsed > 0 ? parsed : 10
     },
   },
+  cron: {
+    /**
+     * Shared secret used to authenticate scheduled (Vercel Cron) requests.
+     * Vercel sends it as `Authorization: Bearer <CRON_SECRET>`. Never exposed to
+     * the client. Required — a cron endpoint refuses to run without it.
+     */
+    secret(): string {
+      return required('CRON_SECRET')
+    },
+  },
 }

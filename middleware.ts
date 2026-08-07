@@ -44,6 +44,9 @@ const PUBLIC_PATHS: string[] = [
   '/support',
   // Stripe webhook: self-secured via HMAC signature — no session cookie
   '/api/webhooks/stripe',
+  // Scheduled render-job driver (Vercel Cron): self-secured via CRON_SECRET
+  // bearer — the scheduler has no session cookie.
+  '/api/cron/render-jobs',
   // Pre-auth checkout: unauthenticated users completing a Stripe checkout
   '/api/checkout/start',
   '/api/checkout/complete',

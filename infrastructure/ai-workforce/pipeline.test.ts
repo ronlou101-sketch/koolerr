@@ -40,7 +40,12 @@ vi.mock('@/domains/workforce-engine', () => ({
   },
 }))
 vi.mock('@/domains/deliverables', () => ({
-  deliverablesService: { storeDeliverable: vi.fn().mockResolvedValue({ ok: true, value: {} }) },
+  deliverablesService: {
+    storeDeliverable: vi.fn().mockResolvedValue({ ok: true, value: { id: 'del_stub' } }),
+  },
+}))
+vi.mock('@/domains/ai-workforce/render-jobs', () => ({
+  renderJobsService: { enqueue: vi.fn().mockResolvedValue({ ok: true, value: {} }) },
 }))
 vi.mock('@/shared/lib/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn() },
@@ -73,7 +78,12 @@ const RESEARCH_BRIEF = {
   keyInsights: [],
 }
 const STRATEGY_BRIEF = { id: 'sb_1', targetPlatforms: ['Facebook'], contentPillars: [] }
-const CREATIVE_BRIEF = { id: 'cb_1', adCopy: 'Great copy', visualGuidelines: '' }
+const CREATIVE_BRIEF = {
+  id: 'cb_1',
+  adCopy: 'Great copy',
+  visualGuidelines: '',
+  imagePrompts: ['a hero image', 'a product shot'],
+}
 const VIDEO_BRIEF = { id: 'vb_1', scripts: [], shotList: [] }
 const PUBLISHING_JOB = {
   id: 'pj_1',
@@ -105,6 +115,7 @@ describe('runAIWorkforcePipeline()', () => {
   let storeMemoryMock: ReturnType<typeof vi.fn>
   let updateStatusMock: ReturnType<typeof vi.fn>
   let storeDeliverableMock: ReturnType<typeof vi.fn>
+  let enqueueMock: ReturnType<typeof vi.fn>
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -119,6 +130,7 @@ describe('runAIWorkforcePipeline()', () => {
     const brainMod = await import('@/domains/business-brain')
     const workforceMod = await import('@/domains/workforce-engine')
     const deliverablesMod = await import('@/domains/deliverables')
+    const renderJobsMod = await import('@/domains/ai-workforce/render-jobs')
 
     researchMock = vi.mocked(researchMod.researchDepartment.conductResearch)
     strategyMock = vi.mocked(strategyMod.strategyDepartment.developStrategy)
@@ -131,6 +143,7 @@ describe('runAIWorkforcePipeline()', () => {
     storeMemoryMock = vi.mocked(brainMod.businessBrainService.storeMemory)
     updateStatusMock = vi.mocked(workforceMod.workforceEngineService.updateEngagementRunStatus)
     storeDeliverableMock = vi.mocked(deliverablesMod.deliverablesService.storeDeliverable)
+    enqueueMock = vi.mocked(renderJobsMod.renderJobsService.enqueue)
   })
 
   function setupHappyPath() {
@@ -241,6 +254,58 @@ describe('runAIWorkforcePipeline()', () => {
     // No video_script stored, but the report is, and the run completes.
     const storedTypes = storeDeliverableMock.mock.calls.map((c) => c[0].type)
     expect(storedTypes).not.toContain('video_script')
+    expect(storedTypes).toContain('report')
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('enqueues a bounded set of render jobs from the source deliverables (CR-6c2)', async () => {
+    setupHappyPath()
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    // One video job (from the video_script deliverable) + one image job per image
+    // prompt (2 in the fixture), in order.
+    const kinds = enqueueMock.mock.calls.map((c) => c[0].kind)
+    expect(kinds).toEqual(['video', 'image', 'image'])
+
+    expect(enqueueMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'video',
+        sourceDeliverableId: 'del_stub',
+        engagementRunId: TEST_CTX.engagementRunId,
+        dedupeKey: `${TEST_CTX.engagementRunId}:video:del_stub`,
+      })
+    )
+    expect(enqueueMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'image',
+        sourceDeliverableId: null,
+        dedupeKey: `${TEST_CTX.engagementRunId}:image:0`,
+      })
+    )
+  })
+
+  it('does not enqueue a video job when the video_script store fails (images still enqueue)', async () => {
+    setupHappyPath()
+    // First storeDeliverable call is the video_script; fail it, later (report) succeeds.
+    storeDeliverableMock.mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR', message: 'db write failed' },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    const kinds = enqueueMock.mock.calls.map((c) => c[0].kind)
+    expect(kinds).toEqual(['image', 'image'])
+  })
+
+  it('is non-fatal when enqueue fails: the campaign still completes', async () => {
+    setupHappyPath()
+    enqueueMock.mockRejectedValue(new Error('queue unavailable'))
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    const storedTypes = storeDeliverableMock.mock.calls.map((c) => c[0].type)
     expect(storedTypes).toContain('report')
     expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
   })

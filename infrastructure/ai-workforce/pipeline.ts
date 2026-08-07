@@ -1,4 +1,5 @@
 import type {
+  DeliverableId,
   DigitalEmployeeId,
   EngagementRunId,
   OrganizationId,
@@ -20,6 +21,7 @@ import { deliveryDepartment } from '@/domains/ai-workforce/delivery'
 import { businessBrainService } from '@/domains/business-brain'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
+import { renderJobsService } from '@/domains/ai-workforce/render-jobs'
 import { logger } from '@/shared/lib/logger'
 
 export interface AIWorkforcePipelineContext {
@@ -50,6 +52,9 @@ type StepOutcome<T> = { ok: true; value: T } | { ok: false; message: string }
 /** 1 initial attempt + 2 retries. Transient provider errors usually clear by attempt 2. */
 const MAX_DEPARTMENT_ATTEMPTS = 3
 const DEFAULT_RETRY_BACKOFF_MS = 2000
+
+/** Upper bound on image render jobs enqueued per campaign (ADR-025 §2 — bounded set). */
+const MAX_IMAGE_RENDER_JOBS = 3
 
 function delay(ms: number): Promise<void> {
   if (ms <= 0) return Promise.resolve()
@@ -290,8 +295,10 @@ export async function runAIWorkforcePipeline(
     engagementRunId,
     creativeBrief,
   })
+  let videoScriptDeliverableId: DeliverableId | null = null
+  let videoScriptText: string | null = null
   if (scriptResult.ok) {
-    await deliverablesService.storeDeliverable({
+    const scriptStore = await deliverablesService.storeDeliverable({
       tenantId,
       organizationId,
       engagementRunId,
@@ -305,10 +312,71 @@ export async function runAIWorkforcePipeline(
       },
       attributedTo: ['video-producer' as DigitalEmployeeId],
     })
+    if (scriptStore.ok) {
+      videoScriptDeliverableId = scriptStore.value.id
+      videoScriptText = scriptResult.value.script
+    } else {
+      logger.warn('AI Workforce pipeline failed to store video script deliverable', {
+        runId: engagementRunId,
+      })
+    }
   } else {
     logger.info('AI Workforce pipeline skipped video script', {
       runId: engagementRunId,
       reason: scriptResult.error.message,
+    })
+  }
+
+  // ── Enqueue render jobs (additive, bounded, non-fatal) ──────────────────────
+  // Enqueue a BOUNDED set of idempotent render jobs from the campaign's source
+  // deliverables so the async render worker (the /api/cron/render-jobs driver)
+  // produces real branded media (ADR-025 §2/§5): one spokesperson video job from
+  // the video_script deliverable, plus up to MAX_IMAGE_RENDER_JOBS image jobs from
+  // the Creative Brief's image prompts. dedupeKeys are deterministic per run so a
+  // re-run never duplicates jobs. Best-effort: a failure to enqueue never fails the
+  // campaign.
+  try {
+    if (videoScriptDeliverableId && videoScriptText) {
+      const enqueued = await renderJobsService.enqueue({
+        organizationId,
+        tenantId,
+        engagementRunId,
+        kind: 'video',
+        sourceDeliverableId: videoScriptDeliverableId,
+        prompt: videoScriptText,
+        dedupeKey: `${engagementRunId}:video:${videoScriptDeliverableId}`,
+      })
+      if (!enqueued.ok) {
+        logger.warn('AI Workforce pipeline failed to enqueue video render job', {
+          runId: engagementRunId,
+          reason: enqueued.error.message,
+        })
+      }
+    }
+
+    const imagePrompts = creativeBrief.imagePrompts.slice(0, MAX_IMAGE_RENDER_JOBS)
+    for (let i = 0; i < imagePrompts.length; i++) {
+      const enqueued = await renderJobsService.enqueue({
+        organizationId,
+        tenantId,
+        engagementRunId,
+        kind: 'image',
+        sourceDeliverableId: null,
+        prompt: imagePrompts[i],
+        dedupeKey: `${engagementRunId}:image:${i}`,
+      })
+      if (!enqueued.ok) {
+        logger.warn('AI Workforce pipeline failed to enqueue image render job', {
+          runId: engagementRunId,
+          index: i,
+          reason: enqueued.error.message,
+        })
+      }
+    }
+  } catch (e) {
+    logger.warn('AI Workforce pipeline render-job enqueue failed', {
+      runId: engagementRunId,
+      error: e instanceof Error ? e.message : String(e),
     })
   }
 
