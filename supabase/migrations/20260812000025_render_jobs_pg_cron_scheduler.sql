@@ -15,21 +15,25 @@
 --     GET /api/cron/render-jobs
 --     Authorization: Bearer <CRON_SECRET>
 --
--- SAFETY: the job is created DISABLED (cron.job.active = false). It issues NO
--- HTTP request until explicitly enabled under separate authorization. The bearer
--- secret is read from Supabase Vault at execution time and is NEVER stored in
--- this file, source code, or any committed configuration.
+-- pg_cron PERMISSIONS: on Supabase the migration role may NOT read or write the
+-- `cron.job` table directly (SELECT/UPDATE raise permission denied, SQLSTATE
+-- 42501). We therefore use only pg_cron's function API — cron.unschedule /
+-- cron.schedule / cron.alter_job — never direct table DML.
+--
+-- SAFETY: the job is created DISABLED via cron.alter_job(active := false). It
+-- issues NO HTTP request until explicitly enabled under separate authorization.
+-- The bearer secret and worker origin are read from Supabase Vault at execution
+-- time and are NEVER stored in this file, source code, or committed config.
 --
 -- ACTIVATION PREREQUISITES (performed LATER, not by this migration):
 --   1. Store two secrets in Supabase Vault:
 --        - 'CRON_SECRET'       : the worker bearer secret (matches the Vercel env var)
---        - 'render_worker_url' : the deployment origin (e.g. https://<prod-domain>),
---                                no trailing slash
---   2. Confirm both resolve, then enable the job:
---        select cron.alter_job(
---          (select jobid from cron.job where jobname = 'render-jobs-drain'),
---          active := true
---        );
+--        - 'render_worker_url' : the stable production origin
+--                                (https://koolerr-s1bb.vercel.app), no trailing slash
+--   2. Enable the job (separately authorized) — e.g. via the Supabase Cron
+--      dashboard (toggle Active on), or SQL:
+--        select cron.alter_job(<jobid>, active := true);
+--      where <jobid> is this job's id (visible in the Supabase Cron dashboard).
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
@@ -38,15 +42,20 @@ do $$
 declare
   v_jobid bigint;
 begin
-  -- Idempotent (re)creation: drop any prior definition of this job first.
-  if exists (select 1 from cron.job where jobname = 'render-jobs-drain') then
+  -- Idempotent (re)creation via the function API only. cron.unschedule raises if
+  -- the job is absent (e.g. first apply), so tolerate that. We do NOT rely on any
+  -- unverified update-on-duplicate-name behavior of cron.schedule.
+  begin
     perform cron.unschedule('render-jobs-drain');
-  end if;
+  exception
+    when others then
+      null;  -- no existing job named render-jobs-drain; nothing to remove
+  end;
 
-  -- Register the 2-minute drain schedule. The command reads the worker origin
-  -- and bearer secret from Vault at run time — no secret or environment-specific
-  -- value is committed here.
-  select cron.schedule(
+  -- Register the 2-minute drain schedule; cron.schedule returns the new jobid.
+  -- The command reads the worker origin and bearer secret from Vault at run time
+  -- — no secret or environment-specific value is committed here.
+  v_jobid := cron.schedule(
     'render-jobs-drain',
     '*/2 * * * *',
     $cmd$
@@ -64,9 +73,10 @@ begin
         )
       );
     $cmd$
-  ) into v_jobid;
+  );
 
-  -- CRITICAL: leave the job DISABLED. It will not fire until explicitly enabled.
-  update cron.job set active = false where jobid = v_jobid;
+  -- CRITICAL: leave the job DISABLED via the supported function API (no direct
+  -- cron.job UPDATE). It will not fire until explicitly enabled later.
+  perform cron.alter_job(v_jobid, active := false);
 end;
 $$;
