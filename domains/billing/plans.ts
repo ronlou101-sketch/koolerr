@@ -59,6 +59,15 @@ export const ENTITLEMENT_FEATURES = {
    * no separate render budget. Enforced via checkEntitlement() before each render.
    */
   spokespersonVideo: 'spokesperson_video',
+  /**
+   * Included spokesperson-video PRODUCTION MINUTES per billing period. A rendered
+   * video consumes 1 unit of `spokespersonVideo` (the count allowance) AND its
+   * actual duration from this minute allowance. This entitlement defines the
+   * ALLOWANCE only; duration-based deduction is a later, separate step. The
+   * allowance values (10/60/200) are whole minutes and fit the existing bigint
+   * `entitlements.limit_amount` schema — no migration required here.
+   */
+  spokespersonVideoMinutes: 'spokesperson_video_minutes',
 } as const
 
 /**
@@ -83,20 +92,36 @@ export const PLAN_ENTITLEMENTS: Record<PlanId, Record<string, number>> = {
     [ENTITLEMENT_FEATURES.engagementRun]: 10,
     [ENTITLEMENT_FEATURES.modelInvocation]: 50_000,
     [ENTITLEMENT_FEATURES.spokespersonVideo]: 0,
+    [ENTITLEMENT_FEATURES.spokespersonVideoMinutes]: 0,
   },
   build: {
     [ENTITLEMENT_FEATURES.engagementRun]: 250,
     [ENTITLEMENT_FEATURES.modelInvocation]: 500_000,
     [ENTITLEMENT_FEATURES.spokespersonVideo]: 5,
+    [ENTITLEMENT_FEATURES.spokespersonVideoMinutes]: 10,
   },
   grow: {
     [ENTITLEMENT_FEATURES.engagementRun]: Infinity,
     [ENTITLEMENT_FEATURES.modelInvocation]: 5_000_000,
     [ENTITLEMENT_FEATURES.spokespersonVideo]: 30,
+    [ENTITLEMENT_FEATURES.spokespersonVideoMinutes]: 60,
   },
   scale: {
     [ENTITLEMENT_FEATURES.engagementRun]: Infinity,
     [ENTITLEMENT_FEATURES.modelInvocation]: Infinity,
     [ENTITLEMENT_FEATURES.spokespersonVideo]: 100,
+    [ENTITLEMENT_FEATURES.spokespersonVideoMinutes]: 200,
   },
+}
+
+/**
+ * Spokesperson-video production minutes consumed by a rendered video of the given
+ * duration. Fractional by design (30s → 0.5 min, 90s → 1.5 min); the per-video
+ * count allowance is tracked separately via `spokespersonVideo`.
+ *
+ * Pure calculation only — this performs NO entitlement deduction or usage
+ * recording. Duration-based consumption against the allowance is a later step.
+ */
+export function videoMinutesForDuration(durationSeconds: number): number {
+  return durationSeconds / 60
 }

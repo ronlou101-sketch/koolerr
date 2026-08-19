@@ -62,6 +62,7 @@ const PACKAGES: Package[] = [
         items: [
           '20 AI Marketing Assets per month',
           'Up to 5 AI Spokesperson Videos per month',
+          '10 Minutes of AI Spokesperson Video Production per month',
           'AI Image Generation',
           'Social Media Captions',
         ],
@@ -89,6 +90,7 @@ const PACKAGES: Package[] = [
           'Up to 50 AI Workforce Employees',
           '100 AI Marketing Assets per month',
           'Up to 30 AI Spokesperson Videos per month',
+          '60 Minutes of AI Spokesperson Video Production per month',
         ],
       },
       {
@@ -124,6 +126,7 @@ const PACKAGES: Package[] = [
           '200 AI Workforce Employees',
           '500 AI Marketing Assets per month',
           'Up to 100 AI Spokesperson Videos per month',
+          '200 Minutes of AI Spokesperson Video Production per month',
           'Multiple Organizations',
         ],
       },
@@ -179,6 +182,12 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     build: 'Up to 5',
     grow: 'Up to 30',
     scale: 'Up to 100',
+  },
+  {
+    label: 'Spokesperson Video Minutes / Month',
+    build: '10',
+    grow: '60',
+    scale: '200',
   },
   {
     label: 'AI Marketing Campaigns',
