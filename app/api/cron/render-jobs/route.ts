@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { bootstrapPlatform } from '@/infrastructure/platform/bootstrap'
 import { renderJobsService } from '@/domains/ai-workforce/render-jobs'
 import type { RenderJob } from '@/domains/ai-workforce/render-jobs'
+import { consumeSpokespersonVideoUsage } from '@/domains/ai-workforce/render'
 import { videoProductionDepartment } from '@/domains/ai-workforce/video-production'
 import { creativeDepartment } from '@/domains/ai-workforce/creative'
 import type { RenderError, RenderJobResult } from '@/domains/ai-workforce/video-production'
@@ -89,6 +90,15 @@ export async function GET(request: Request): Promise<Response> {
       const render = await dispatchRender(job)
       if (render.ok && render.value.deliverableId) {
         await renderJobsService.markCompleted(job.id, render.value.deliverableId)
+        // Consume usage only AFTER durable persistence + completion, keyed on the
+        // render_job id so a retry of the same job can never double-charge (Step 2D).
+        if (job.kind === 'video') {
+          await consumeSpokespersonVideoUsage({
+            organizationId: job.organizationId,
+            idempotencyKey: job.id,
+            durationSeconds: render.value.durationSeconds ?? 0,
+          })
+        }
         completed++
       } else {
         const message = render.ok

@@ -333,6 +333,7 @@ export type UsageEventType =
   | 'model_invocation'
   | 'storage'
   | 'spokesperson_video'
+  | 'spokesperson_video_seconds'
 
 export interface UsageEvent {
   id: UsageEventId

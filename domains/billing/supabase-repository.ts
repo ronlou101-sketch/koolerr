@@ -179,6 +179,16 @@ export class SupabaseBillingRepository implements IBillingRepository {
     return (data ?? []).map((r) => mapUsageEvent(r as UsageEventRow))
   }
 
+  async findUsageEventById(id: string): Promise<UsageEvent | null> {
+    const { data, error } = await this.client
+      .from('usage_events')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw new Error(`[BILLING_REPO] findUsageEventById failed: ${error.message}`)
+    return data ? mapUsageEvent(data as UsageEventRow) : null
+  }
+
   async saveEntitlement(entitlement: Entitlement): Promise<Entitlement> {
     const { data, error } = await this.client
       .from('entitlements')

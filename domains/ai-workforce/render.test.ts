@@ -266,7 +266,7 @@ describe('executeRenderJob', () => {
 
   const metered = (): RenderJobRequest => makeRequest({ meteredFeature: 'spokesperson_video' })
 
-  it('gates a metered render under limit → renders and meters one usage event', async () => {
+  it('gates a metered render under limit → renders; consumption is the caller’s job', async () => {
     vi.mocked(billingService.checkEntitlement).mockResolvedValue({
       ok: true,
       value: { organizationId: ORG_ID, feature: 'spokesperson_video', limit: 5, used: 2 },
@@ -276,13 +276,10 @@ describe('executeRenderJob', () => {
 
     expect(result.ok).toBe(true)
     expect(gateway.invoke).toHaveBeenCalledOnce()
-    expect(billingService.recordUsageEvent).toHaveBeenCalledWith(
-      expect.objectContaining({
-        organizationId: ORG_ID,
-        type: 'spokesperson_video',
-        quantity: 1,
-      })
-    )
+    // Step 2D: executeRenderJob no longer meters inline. The caller (cron worker /
+    // sync route) consumes count + seconds idempotently AFTER durable persistence
+    // and job completion, keyed on the render_job id.
+    expect(billingService.recordUsageEvent).not.toHaveBeenCalled()
   })
 
   it('rejects an over-limit metered render before dispatch (non-spending)', async () => {

@@ -3,6 +3,7 @@ import {
   ENTITLEMENT_FEATURES,
   PLAN_ENTITLEMENTS,
   PLAN_PRICES_CENTS,
+  billableSeconds,
   planIdFromStripePriceId,
   stripePriceId,
   videoMinutesForDuration,
@@ -57,9 +58,9 @@ describe('planIdFromStripePriceId', () => {
   })
 })
 
-describe('PLAN_ENTITLEMENTS — video count + minute allowances', () => {
+describe('PLAN_ENTITLEMENTS — video count + second allowances', () => {
   const video = ENTITLEMENT_FEATURES.spokespersonVideo
-  const minutes = ENTITLEMENT_FEATURES.spokespersonVideoMinutes
+  const seconds = ENTITLEMENT_FEATURES.spokespersonVideoSeconds
 
   it('preserves the per-video COUNT allowance (5 / 30 / 100)', () => {
     expect(PLAN_ENTITLEMENTS.build[video]).toBe(5)
@@ -68,17 +69,21 @@ describe('PLAN_ENTITLEMENTS — video count + minute allowances', () => {
     expect(PLAN_ENTITLEMENTS.unpaid[video]).toBe(0)
   })
 
-  it('adds the video-MINUTE allowance as a second entitlement (10 / 60 / 200)', () => {
-    expect(PLAN_ENTITLEMENTS.build[minutes]).toBe(10)
-    expect(PLAN_ENTITLEMENTS.grow[minutes]).toBe(60)
-    expect(PLAN_ENTITLEMENTS.scale[minutes]).toBe(200)
-    expect(PLAN_ENTITLEMENTS.unpaid[minutes]).toBe(0)
+  it('stores the video-time allowance in SECONDS (600 / 3600 / 12000 = 10 / 60 / 200 min)', () => {
+    expect(PLAN_ENTITLEMENTS.build[seconds]).toBe(600)
+    expect(PLAN_ENTITLEMENTS.grow[seconds]).toBe(3600)
+    expect(PLAN_ENTITLEMENTS.scale[seconds]).toBe(12000)
+    expect(PLAN_ENTITLEMENTS.unpaid[seconds]).toBe(0)
+    // …which are exactly the customer-facing 10 / 60 / 200 minutes
+    expect(videoMinutesForDuration(PLAN_ENTITLEMENTS.build[seconds])).toBe(10)
+    expect(videoMinutesForDuration(PLAN_ENTITLEMENTS.grow[seconds])).toBe(60)
+    expect(videoMinutesForDuration(PLAN_ENTITLEMENTS.scale[seconds])).toBe(200)
   })
 
-  it('keeps count and minutes as two distinct entitlement features', () => {
+  it('keeps count and seconds as two distinct entitlement features', () => {
     expect(video).toBe('spokesperson_video')
-    expect(minutes).toBe('spokesperson_video_minutes')
-    expect(video).not.toBe(minutes)
+    expect(seconds).toBe('spokesperson_video_seconds')
+    expect(video).not.toBe(seconds)
   })
 
   it('does not reduce existing engagement-run entitlements', () => {
@@ -96,7 +101,7 @@ describe('PLAN_PRICES_CENTS — prices unchanged', () => {
   })
 })
 
-describe('videoMinutesForDuration — fractional minutes', () => {
+describe('videoMinutesForDuration — fractional display minutes', () => {
   it('represents 30 seconds as 0.5 minutes', () => {
     expect(videoMinutesForDuration(30)).toBe(0.5)
   })
@@ -106,5 +111,22 @@ describe('videoMinutesForDuration — fractional minutes', () => {
   it('represents whole minutes exactly', () => {
     expect(videoMinutesForDuration(60)).toBe(1)
     expect(videoMinutesForDuration(0)).toBe(0)
+  })
+})
+
+describe('billableSeconds — ceil to whole seconds (never undercharge)', () => {
+  it("ceils HeyGen's fractional duration (3.29143 → 4)", () => {
+    expect(billableSeconds(3.29143)).toBe(4)
+  })
+  it('leaves whole seconds unchanged (30 → 30, 60 → 60)', () => {
+    expect(billableSeconds(30)).toBe(30)
+    expect(billableSeconds(60)).toBe(60)
+  })
+  it('ceils any positive fraction up to at least 1 (0.1 → 1)', () => {
+    expect(billableSeconds(0.1)).toBe(1)
+  })
+  it('clamps non-positive to 0', () => {
+    expect(billableSeconds(0)).toBe(0)
+    expect(billableSeconds(-5)).toBe(0)
   })
 })

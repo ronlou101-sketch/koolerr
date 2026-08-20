@@ -1,7 +1,12 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
-import { billingService, ENTITLEMENT_FEATURES, PLAN_LABELS } from '@/domains/billing'
+import {
+  billingService,
+  ENTITLEMENT_FEATURES,
+  PLAN_LABELS,
+  videoMinutesForDuration,
+} from '@/domains/billing'
 
 /**
  * Usage page — shows the customer their current plan, entitlement limits,
@@ -41,6 +46,12 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
+/** Whole seconds → "Xm Ys" for an optional precise readout (never raw seconds). */
+function formatMinSec(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds))
+  return `${Math.floor(s / 60)}m ${s % 60}s`
+}
+
 export default async function UsagePage() {
   const ctx = await getRequestPlatformContext()
   if (!ctx) redirect('/login')
@@ -56,6 +67,12 @@ export default async function UsagePage() {
   const runEntitlement = entitlements.find((e) => e.feature === ENTITLEMENT_FEATURES.engagementRun)
   const tokenEntitlement = entitlements.find(
     (e) => e.feature === ENTITLEMENT_FEATURES.modelInvocation
+  )
+  const videoEntitlement = entitlements.find(
+    (e) => e.feature === ENTITLEMENT_FEATURES.spokespersonVideo
+  )
+  const videoSecondsEntitlement = entitlements.find(
+    (e) => e.feature === ENTITLEMENT_FEATURES.spokespersonVideoSeconds
   )
 
   const planLabel = subscription
@@ -135,6 +152,35 @@ export default async function UsagePage() {
               <UsageBar used={tokenEntitlement.used} limit={tokenEntitlement.limit} />
             ) : (
               <p className="mt-2 text-xs text-muted-foreground">No token usage recorded yet.</p>
+            )}
+          </div>
+
+          {/* Spokesperson Videos — count + production minutes (stored as seconds) */}
+          <div className="rounded-lg border border-border bg-card p-5">
+            <p className="text-sm font-medium text-foreground">Spokesperson Videos</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              AI spokesperson videos and production minutes for this period.
+            </p>
+            {videoEntitlement ? (
+              <UsageBar used={videoEntitlement.used} limit={videoEntitlement.limit} />
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">No video usage recorded yet.</p>
+            )}
+            {videoSecondsEntitlement && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {videoSecondsEntitlement.limit === Infinity
+                  ? `${videoMinutesForDuration(videoSecondsEntitlement.used).toFixed(1)} video minutes used (unlimited)`
+                  : `${Math.max(
+                      0,
+                      videoMinutesForDuration(
+                        videoSecondsEntitlement.limit - videoSecondsEntitlement.used
+                      )
+                    ).toFixed(1)} of ${videoMinutesForDuration(
+                      videoSecondsEntitlement.limit
+                    )} video minutes remaining`}
+                {videoSecondsEntitlement.used > 0 &&
+                  ` · ${formatMinSec(videoSecondsEntitlement.used)} used`}
+              </p>
             )}
           </div>
         </div>

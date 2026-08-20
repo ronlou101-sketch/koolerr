@@ -24,6 +24,8 @@ export interface IBillingRepository {
   // Usage events — append-only
   saveUsageEvent(event: UsageEvent): Promise<UsageEvent>
   listUsageEvents(organizationId: OrganizationId, type?: UsageEventType): Promise<UsageEvent[]>
+  /** Look up a usage event by its (text PK) id — supports idempotent recording. */
+  findUsageEventById(id: string): Promise<UsageEvent | null>
 
   // Entitlements — upsert semantics (organizationId, feature) is the key
   saveEntitlement(entitlement: Entitlement): Promise<Entitlement>

@@ -82,6 +82,12 @@ export interface NormalizedModelResponse {
   model: string
   tokensUsed: number
   latencyMs: number
+  /**
+   * Actual rendered media duration in seconds, when the provider reports it
+   * (e.g. HeyGen video_status.duration). Undefined for modalities without a
+   * duration (text, image). Billing source of truth for video minutes.
+   */
+  durationSeconds?: number
 }
 
 // ---------------------------------------------------------------------------
@@ -123,6 +129,8 @@ export interface GatewayResponse {
   model: string
   tokensUsed: number
   latencyMs: number
+  /** Actual rendered media duration in seconds when the provider reports it (HeyGen). */
+  durationSeconds?: number
 }
 
 // ---------------------------------------------------------------------------

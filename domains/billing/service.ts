@@ -44,6 +44,13 @@ export interface RecordUsageInput {
   type: UsageEventType
   quantity: number
   metadata?: Record<string, unknown>
+  /**
+   * Optional deterministic usage-event id for IDEMPOTENT recording. When supplied
+   * (e.g. keyed on a render_job.id), a repeat with the same id is a no-op — no
+   * duplicate event and no second entitlement increment. Prevents double-charging
+   * when a completed render is retried.
+   */
+  id?: string
 }
 
 export interface SetEntitlementInput {
@@ -181,8 +188,18 @@ export class BillingService implements IBillingService {
 
   async recordUsageEvent(input: RecordUsageInput): Promise<PlatformResult<UsageEvent>> {
     try {
+      const id = (input.id ?? `usage_${crypto.randomUUID()}`) as UsageEventId
+
+      // Idempotency: when a deterministic id is supplied, a repeat is a no-op —
+      // neither a duplicate usage event nor a second entitlement increment. This
+      // is what makes a retried render_job consume its quota at most once.
+      if (input.id) {
+        const existing = await this.repo.findUsageEventById(id)
+        if (existing) return ok(existing)
+      }
+
       const event: UsageEvent = {
-        id: `usage_${crypto.randomUUID()}` as UsageEventId,
+        id,
         organizationId: input.organizationId,
         type: input.type,
         quantity: input.quantity,

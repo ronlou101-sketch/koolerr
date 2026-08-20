@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { deliverablesService } from '@/domains/deliverables'
 import { videoProductionDepartment } from '@/domains/ai-workforce/video-production'
+import { consumeSpokespersonVideoUsage } from '@/domains/ai-workforce/render'
 import type { DeliverableId } from '@/shared/types'
 
 // HeyGen polls for up to 10 minutes; Vercel Pro function timeout caps at 5 minutes.
@@ -71,6 +72,16 @@ export async function POST(request: Request) {
           ? 402
           : 500
     return NextResponse.json({ error: result.error.message }, { status })
+  }
+
+  // Consume video count + seconds AFTER the deliverable persisted (durable). This
+  // path has no render_job/retry, so the run id is a stable idempotency key.
+  if (result.value.deliverableId) {
+    await consumeSpokespersonVideoUsage({
+      organizationId: ctx.organizationId,
+      idempotencyKey: result.value.engagementRunId,
+      durationSeconds: result.value.durationSeconds ?? 0,
+    })
   }
 
   return NextResponse.json({

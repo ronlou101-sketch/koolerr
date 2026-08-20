@@ -34,6 +34,14 @@ export class InMemoryBillingRepository implements IBillingRepository {
     return type ? events.filter((e) => e.type === type) : events
   }
 
+  async findUsageEventById(id: string): Promise<UsageEvent | null> {
+    for (const events of this.usageEvents.values()) {
+      const found = events.find((e) => e.id === id)
+      if (found) return found
+    }
+    return null
+  }
+
   async saveEntitlement(entitlement: Entitlement): Promise<Entitlement> {
     this.entitlements.set(`${entitlement.organizationId}::${entitlement.feature}`, entitlement)
     return entitlement

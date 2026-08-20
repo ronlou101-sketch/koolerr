@@ -37,6 +37,8 @@ interface HeyGenVideoStatus {
   status: 'waiting' | 'processing' | 'completed' | 'failed'
   video_url?: string
   error?: string
+  /** Rendered video length in seconds (float), present on completed videos. */
+  duration?: number
 }
 
 export class HeyGenAdapter implements IModelProviderAdapter {
@@ -85,13 +87,14 @@ export class HeyGenAdapter implements IModelProviderAdapter {
 
     const startMs = Date.now()
     const { video_id } = await this.createVideo(request.prompt, avatarId, voiceId)
-    const { video_url } = await this.pollForCompletion(video_id)
+    const { video_url, durationSeconds } = await this.pollForCompletion(video_id)
 
     return {
       content: video_url,
       model: 'heygen-avatar-video-v2',
       tokensUsed: 0, // HeyGen charges by video credits, not tokens
       latencyMs: Date.now() - startMs,
+      durationSeconds,
     }
   }
 
@@ -144,7 +147,9 @@ export class HeyGenAdapter implements IModelProviderAdapter {
     return { video_id: json.data.video_id }
   }
 
-  private async pollForCompletion(videoId: string): Promise<{ video_url: string }> {
+  private async pollForCompletion(
+    videoId: string
+  ): Promise<{ video_url: string; durationSeconds?: number }> {
     const deadline = Date.now() + POLL_TIMEOUT_MS
 
     while (Date.now() < deadline) {
@@ -154,7 +159,9 @@ export class HeyGenAdapter implements IModelProviderAdapter {
         if (!status.video_url) {
           throw new Error(`[HEYGEN_ADAPTER] Video ${videoId} completed with no video_url`)
         }
-        return { video_url: status.video_url }
+        // HeyGen reports the rendered length (seconds) on completion — the
+        // authoritative source of truth for video-minute billing.
+        return { video_url: status.video_url, durationSeconds: status.duration }
       }
 
       if (status.status === 'failed') {

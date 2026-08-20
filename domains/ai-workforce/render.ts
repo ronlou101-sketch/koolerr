@@ -2,7 +2,7 @@ import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
 import { brandAmbassadorService } from '@/domains/brand-ambassador'
 import type { BrandAmbassadorIdentity } from '@/domains/brand-ambassador'
-import { billingService } from '@/domains/billing'
+import { billingService, billableSeconds } from '@/domains/billing'
 import { modelGateway } from '@/shared/model-gateway'
 import type { BrandIdentity, IModelGateway } from '@/shared/model-gateway'
 import { trustEngine } from '@/shared/trust'
@@ -44,9 +44,10 @@ import type {
  * Entitlement enforcement (ADR-025 §4, Slice CR-4): a render that carries a
  * `meteredFeature` is gated on that billing entitlement BEFORE dispatch — an
  * over-limit request is rejected with `ENTITLEMENT_EXCEEDED` and never invokes the
- * gateway (non-spending). A successful metered render records one usage event so the
- * plan cap is consumed. Only spokesperson video renders are metered; image renders
- * carry no `meteredFeature` and are not gated (ADR-025 §4 boundary).
+ * gateway (non-spending). On success the CALLER consumes usage idempotently after
+ * durable persistence + job completion (Step 2D — `consumeSpokespersonVideoUsage`);
+ * `executeRenderJob` no longer meters inline. Only spokesperson video renders are
+ * gated; image renders carry no `meteredFeature` and are not gated (ADR-025 §4).
  */
 
 export type RenderErrorCode =
@@ -66,6 +67,12 @@ export interface RenderJobResult {
   /** Stored deliverable id, or null when the deliverable store failed (asset still returned). */
   deliverableId: DeliverableId | null
   engagementRunId: EngagementRunId
+  /**
+   * Actual rendered video duration in seconds, when the provider reports it
+   * (HeyGen). Undefined for image renders. The caller consumes video-second
+   * usage from this AFTER durable persistence + job completion (Step 2D).
+   */
+  durationSeconds?: number
 }
 
 export interface RenderJobRequest {
@@ -169,6 +176,7 @@ export async function executeRenderJob(
   const brandIdentity = await resolveBrandIdentity(request.organizationId)
 
   let assetUrl: string
+  let durationSeconds: number | undefined
   try {
     const response = await gateway.invoke({
       tenantId,
@@ -182,6 +190,8 @@ export async function executeRenderJob(
       brandIdentity,
     })
     assetUrl = response.content
+    // Provider-reported rendered duration (HeyGen video). Billing source of truth.
+    durationSeconds = response.durationSeconds
   } catch (error) {
     await workforceEngineService.updateEngagementRunStatus({
       tenantId,
@@ -200,23 +210,10 @@ export async function executeRenderJob(
     updatedAt: new Date(),
   })
 
-  // Meter the successful render so the plan cap is consumed (ADR-025 §4). Metering is
-  // a side effect — a failure to record never invalidates a render that already ran.
-  if (request.meteredFeature) {
-    const usage = await billingService.recordUsageEvent({
-      tenantId,
-      organizationId: request.organizationId,
-      type: request.meteredFeature,
-      quantity: 1,
-    })
-    if (!usage.ok) {
-      logger.warn(`[${request.logLabel}] Failed to record usage — render succeeded`, {
-        engagementRunId,
-        error: usage.error.message,
-      })
-    }
-  }
-
+  // Usage is NOT consumed here. Per Step 2D the caller consumes video count +
+  // seconds idempotently (keyed on render_job.id) AFTER the deliverable is durably
+  // stored and the job marked completed — so a store failure/retry cannot
+  // double-charge. Pre-dispatch entitlement gating (above) is unchanged.
   const storeResult = await deliverablesService.storeDeliverable({
     tenantId,
     organizationId: request.organizationId,
@@ -237,7 +234,67 @@ export async function executeRenderJob(
     assetUrl,
     deliverableId: storeResult.ok ? storeResult.value.id : null,
     engagementRunId,
+    durationSeconds,
   })
+}
+
+/**
+ * Idempotently consume a spokesperson video's usage AFTER it has durably rendered
+ * and its render_job is completed (Step 2D). Records two meters, each keyed on a
+ * deterministic id derived from `idempotencyKey` (the render_job.id): the video
+ * COUNT (`spokesperson_video` +1) and the actual duration in whole seconds
+ * (`spokesperson_video_seconds` += ceil(duration)). A retry of the same job
+ * re-uses the same keys, so consumption happens at most once. Never throws —
+ * a metering failure is logged; the render itself already succeeded.
+ */
+export async function consumeSpokespersonVideoUsage(params: {
+  organizationId: OrganizationId
+  /** Stable key for idempotency — the render_job.id (or run id for the sync path). */
+  idempotencyKey: string
+  durationSeconds: number
+}): Promise<void> {
+  // Metering is a side effect — a failure here must NEVER invalidate or un-complete
+  // a render that already succeeded and persisted. Swallow all errors (logged).
+  try {
+    const tenantId = env.platform.tenantId()
+    const seconds = billableSeconds(params.durationSeconds)
+
+    const countResult = await billingService.recordUsageEvent({
+      id: `svc:${params.idempotencyKey}`,
+      tenantId,
+      organizationId: params.organizationId,
+      type: 'spokesperson_video',
+      quantity: 1,
+    })
+    if (!countResult.ok) {
+      logger.warn('[RENDER] Failed to record spokesperson_video usage — render succeeded', {
+        idempotencyKey: params.idempotencyKey,
+        error: countResult.error.message,
+      })
+    }
+
+    // usage_events.quantity has a CHECK (> 0); skip a zero-second edge case.
+    if (seconds > 0) {
+      const secondsResult = await billingService.recordUsageEvent({
+        id: `svs:${params.idempotencyKey}`,
+        tenantId,
+        organizationId: params.organizationId,
+        type: 'spokesperson_video_seconds',
+        quantity: seconds,
+      })
+      if (!secondsResult.ok) {
+        logger.warn('[RENDER] Failed to record spokesperson_video_seconds usage', {
+          idempotencyKey: params.idempotencyKey,
+          error: secondsResult.error.message,
+        })
+      }
+    }
+  } catch (e) {
+    logger.warn('[RENDER] Video usage consumption threw — render already succeeded', {
+      idempotencyKey: params.idempotencyKey,
+      error: e instanceof Error ? e.message : String(e),
+    })
+  }
 }
 
 /**

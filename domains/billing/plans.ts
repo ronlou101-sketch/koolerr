@@ -60,12 +60,16 @@ export const ENTITLEMENT_FEATURES = {
    */
   spokespersonVideo: 'spokesperson_video',
   /**
-   * Included spokesperson-video PRODUCTION MINUTES per billing period. A rendered
-   * video consumes 1 unit of `spokespersonVideo` (the count allowance) AND its
-   * actual duration from this minute allowance. This entitlement defines the
-   * ALLOWANCE only; duration-based deduction is a later, separate step. The
-   * allowance values (10/60/200) are whole minutes and fit the existing bigint
-   * `entitlements.limit_amount` schema — no migration required here.
+   * Included spokesperson-video production time per billing period, stored in
+   * WHOLE SECONDS (Step 2C integer-seconds model). A rendered video consumes 1
+   * unit of `spokespersonVideo` (count) AND its actual rendered duration (ceil to
+   * whole seconds) from this allowance. Seconds are integers → fit the existing
+   * bigint schema (no numeric migration). The customer sees minutes (seconds/60).
+   */
+  spokespersonVideoSeconds: 'spokesperson_video_seconds',
+  /**
+   * @deprecated Superseded by `spokespersonVideoSeconds` (Step 2D). Retained only
+   * so the one-off backfill can locate legacy `spokesperson_video_minutes` rows.
    */
   spokespersonVideoMinutes: 'spokesperson_video_minutes',
 } as const
@@ -92,36 +96,45 @@ export const PLAN_ENTITLEMENTS: Record<PlanId, Record<string, number>> = {
     [ENTITLEMENT_FEATURES.engagementRun]: 10,
     [ENTITLEMENT_FEATURES.modelInvocation]: 50_000,
     [ENTITLEMENT_FEATURES.spokespersonVideo]: 0,
-    [ENTITLEMENT_FEATURES.spokespersonVideoMinutes]: 0,
+    [ENTITLEMENT_FEATURES.spokespersonVideoSeconds]: 0,
   },
   build: {
     [ENTITLEMENT_FEATURES.engagementRun]: 250,
     [ENTITLEMENT_FEATURES.modelInvocation]: 500_000,
     [ENTITLEMENT_FEATURES.spokespersonVideo]: 5,
-    [ENTITLEMENT_FEATURES.spokespersonVideoMinutes]: 10,
+    // 10 minutes
+    [ENTITLEMENT_FEATURES.spokespersonVideoSeconds]: 600,
   },
   grow: {
     [ENTITLEMENT_FEATURES.engagementRun]: Infinity,
     [ENTITLEMENT_FEATURES.modelInvocation]: 5_000_000,
     [ENTITLEMENT_FEATURES.spokespersonVideo]: 30,
-    [ENTITLEMENT_FEATURES.spokespersonVideoMinutes]: 60,
+    // 60 minutes
+    [ENTITLEMENT_FEATURES.spokespersonVideoSeconds]: 3600,
   },
   scale: {
     [ENTITLEMENT_FEATURES.engagementRun]: Infinity,
     [ENTITLEMENT_FEATURES.modelInvocation]: Infinity,
     [ENTITLEMENT_FEATURES.spokespersonVideo]: 100,
-    [ENTITLEMENT_FEATURES.spokespersonVideoMinutes]: 200,
+    // 200 minutes
+    [ENTITLEMENT_FEATURES.spokespersonVideoSeconds]: 12000,
   },
 }
 
 /**
- * Spokesperson-video production minutes consumed by a rendered video of the given
- * duration. Fractional by design (30s → 0.5 min, 90s → 1.5 min); the per-video
- * count allowance is tracked separately via `spokespersonVideo`.
- *
- * Pure calculation only — this performs NO entitlement deduction or usage
- * recording. Duration-based consumption against the allowance is a later step.
+ * Customer-facing DISPLAY conversion: seconds → minutes, fractional by design
+ * (30s → 0.5, 60s → 1, 90s → 1.5). Used to present the seconds-based allowance in
+ * minutes. Pure calculation — no deduction or usage recording.
  */
 export function videoMinutesForDuration(durationSeconds: number): number {
   return durationSeconds / 60
+}
+
+/**
+ * Billable whole seconds consumed by a rendered video of the given duration —
+ * `Math.ceil` (never undercharge), clamped to ≥ 0. HeyGen returns a float
+ * duration (e.g. 3.29143 → 4). Pure calculation — no deduction here.
+ */
+export function billableSeconds(durationSeconds: number): number {
+  return Math.max(0, Math.ceil(durationSeconds))
 }
