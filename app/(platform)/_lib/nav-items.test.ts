@@ -75,6 +75,7 @@ describe('platformNav()', () => {
       '/analytics',
       '/billing',
       '/usage',
+      '/channels',
       '/audit',
       '/consent',
       '/tower',

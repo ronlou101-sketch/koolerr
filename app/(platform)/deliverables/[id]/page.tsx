@@ -2,13 +2,13 @@ import { notFound, redirect } from 'next/navigation'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { deliverablesService } from '@/domains/deliverables'
 import type { Deliverable, DeliverableId } from '@/shared/types'
-import { approveDeliverable, rejectDeliverable } from './actions'
+import { approveDeliverable, rejectDeliverable, publishDeliverableToYouTube } from './actions'
 import { GenerateVideoButton } from './generate-video-button'
 import { isReportViewEmpty, toReportView } from './report-view'
 
 interface Props {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ approved?: string; rejected?: string }>
+  searchParams: Promise<{ approved?: string; rejected?: string; published?: string }>
 }
 
 const STATUS_LABELS = {
@@ -235,7 +235,7 @@ export default async function DeliverablePage({ params, searchParams }: Props) {
   if (!ctx) redirect('/login')
 
   const { id } = await params
-  const { approved, rejected } = await searchParams
+  const { approved, rejected, published } = await searchParams
 
   const result = await deliverablesService.getDeliverable(id as DeliverableId, ctx.organizationId)
   if (!result.ok) notFound()
@@ -272,6 +272,29 @@ export default async function DeliverablePage({ params, searchParams }: Props) {
         </div>
       )}
 
+      {published && (
+        <div
+          className={`rounded-md px-4 py-3 text-sm ${
+            published === 'queued'
+              ? 'bg-green-50 text-green-700'
+              : 'bg-destructive/10 text-destructive'
+          }`}
+        >
+          {published === 'queued' &&
+            'Publishing to YouTube — your video will appear on your channel shortly.'}
+          {published === 'notconnected' && (
+            <>
+              Connect a YouTube channel first on your{' '}
+              <a href="/channels" className="underline">
+                Channels
+              </a>{' '}
+              page.
+            </>
+          )}
+          {published === 'error' && 'Could not start publishing. Please try again.'}
+        </div>
+      )}
+
       {deliverable.type === 'video_script' && <VideoScriptContent deliverable={deliverable} />}
       {deliverable.type === 'video' && <VideoContent deliverable={deliverable} />}
       {deliverable.type === 'image' && <ImageContent deliverable={deliverable} />}
@@ -280,6 +303,23 @@ export default async function DeliverablePage({ params, searchParams }: Props) {
         deliverable.type !== 'video' &&
         deliverable.type !== 'image' &&
         deliverable.type !== 'report' && <GenericContent deliverable={deliverable} />}
+
+      {deliverable.type === 'video' && deliverable.status === 'approved' && (
+        <section className="space-y-3 rounded-lg border border-border bg-card p-6">
+          <h2 className="text-sm font-medium text-foreground">Publish</h2>
+          <p className="text-sm text-muted-foreground">
+            Send this approved video to your connected YouTube channel.
+          </p>
+          <form action={publishDeliverableToYouTube.bind(null, deliverable.id)}>
+            <button
+              type="submit"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              Publish to YouTube
+            </button>
+          </form>
+        </section>
+      )}
 
       {reviewable && (
         <section className="space-y-4 rounded-lg border border-border bg-card p-6">

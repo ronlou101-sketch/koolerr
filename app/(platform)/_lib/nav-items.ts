@@ -55,6 +55,7 @@ export const MORE_NAV: NavItem[] = [
   { href: '/analytics', label: 'Analytics' },
   { href: '/billing', label: 'Billing' },
   { href: '/usage', label: 'Usage' },
+  { href: '/channels', label: 'Channels' },
   { href: '/audit', label: 'Audit' },
   { href: '/consent', label: 'Consent' },
 ]

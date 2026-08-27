@@ -99,4 +99,32 @@ export const env = {
       return required('CRON_SECRET')
     },
   },
+  channels: {
+    /**
+     * Google OAuth (YouTube publishing) — platform-level credentials, NOT
+     * per-tenant. Server-only. `clientSecret` and `tokenEncryptionKey` must never
+     * reach the browser, a URL, a log, or the database. Lazy accessors so the app
+     * boots without them until the YouTube-connect feature is exercised.
+     */
+    google: {
+      clientId(): string {
+        return required('GOOGLE_OAUTH_CLIENT_ID')
+      },
+      clientSecret(): string {
+        return required('GOOGLE_OAUTH_CLIENT_SECRET')
+      },
+      redirectUri(): string {
+        return required('GOOGLE_OAUTH_REDIRECT_URI')
+      },
+    },
+    /**
+     * 32-byte AES-256-GCM key for encrypting stored OAuth tokens at rest,
+     * provided base64-encoded (decodes to exactly 32 bytes). Platform secret —
+     * never in the DB, Git, client code, an API response, or a log. The crypto
+     * helper fails closed if this is missing or not exactly 32 bytes.
+     */
+    tokenEncryptionKey(): string {
+      return required('CHANNEL_TOKEN_ENC_KEY')
+    },
+  },
 }
