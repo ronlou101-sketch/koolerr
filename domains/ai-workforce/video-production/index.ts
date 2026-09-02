@@ -31,8 +31,33 @@ export type {
   IVideoProductionDepartmentService,
   SpokespersonVideoRenderRequest,
   WriteScriptRequest,
+  WriteCustomerVideoScriptRequest,
 } from './service'
 export { VideoProductionDepartmentService, videoProductionDepartment } from './service'
+export {
+  VIDEO_CONCEPTS,
+  VIDEO_DURATION_PRESETS,
+  MAX_VIDEO_SECONDS,
+  isValidVideoDuration,
+  getVideoConcept,
+  type VideoConcept,
+  type VideoDurationSec,
+} from './prompt-library'
+export {
+  VIDEO_AVATARS,
+  VIDEO_VOICES,
+  DEFAULT_AVATAR_ID,
+  DEFAULT_VOICE_ID,
+  getVideoAvatar,
+  getVideoVoice,
+  isValidVideoAvatar,
+  isValidVideoVoice,
+  videoLanguages,
+  videoVoicesForLanguage,
+  isValidVideoSelection,
+  type VideoAvatarOption,
+  type VideoVoiceOption,
+} from './avatar-catalog'
 export type { RenderError, RenderErrorCode, RenderJobResult } from '../render'
 export {
   buildVideoProductionPrompt,

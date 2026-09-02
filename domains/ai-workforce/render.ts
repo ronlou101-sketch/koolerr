@@ -99,6 +99,14 @@ export interface RenderJobRequest {
    * spokesperson video renders set this; image renders leave it undefined.
    */
   meteredFeature?: UsageEventType
+  /**
+   * Optional per-render spokesperson override (Step 4B). When set, these take
+   * precedence over the org's resolved Brand Ambassador identity. Callers MUST
+   * pre-validate them against the cost-verified catalog (VIDEO_AVATARS/VIDEO_VOICES);
+   * the render path does NOT re-check the allowlist and does NOT invent avatars.
+   */
+  avatarId?: string
+  voiceId?: string
 }
 
 /**
@@ -171,9 +179,23 @@ export async function executeRenderJob(
     autonomyLevel: 'autonomous',
   })
 
-  // Brand the render with the org's single spokesperson (ADR-025 §1/§7). Falls back
-  // to the platform env default (adapters' env fallback) when unavailable.
-  const brandIdentity = await resolveBrandIdentity(request.organizationId)
+  // Brand the render with the org's single spokesperson (ADR-025 §1/§7). A
+  // per-render avatar/voice override (Step 4B, pre-validated by the caller against
+  // the cost-verified catalog) takes PRECEDENCE over the org's resolved Brand
+  // Ambassador. Callers that pass an override (e.g. the customer-composed video
+  // route, which always supplies the confirmed low-cost default) therefore render
+  // with the selected avatar/voice, NOT the org ambassador. When no override is
+  // given, the resolved ambassador is used, falling back to the env default in the
+  // adapter — unchanged for those callers.
+  const resolvedIdentity = await resolveBrandIdentity(request.organizationId)
+  const brandIdentity =
+    request.avatarId || request.voiceId
+      ? {
+          ...(resolvedIdentity ?? {}),
+          avatarId: request.avatarId ?? resolvedIdentity?.avatarId,
+          voiceId: request.voiceId ?? resolvedIdentity?.voiceId,
+        }
+      : resolvedIdentity
 
   let assetUrl: string
   let durationSeconds: number | undefined

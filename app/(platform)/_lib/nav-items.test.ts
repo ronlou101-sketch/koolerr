@@ -68,6 +68,7 @@ describe('platformNav()', () => {
       '/runs',
       '/deliverables',
       '/academy',
+      '/create-video',
       '/creative',
       '/approvals',
       '/workforces',

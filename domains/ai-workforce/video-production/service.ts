@@ -18,6 +18,7 @@ import { WORKFORCE_REGISTRY } from '../employees'
 import { executeRenderJob } from '../render'
 import type { RenderError, RenderJobResult } from '../render'
 import {
+  buildCustomerVideoScriptPrompt,
   buildVideoProductionPrompt,
   buildVideoScriptPrompt,
   parseVideoProductionBrief,
@@ -53,12 +54,38 @@ export interface SpokespersonVideoRenderRequest {
   organizationId: OrganizationId
   /** The video script text used as the render prompt. */
   script: string
-  /** Source `video_script` deliverable this render was produced from. */
-  scriptDeliverableId: DeliverableId
+  /**
+   * Source `video_script` deliverable this render was produced from, when it
+   * came from one. Optional: a customer-composed video (Step 4A) has no source
+   * script deliverable, so this is omitted and not written into the video's content.
+   */
+  scriptDeliverableId?: DeliverableId
   /** Originating creative, when known. */
   creativeId: string | null
   /** Title for the stored `video` deliverable. */
   title: string
+  /**
+   * Optional cost-verified avatar/voice override (Step 4B). When present, it
+   * overrides the org's Brand Ambassador for this render (the caller must have
+   * validated it against the cost-verified catalog).
+   */
+  avatarId?: string
+  voiceId?: string
+}
+
+/** Input for the customer AI-assisted script drafting (Step 4A). */
+export interface WriteCustomerVideoScriptRequest {
+  tenantId: TenantId
+  organizationId: OrganizationId
+  workforceId: WorkforceId
+  engagementRunId: EngagementRunId
+  /** The customer's plain-language description of the video they want. */
+  description: string
+  /** Target length in seconds (30/60/90/120) — guides script length. */
+  targetDurationSec: number
+  tone?: string
+  cta?: string
+  businessName?: string
 }
 
 const MAX_RETRIES = 3
@@ -89,6 +116,14 @@ export interface IVideoProductionDepartmentService {
    * pipeline persists the result as a `video_script` deliverable.
    */
   writeScript(request: WriteScriptRequest): Promise<Result<VideoScript, VideoProductionError>>
+  /**
+   * Turns a customer's plain-language description into a spokesperson script
+   * (Step 4A, AI-assisted creation). The customer reviews/edits the result before
+   * submitting it for production — this only drafts the script, never renders.
+   */
+  writeCustomerVideoScript(
+    request: WriteCustomerVideoScriptRequest
+  ): Promise<Result<VideoScript, VideoProductionError>>
   getJob(jobId: string): VideoProductionJob | undefined
   listJobs(): VideoProductionJob[]
 }
@@ -318,16 +353,24 @@ export class VideoProductionDepartmentService implements IVideoProductionDepartm
         trustRuleId: `heygen-video-${request.organizationId}`,
         provider: 'heygen',
         prompt: request.script,
-        runObjective: `HeyGen video generation for script: ${request.scriptDeliverableId}`,
+        avatarId: request.avatarId,
+        voiceId: request.voiceId,
+        runObjective: request.scriptDeliverableId
+          ? `HeyGen video generation for script: ${request.scriptDeliverableId}`
+          : 'HeyGen video generation (customer-composed)',
         runContext: {
           type: 'heygen-video-generation',
-          scriptDeliverableId: request.scriptDeliverableId,
+          ...(request.scriptDeliverableId
+            ? { scriptDeliverableId: request.scriptDeliverableId }
+            : {}),
         },
         deliverableType: 'video',
         deliverableTitle: request.title,
         buildContent: (videoUrl) => ({
           videoUrl,
-          scriptDeliverableId: request.scriptDeliverableId,
+          ...(request.scriptDeliverableId
+            ? { scriptDeliverableId: request.scriptDeliverableId }
+            : {}),
           creativeId: request.creativeId,
         }),
         logLabel: 'HEYGEN_GENERATE',
@@ -346,6 +389,47 @@ export class VideoProductionDepartmentService implements IVideoProductionDepartm
 
     let lastError = ''
     // Try the text providers in order; the pipeline adds outer retry via attemptStep.
+    for (const providerId of VIDEO_PLAN_PROVIDERS) {
+      try {
+        const response = await this.gateway.invoke({
+          tenantId: request.tenantId,
+          organizationId: request.organizationId,
+          workforceId: request.workforceId,
+          digitalEmployeeId: VIDEO_EMPLOYEE_ID,
+          engagementRunId: request.engagementRunId,
+          action: WRITE_SCRIPT_ACTION,
+          prompt,
+          systemContext: VIDEO_SCRIPT_WRITER_SYSTEM_CONTEXT,
+          provider: providerId,
+          maxTokens: 2048,
+        })
+        return ok(parseVideoScript(response.content))
+      } catch (error) {
+        lastError = String(error)
+        if (this.isNonRetriable(lastError)) break
+      }
+    }
+
+    return err({
+      code: this.classifyError(lastError),
+      message: `Video script generation failed: ${lastError}`,
+      retriable: true,
+    })
+  }
+
+  async writeCustomerVideoScript(
+    request: WriteCustomerVideoScriptRequest
+  ): Promise<Result<VideoScript, VideoProductionError>> {
+    this.ensureTrustRule(VIDEO_EMPLOYEE_ID, request.organizationId, WRITE_SCRIPT_ACTION)
+    const prompt = buildCustomerVideoScriptPrompt({
+      description: request.description,
+      tone: request.tone,
+      cta: request.cta,
+      targetDurationSec: request.targetDurationSec,
+      businessName: request.businessName,
+    })
+
+    let lastError = ''
     for (const providerId of VIDEO_PLAN_PROVIDERS) {
       try {
         const response = await this.gateway.invoke({
