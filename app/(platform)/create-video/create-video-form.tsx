@@ -63,6 +63,7 @@ export function CreateVideoForm({
   // Spokesperson selection — defaults to the confirmed low-cost Armando + Michael C.
   const defaultVoice = voices.find((v) => v.voiceId === defaultVoiceId)
   const [avatarId, setAvatarId] = useState(defaultAvatarId)
+  const [selectedConceptId, setSelectedConceptId] = useState<string | null>(null)
   const [language, setLanguage] = useState(defaultVoice?.language ?? languages[0] ?? 'English')
   const [voiceId, setVoiceId] = useState(defaultVoiceId)
   const voicesForLang = useMemo(
@@ -98,6 +99,7 @@ export function CreateVideoForm({
     setScript(c.starterScript)
     setTitle(c.title)
     setDurationSec(c.suggestedDurationSec)
+    setSelectedConceptId(c.id)
   }
 
   async function draftWithAI() {
@@ -183,7 +185,12 @@ export function CreateVideoForm({
               key={c.id}
               type="button"
               onClick={() => applyConcept(c)}
-              className="rounded-lg border border-border bg-card p-4 text-left hover:border-ring"
+              aria-pressed={selectedConceptId === c.id}
+              className={`rounded-lg border-2 p-4 text-left ${
+                selectedConceptId === c.id
+                  ? 'border-[#24aafb] bg-[#24aafb]/25'
+                  : 'border-border bg-card hover:border-ring'
+              }`}
             >
               <div className="text-sm font-medium text-foreground">{c.title}</div>
               <p className="mt-1 text-xs text-muted-foreground">{c.description}</p>
@@ -267,9 +274,10 @@ export function CreateVideoForm({
               key={a.avatarId}
               type="button"
               onClick={() => setAvatarId(a.avatarId)}
-              className={`flex items-center gap-3 rounded-lg border p-3 text-left ${
+              aria-pressed={avatarId === a.avatarId}
+              className={`flex items-center gap-3 rounded-lg border-2 p-3 text-left ${
                 avatarId === a.avatarId
-                  ? 'border-primary bg-primary/5'
+                  ? 'border-[#24aafb] bg-[#24aafb]/25'
                   : 'border-border bg-card hover:border-ring'
               }`}
             >
