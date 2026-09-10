@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `aead9eebb3d814a27d189130c94c918f704a5d09`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -24,8 +24,8 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 ## Operational records (Founder-set; not conflicts)
 
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
-were added at the **post-PR-#4 reconcile**. None of them is a resolution of C1–C7 and none may be read
-as such.
+were added at the **post-PR-#4 reconcile**; **O9–O10** were added at the **post-PR-#8 reconcile**.
+None of them is a resolution of C1–C7 and none may be read as such.
 
 ### O1 — SoT pack slice closed
 
@@ -83,6 +83,33 @@ Boundaries — all still binding:
 
 O8 authorizes *continuation of the loop*. It does **not** authorize any specific product slice, does
 **not** pick a side in the roadmap conflict (**C1**), and does **not** resolve any of C1–C7.
+
+### O9 — PR #6 merged (desktop NavDropdown keyboard accessibility)
+
+PR **#6**, branch `fix/nav-dropdown-keyboard-a11y`, **merged** into `master` at merge SHA
+**`b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`**. Delivered
+`app/(platform)/_components/nav-dropdown.tsx`, `nav-dropdown-focus.ts`, and `nav-dropdown.test.ts`.
+Recorded in `COMPLETED_WORK.md`; the slice is closed in `ACTIVE_SLICE.md`.
+
+This merge landed on `master` **before** any SoT reconcile recorded it — the SoT files sat at their
+post-PR-#4 state through both PR #6 and PR #8. It is recorded here from in-repo git evidence at the
+post-PR-#8 reconcile, not from a contemporaneous Foreman record.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+
+### O10 — PR #8 merged (AccountMenu keyboard accessibility)
+
+PR **#8**, branch `fix/account-menu-keyboard-a11y`, **merged** into `master` at merge SHA
+**`aead9eebb3d814a27d189130c94c918f704a5d09`**. Delivered
+`app/(platform)/_components/account-menu.tsx` and `account-menu.test.ts`, **reusing** the
+`nav-dropdown-focus` helpers from O9 rather than reimplementing roving focus. Evidence at merge:
+Vitest **987/987**, real-component browser verification **PASS**, Architect escalation
+**`9df588c3…`**, **Founder merged**, no new dependencies. Recorded in `COMPLETED_WORK.md`; the slice
+is closed in `ACTIVE_SLICE.md`.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+Three navigation surfaces (mobile nav, NavDropdown, AccountMenu) now have keyboard handling; that is
+**not** an accessibility audit, a WCAG conformance claim, or a launch gate.
 
 ---
 

@@ -4,8 +4,65 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `aead9eebb3d814a27d189130c94c918f704a5d09`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
+
+---
+
+## AccountMenu keyboard accessibility — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#8**, branch `fix/account-menu-keyboard-a11y`, **merged** into `master` at merge
+SHA **`aead9eebb3d814a27d189130c94c918f704a5d09`** (`aead9ee`). Slice commit
+`b9d06ca643215727c7c196962a4ad29d403d206b` (`fix(platform): keyboard navigation for AccountMenu`).
+
+Files delivered on `master`:
+
+- `app/(platform)/_components/account-menu.tsx`
+- `app/(platform)/_components/account-menu.test.ts`
+
+The slice **reuses** the `nav-dropdown-focus` helpers delivered by PR #6 (`activeMenuIndex`,
+`focusMenuItem`, `isMenuNavigationKey`) rather than reimplementing roving focus — verified in-repo at
+`app/(platform)/_components/account-menu.tsx:5`. No new focus helper module was added.
+
+Verification evidence at merge time:
+
+- **Vitest 987 / 987 passing.**
+- **Real-component browser verification: PASS.**
+- **Architect escalation `9df588c3…`** raised and escalated; **Founder merged.**
+- **No new dependencies** introduced.
+
+**Scope of this claim:** the two files above only. This closes the named slice. It completes **no**
+launch phase, milestone, or gate, asserts no broader accessibility outcome, and resolves **no**
+conflict in `DECISIONS.md` (**C1–C7 remain open**). Foreman QA is **not** Independent QA; Independent
+QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
+
+---
+
+## Desktop NavDropdown keyboard accessibility — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#6**, branch `fix/nav-dropdown-keyboard-a11y`, **merged** into `master` at merge
+SHA **`b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`** (`b2f9327`). Slice commit
+`341773ad69b4301c794baa72ce09a064f0a97674` (`fix(platform): keyboard navigation for desktop
+NavDropdown`).
+
+Files delivered on `master`:
+
+- `app/(platform)/_components/nav-dropdown.tsx`
+- `app/(platform)/_components/nav-dropdown-focus.ts`
+- `app/(platform)/_components/nav-dropdown.test.ts`
+
+This slice merged **before** any SoT reconcile recorded it: the SoT files on `master` remained at
+their post-PR-#4 state until this post-PR-#8 reconcile, and the in-flight PR #7 that would have
+recorded it is stale and superseded (`CURRENT_STATE.md`). Recorded here from in-repo git evidence.
+
+Verification evidence at merge time: **not restated here.** This reconcile did not re-run the gates
+and holds no first-hand record of the PR #6 merge-time numbers; the Vitest **987/987** figure above
+is the count observed at the **PR #8** merge, on a `master` that already contained this slice. Do not
+back-date it as PR #6's own evidence.
+
+**Scope of this claim:** the three files above only. This closes the named slice. It completes **no**
+launch phase, milestone, or gate, asserts no broader accessibility outcome, and resolves **no**
+conflict in `DECISIONS.md` (**C1–C7 remain open**).
 
 ---
 
@@ -33,6 +90,20 @@ Verification evidence at merge time:
 launch phase, milestone, or gate, asserts no broader accessibility outcome, and resolves **no**
 conflict in `DECISIONS.md` (**C1–C7 remain open**). Foreman QA is **not** Independent QA; Independent
 QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
+
+---
+
+## SoT post-PR-#4 reconcile slice — ✅ COMPLETE (agent-ops work, not product work)
+
+**Evidence:** PR **#5**, branch `docs/sot-post-pr4-reconcile`, **merged** into `master` at SHA
+**`ef9502c…`**. Slice commit `ee14c2c` (`docs(sot): reconcile SoT after mobile-nav PR #4 merge`).
+
+- Delivered: documentation-only updates to the four allowlisted SoT files recording the PR #4 merge
+  (`DECISIONS.md` O7–O8).
+- Slice closed; superseded by this post-PR-#8 reconcile.
+
+**This closes an operating-documentation slice only.** It completes **no** product phase, milestone,
+or launch gate, and resolves **no** conflict in `DECISIONS.md` (C1–C7 remain open).
 
 ---
 
