@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `98bbb0ac62fbd9164cdbd9946aaeeddd060b3f2a`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -24,8 +24,9 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 ## Operational records (Founder-set; not conflicts)
 
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
-were added at the **post-PR-#4 reconcile**. None of them is a resolution of C1–C7 and none may be read
-as such.
+were added at the **post-PR-#4 reconcile**; **O9** was added at the **post-PR-#13 reconcile**. None of
+them is a resolution of C1–C7 and none may be read as such. Prior O-records are kept as written — later
+records clarify, they do not delete.
 
 ### O1 — SoT pack slice closed
 
@@ -83,6 +84,23 @@ Boundaries — all still binding:
 
 O8 authorizes *continuation of the loop*. It does **not** authorize any specific product slice, does
 **not** pick a side in the roadmap conflict (**C1**), and does **not** resolve any of C1–C7.
+
+### O9 — PR #13 merged (global error boundary, no raw `error.message`)
+
+PR **#13**, branch `fix/global-error-no-raw-message`, **merged** into `master` at merge SHA
+**`98bbb0ac62fbd9164cdbd9946aaeeddd060b3f2a`**. `app/global-error.tsx` no longer renders the raw
+`error.message`; it shows fixed copy plus the opaque `digest` reference and **reuses**
+`app/error-copy.ts` (from PR #12) so the root and global boundaries cannot drift. Evidence at merge:
+Vitest **995/995**, manual verification **PASS**, Architect approval **`65b9f5b9…`**, **Founder
+merged**, no new dependencies. Recorded in `COMPLETED_WORK.md`; the slice is closed in
+`ACTIVE_SLICE.md`. `master` tip is now `98bbb0a…`.
+
+Also recorded at this reconcile (facts, not decisions): PRs **#5, #6, #8, #10, #12** are merged and
+now appear in `COMPLETED_WORK.md`; the SoT PRs **#7, #9, #11, #14** remain **OPEN and superseded** by
+this post-PR-#13 reconcile — no agent may close, push to, rebase, or comment on them, and their
+disposition stays a Founder decision. PR **#1** remains OPEN and untouched (**O5**).
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
 
 ---
 

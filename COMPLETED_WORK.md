@@ -4,8 +4,112 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `98bbb0ac62fbd9164cdbd9946aaeeddd060b3f2a`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
+
+---
+
+## Global error boundary — no raw `error.message` — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#13**, branch `fix/global-error-no-raw-message`, **merged** into `master` at merge
+SHA **`98bbb0ac62fbd9164cdbd9946aaeeddd060b3f2a`** (`98bbb0a`). Slice commit `b6d244f`
+(`fix(app): stop exposing raw error.message on global error UI`).
+
+Files delivered on `master`:
+
+- `app/global-error.tsx` — renders fixed copy plus the opaque `digest` reference only; the error's
+  message, stack, and cause are logged, never displayed.
+- `app/error.test.ts` — stale test comment updated.
+
+The boundary **reuses** `app/error-copy.ts` (introduced by PR #12) rather than restating the copy or
+the digest rule, so the root and global boundaries cannot drift apart.
+
+Verification evidence at merge time:
+
+- **Vitest 995 / 995 passing.**
+- **Manual verification: PASS.**
+- **Architect approval** recorded at `65b9f5b9…`.
+- **Founder merged.**
+- **No new dependencies** introduced.
+
+**Scope of this claim:** the two files above only. This closes the named slice. It completes **no**
+launch phase, milestone, or gate, asserts no broader error-disclosure or accessibility outcome, and
+resolves **no** conflict in `DECISIONS.md` (**C1–C7 remain open**). Foreman QA is **not** Independent
+QA; Independent QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
+
+---
+
+## Root error boundary — no raw `error.message` — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#12**, branch `fix/root-error-no-raw-message`, **merged** into `master` at merge
+SHA **`bf3c06c7a98c96ea94ba714c5420a190aa33813e`** (`bf3c06c`). Slice commit `528fd7b`.
+
+Files delivered on `master`: `app/error.tsx`, `app/error-copy.ts` (new shared copy/digest helpers),
+`app/error.test.ts`.
+
+**Scope of this claim:** those three files only. Closes the named slice; completes no phase,
+milestone, or gate; resolves nothing in C1–C7.
+
+---
+
+## Platform empty state + route error boundary accessibility — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#10**, branch `fix/platform-empty-error-a11y`, **merged** into `master` at merge
+SHA **`5f94fa301fc67296ec1bf632fdf1c4044e565b0d`** (`5f94fa3`). Slice commit `3269653`.
+
+Files delivered on `master`: `app/(platform)/_components/empty-state.tsx`,
+`app/(platform)/error.tsx`. Existing copy, visuals, and recovery actions preserved; no new
+dependencies per the commit record.
+
+**Scope of this claim:** those two files only. Asserts no broader accessibility outcome.
+
+---
+
+## AccountMenu keyboard navigation — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#8**, branch `fix/account-menu-keyboard-a11y`, **merged** into `master` at merge
+SHA **`aead9eebb3d814a27d189130c94c918f704a5d09`** (`aead9ee`). Slice commit `b9d06ca`.
+
+Files delivered on `master`: `app/(platform)/_components/account-menu.tsx`,
+`app/(platform)/_components/account-menu.test.ts`. Reuses the shared `nav-dropdown-focus` helpers
+from PR #6 rather than duplicating roving-focus logic.
+
+**Scope of this claim:** those two files only.
+
+---
+
+## Desktop NavDropdown keyboard navigation — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#6**, branch `fix/nav-dropdown-keyboard-a11y`, **merged** into `master` at merge
+SHA **`b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`** (`b2f9327`). Slice commit `341773a`.
+
+Files delivered on `master`: `app/(platform)/_components/nav-dropdown.tsx`,
+`app/(platform)/_components/nav-dropdown-focus.ts`, `app/(platform)/_components/nav-dropdown.test.ts`.
+
+**Scope of this claim:** those three files only.
+
+---
+
+> **Verification-evidence caveat for PRs #6, #8, #10, #12.** Each is recorded above **as merged**, on
+> in-repo git evidence (merge commit, slice commit, changed files). Per-slice verification evidence
+> (test counts, Architect approvals, manual-verification results) was **not supplied to this
+> reconcile** and was **not re-measured** in this session — `node_modules/` is not installed here, so
+> the suite could not be run (`CURRENT_STATE.md`). Do not infer such evidence; if the Founder or
+> Foreman needs it recorded, it must be supplied. The merge itself is the only claim made.
+
+---
+
+## SoT post-PR-#4 reconcile slice — ✅ COMPLETE (agent-ops work, not product work)
+
+**Evidence:** PR **#5** (`docs(sot): reconcile SoT after mobile-nav PR #4 merge`), branch
+`docs/sot-post-pr4-reconcile`, **merged** into `master` at SHA
+**`ef9502c9d64d9f53086e5239fa5f7174e08c5e01`** (`ef9502c`). Slice commit `ee14c2c`.
+
+- Delivered: documentation-only updates to the four allowlisted SoT files recording PR #3 / PR #4
+  completion and adding `DECISIONS.md` **O7–O8**.
+
+**This closes an operating-documentation slice only.** It completes **no** product phase, milestone,
+or launch gate, and resolves **no** conflict in `DECISIONS.md` (C1–C7 remain open).
 
 ---
 
