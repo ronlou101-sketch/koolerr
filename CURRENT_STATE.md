@@ -1,14 +1,14 @@
 # CURRENT_STATE.md
 
-> Foreman SoT: observed repository / branch state. Evidence-cited. Last reconciled for SoT tip after PRs **#24–#28** on master tip `4dad95f…`.
+> Foreman SoT: observed repository / branch state. Evidence-cited. Last reconciled for SoT micro-reconcile after PR **#30** + stale closes on master tip `81fe0f9…`.
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`**, tip `4dad95f0b9ffaefea458ee34386271e573e61b73` |
-| **`master` / `origin/master` tip** | `4dad95f0b9ffaefea458ee34386271e573e61b73` (`4dad95f` — merge of PR #28, Phase 8 hermetic validation evidence) |
-| **Prior recorded tips** | `c685e95` (PR #27 AMG activation record NOT ACTIVATED) → `b17e625` (PR #26 ADR-027 Accepted — not Activated) → `f1daf6f` (PR #25 AMG draft ADR-027) → `85ef083` (PR #24 Phase 7.9 docs) → `d40356d` (PR #23 perf baseline) → `d0bddfa` (PR #22 hermetic E2E) → `c72181f` (PR #21 C1 Version A) → `d26a9be` (PR #20 / 7.6) → `3906e25` (PR #19 / 7.5) → `f837a19` / `24a18b8` / `259bd95` (PRs #18–#16 / 7.3c) → `7a55a4e` (PR #4) → `2ea64c9` (PR #3) → `945f308` (PR #2) |
-| **Branch of this reconcile** | `docs/sot-tip-reconcile-24-28`, cut from `4dad95f…` |
-| **Working tree at capture** | clean at slice start; docs-only edits on allowlist |
+| **Base for new implementation branches** | current **`master`**, tip `81fe0f9554a1caa47b73f100d6d1a152cb86e521` |
+| **`master` / `origin/master` tip** | `81fe0f9554a1caa47b73f100d6d1a152cb86e521` (`81fe0f9` — merge of PR #30, stale SoT PR triage disposition record) |
+| **Prior recorded tips** | `b11f03e` (PR #29 SoT tip reconcile #24–#28) → `4dad95f` (PR #28 Phase 8 hermetic validation evidence) → `c685e95` (PR #27 AMG activation record NOT ACTIVATED) → `b17e625` (PR #26 ADR-027 Accepted — not Activated) → `f1daf6f` (PR #25 AMG draft ADR-027) → `85ef083` (PR #24 Phase 7.9 docs) → `d40356d` (PR #23 perf baseline) → `d0bddfa` (PR #22 hermetic E2E) → `c72181f` (PR #21 C1 Version A) → `d26a9be` (PR #20 / 7.6) → `3906e25` (PR #19 / 7.5) → `f837a19` / `24a18b8` / `259bd95` (PRs #18–#16 / 7.3c) → `7a55a4e` (PR #4) → `2ea64c9` (PR #3) → `945f308` (PR #2) |
+| **Branch of this reconcile** | `docs/sot-micro-reconcile-30-closes`, cut from `81fe0f9…` |
+| **Working tree at capture** | clean at slice start; docs-only edits on allowlist (+ triage disposition language correction) |
 | **Default branch (GitHub)** | `master` (note: `CLAUDE.md` Git Standards say “Branch from `main`” — naming conflict, `DECISIONS.md` **C3**, still open) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` — **no longer** the branch new work is cut from |
 
@@ -16,9 +16,9 @@
 
 ## Branching workflow
 
-- **Future Claude Code implementation branches are cut from current `master`** (tip `4dad95f…`) — **not** from `feat/phase-5-6-launch-integrity`.
-- `master` now includes: Foreman SoT pack (PR #2), SoT refresh (PR #3), mobile-nav focus (PR #4), post-PR-#4 reconcile (PR #5), Phase **7.3c** (PRs #16–#18), Phase **7.5** (PR #19), Phase **7.6** (PR #20), **C1 Version A** docs (PR #21), Phase 8 hermetic E2E (PR #22), Phase 8 perf baseline (PR #23), Phase **7.9** docs housekeeping (PR #24), AMG draft ADR-027 + governance (PR #25), ADR-027 Accepted — not Activated (PR #26), AMG activation record **NOT ACTIVATED** (PR #27), Phase 8 hermetic validation evidence (PR #28).
-- This branch completes the SoT tip reconcile after PRs **#24–#28** only (docs allowlist).
+- **Future Claude Code implementation branches are cut from current `master`** (tip `81fe0f9…`) — **not** from `feat/phase-5-6-launch-integrity`.
+- `master` now includes: Foreman SoT pack (PR #2), SoT refresh (PR #3), mobile-nav focus (PR #4), post-PR-#4 reconcile (PR #5), Phase **7.3c** (PRs #16–#18), Phase **7.5** (PR #19), Phase **7.6** (PR #20), **C1 Version A** docs (PR #21), Phase 8 hermetic E2E (PR #22), Phase 8 perf baseline (PR #23), Phase **7.9** docs housekeeping (PR #24), AMG draft ADR-027 + governance (PR #25), ADR-027 Accepted — not Activated (PR #26), AMG activation record **NOT ACTIVATED** (PR #27), Phase 8 hermetic validation evidence (PR #28), SoT tip reconcile after PRs **#24–#28** (PR #29), stale SoT PR triage disposition record (PR #30).
+- This branch completes the SoT micro-reconcile after PR **#30** + Founder closes of **#7/#9/#11/#14/#15** only (docs allowlist).
 - `DECISIONS.md` **C5** (feat-branch vs master SHAs at SoT creation) stands unresolved as written.
 
 ---
@@ -32,6 +32,11 @@
 | **PR #3** | **MERGED** | SoT operational refresh. Merge SHA `2ea64c9…`. |
 | **PR #4** | **MERGED** | Mobile-nav focus containment. Merge SHA `7a55a4e…`. |
 | **PR #5** | **MERGED** | SoT post-PR-#4 reconcile. Merge SHA `ef9502c…`. |
+| **PR #7** | **CLOSED** (without merge) | Stale SoT catch-up after NavDropdown PR #6. Founder **closed without merge**; content did **NOT** land. See `docs/governance/stale-sot-pr-triage.md`. |
+| **PR #9** | **CLOSED** (without merge) | Stale SoT catch-up after AccountMenu PR #8. Founder **closed without merge**; content did **NOT** land. |
+| **PR #11** | **CLOSED** (without merge) | Stale SoT catch-up after empty/error PR #10. Founder **closed without merge**; content did **NOT** land. |
+| **PR #14** | **CLOSED** (without merge) | Stale SoT catch-up after root-error PR #12. Founder **closed without merge**; content did **NOT** land. |
+| **PR #15** | **CLOSED** (without merge) | Stale SoT catch-up after global-error PR #13. Founder **closed without merge**; content did **NOT** land. |
 | **PRs #16–#18** | **MERGED** | Phase **7.3c** dogfooding tests + org-scope + `NOT_FOUND`. Merges `259bd95…`, `24a18b8…`, `f837a19…`. |
 | **PR #19** | **MERGED** | Phase **7.5** Stripe webhook-secret SSOT + prod startup assert. Merge `3906e25…`. |
 | **PR #20** | **MERGED** | Phase **7.6** layout auth dedupe. Merge `d26a9be…`. |
@@ -43,6 +48,8 @@
 | **PR #26** | **MERGED** | ADR-027 **Accepted — not Activated**. Merge `b17e625…`. |
 | **PR #27** | **MERGED** | AMG activation record **NOT ACTIVATED**. Merge `c685e95…`. AMG **parked** — not operationally enabled. |
 | **PR #28** | **MERGED** | Phase 8 hermetic validation evidence. Merge `4dad95f…`. Hermetic journey+perf **PASS** at recorded revision; **NOT** live-provider. |
+| **PR #29** | **MERGED** | SoT tip reconcile after PRs **#24–#28**. Merge `b11f03e…`. |
+| **PR #30** | **MERGED** | Stale SoT PR triage disposition record (`docs/governance/stale-sot-pr-triage.md`). Merge `81fe0f9…`. |
 
 ---
 
@@ -51,7 +58,7 @@
 | Source | Claim about current focus |
 | --- | --- |
 | `README.md` / `CLAUDE.md` | **Binding under Founder-resolved C1 Version A (PR #21):** Phase 7 complete; **Phase 8 next** (not complete). |
-| `docs/status.json` | Machine-readable tracker; shape `{ completed, current, remaining }`. Tip reconciled to `4dad95f…` / PRs #24–#28. Still retains older parallel “CURRENT” / Phase 8–10 complete strings — non-binding for “what is next” under C1 Version A. |
+| `docs/status.json` | Machine-readable tracker; shape `{ completed, current, remaining }`. Tip reconciled to `81fe0f9…` / PR #30 + stale closes. Still retains older parallel “CURRENT” / Phase 8–10 complete strings — non-binding for “what is next” under C1 Version A. |
 | `docs/KOOLERR_MASTER_TRACKER.md` §5 | Historical/parallel Phase 10 / Experience / Campaign Rendering claims — not next-step authority under C1 Version A. |
 
 **C1** Founder-resolved Version A — see `DECISIONS.md`. **C2–C7** remain unresolved.
