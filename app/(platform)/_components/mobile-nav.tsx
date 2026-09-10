@@ -10,6 +10,20 @@ import {
   isFocusCandidate,
 } from './mobile-nav-focus'
 
+/**
+ * Mobile navigation drawer for the platform header (Phase 11 grouped IA).
+ *
+ * Rendered only below the `sm` breakpoint (the desktop bar handles larger screens).
+ * A hamburger opens a right-side drawer that mirrors the desktop groups: the
+ * primary items first, then a "More" section, then a founder-only "Owner" section.
+ * Tapping a link or the backdrop closes it.
+ *
+ * Accessibility: the panel is a labelled modal dialog. On open, focus moves to the
+ * Close button; Escape closes it; on close, focus returns to the trigger. While it
+ * is open, Tab and Shift+Tab cycle within the panel rather than escaping to the
+ * page behind it.
+ */
+
 export function MobileNav({
   primary,
   more,
