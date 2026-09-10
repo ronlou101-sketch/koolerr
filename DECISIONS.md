@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `d40356d7295435cc9d193b18629e7f73dc7da3c6`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -24,8 +24,8 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 ## Operational records (Founder-set; not conflicts)
 
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
-were added at the **post-PR-#4 reconcile**. None of them is a resolution of C1–C7 and none may be read
-as such.
+were added at the **post-PR-#4 reconcile**. None of them is a resolution of **C2–C7** (still open). **C1** was Founder-resolved Version A
+separately (PR **#21**); O1–O8 must not be read as resolving C2–C7.
 
 ### O1 — SoT pack slice closed
 
@@ -64,7 +64,7 @@ PR **#4**, branch `fix/mobile-nav-focus-trap`, **merged** into `master` at merge
 Option B + evidence-sufficiency approvals, manual keyboard **PASS**, no new dependencies. Recorded in
 `COMPLETED_WORK.md`; the slice is closed in `ACTIVE_SLICE.md`.
 
-This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C2–C7 (**C1** Founder-resolved Version A separately via PR **#21**).
 
 ### O8 — Founder authorized continuing the autonomous development loop
 
@@ -74,28 +74,47 @@ directive), rather than halting after each merged slice as O6 described.
 Boundaries — all still binding:
 
 - Work stays inside `KOOLERR_CONSTITUTION.md`, `MASTER_ROADMAP.md`, and `ARCHITECTURE_GUARDRAILS.md`.
-- Agents **must not** silently resolve, narrow, or reinterpret **C1–C7**. Those remain Founder
-  decisions and must be escalated, not decided.
+- Agents **must not** silently resolve, narrow, or reinterpret **C2–C7** (still open). **C1** is
+  Founder-resolved Version A (see below). Open conflicts must be escalated, not decided.
 - **Founder-reserved actions still require the Founder** — merge/deploy approval, PR #1 (O5),
   secrets, billing/entitlements, migrations, RLS/auth, destructive operations, architectural changes
   without an ADR, and calling Architect Preview MCP (`AGENT_OPERATING_INSTRUCTIONS.md` hard stops).
 - Temporary Foreman QA keeps its narrow standing under `QA_PROTOCOL.md` and is never Independent QA.
 
-O8 authorizes *continuation of the loop*. It does **not** authorize any specific product slice, does
-**not** pick a side in the roadmap conflict (**C1**), and does **not** resolve any of C1–C7.
+O8 authorizes *continuation of the loop*. It does **not** authorize any specific product slice and
+does **not** resolve **C2–C7**. (**C1** was Founder-resolved Version A separately — PR **#21**.)
+
+### O9 — Phase 7.9 docs housekeeping (this slice) + deferred follow-ons on master
+
+Founder authorized Phase 7.9. On master tip **`d40356d7295435cc9d193b18629e7f73dc7da3c6`**:
+
+- **7.3c / 7.5 / 7.6** Founder-merged (PRs **#16–#18**, **#19** `3906e25…`, **#20** `d26a9be…`).
+- **7.9** closing via docs-only branch `docs/phase-7-9-housekeeping` (this reconcile).
+- **C1 Version A** already on master via PR **#21**; Phase 8 hermetic E2E (**#22**) + perf (**#23**) are validation evidence only — not a product-phase completion claim.
+- **PR #1** remains **OPEN** (O5). Independent QA still absent (O4).
+
+---
+
+## Founder-resolved conflicts
+
+### C1 — Launch phase completion narrative — ✅ Founder-resolved **Version A**
+
+**Resolved by Founder** (evidence: PR **#21**, merge `c72181f…` — already reflected in `README.md` / `CLAUDE.md`).
+
+- **Binding (Version A):** `README.md` + `CLAUDE.md` → Phase 7 ✅; **Phase 8 — Final Product Validation** is next (not complete).
+- **Non-binding for “what is next”:** `FOUNDATION_003` + `docs/KOOLERR_MASTER_TRACKER.md` + `docs/status.json` Phase 8–10 complete/in-progress claims remain historical/parallel evidence; do not treat them as next-step authority under Version A.
+- Agents follow Version A for forward roadmap narrative. This does **not** invent Phase 8/9 product-phase completion.
+
+Original options preserved for audit:
+
+- **A:** `README.md` + `CLAUDE.md` → Phase 7 ✅; **Phase 8 next**.
+- **B:** `FOUNDATION_003` + `docs/KOOLERR_MASTER_TRACKER.md` + `docs/status.json` current[10] → Phases **7–9 ✅**; **Phase 10** in progress (milestone-2 tags).
 
 ---
 
 ## Unresolved SoT conflicts (founder action required)
 
-**C1–C7 below are preserved verbatim and remain UNRESOLVED.** Nothing in the operational records above resolves, narrows, or reinterprets them — in particular the roadmap-narrative conflict **C1** (README/CLAUDE vs Tracker/`status.json`) is untouched. Agents must not pick a side.
-
-### C1 — Launch phase completion narrative
-
-- **A:** `README.md` + `CLAUDE.md` → Phase 7 ✅; **Phase 8 next**.
-- **B:** `FOUNDATION_003` + `docs/KOOLERR_MASTER_TRACKER.md` + `docs/status.json` current[10] → Phases **7–9 ✅**; **Phase 10** in progress (milestone-2 tags).
-
-**Ask founder:** Which document is binding for “what is next”? Update the losers so they stop contradicting.
+**C2–C7 below are preserved verbatim and remain UNRESOLVED.** Nothing in the operational records above resolves, narrows, or reinterprets them. Agents must not pick a side on C2–C7. (**C1** is Founder-resolved Version A above.)
 
 ### C2 — `status.json` schema vs contents
 

@@ -21,6 +21,10 @@ test coverage, accessibility, and launch-day observability. Every milestone ende
 | **7.4 Loading & Error Resilience**           | Added the platform's first `error.tsx` boundary (friendly retry/dashboard screen), shared skeleton primitives, tailored list-shaped loading for `/runs` and `/deliverables`, and a shared `EmptyState`.                                                              | 0 (presentational) |
 | **7.7 Accessibility Pass**                   | Global keyboard `:focus-visible` indicator (existing `--ring` token, keyboard-only). Mobile drawer hardened: `role="dialog"` + `aria-modal`, Escape-to-close, focus-in on open, focus-restore on close.                                                              | 0 (presentational) |
 | **7.8 Observability for Launch Day**         | Added `serializeError()` (additive logger helper capturing name/message/stack/Next digest) and `GET /api/health` (domain-free liveness readout). No existing call sites touched.                                                                                     | +10                |
+| **7.3c Dogfooding service tests**            | Founder-merged: DogfoodingService Vitest coverage + org-scope on campaign/objective update mutators + cross-org miss → `NOT_FOUND`. Evidence: PRs **#16**, **#17**, **#18** (merges `259bd95…`, `24a18b8…`, `f837a19…`).                                                                 | (coverage + fixes) |
+| **7.5 Stripe webhook-secret SSOT + assert**  | Founder-merged: `STRIPE_WEBHOOK_SECRET` single source of truth + production startup assert. Evidence: PR **#19** (merge `3906e25…`).                                                                                                                                  | (startup tests)    |
+| **7.6 Layout auth dedupe**                   | Founder-merged: layout auth dedupe + safe auth/billing read parallelization. Evidence: PR **#20** (merge `d26a9be…`).                                                                                                                                               | (layout)           |
+| **7.9 Documentation & Housekeeping**         | Completing the deferred docs pass via this housekeeping slice (`docs/phase-7-9-housekeeping` on master tip `d40356d…`). Records shipped 7.3c/7.5/7.6 and Founder-resolved C1 Version A; does **not** touch `infrastructure/**/provision.ts` (still deferred).          | 0 (docs)           |
 
 ---
 
@@ -56,12 +60,14 @@ test coverage, accessibility, and launch-day observability. Every milestone ende
 
 ---
 
-## Deferred milestones (not begun; each needs explicit approval)
+## Previously deferred milestones — now shipped / closing
 
-- **7.3c — Dogfooding service tests** — internal founder tooling (~34 methods), lower launch risk; deferred to a later coverage pass.
-- **7.5 — Stripe webhook-secret startup hardening** — requires touching Stripe/Billing config; needs an explicit exception to the Stripe/Billing guardrail. Mitigated operationally until then.
-- **7.6 — Layout / Data-Fetch Consolidation** — its only meaningful wins (removing the double auth call; parallelizing the billing + auth reads) require touching Auth/Billing code; needs an explicit exception.
-- **7.9 — Documentation & Housekeeping** — dropped from Phase 7 as not launch-critical; deferred to a later documentation pass (includes updating the stale `CLAUDE.md` "Current Phase" and a stale comment in the Auth-adjacent `content-workforce/provision.ts`).
+- **7.3c — Dogfooding service tests** — ✅ Founder-merged (PRs **#16**, **#17**, **#18**).
+- **7.5 — Stripe webhook-secret startup hardening** — ✅ Founder-merged (PR **#19**, merge `3906e25…`).
+- **7.6 — Layout / Data-Fetch Consolidation** — ✅ Founder-merged (PR **#20**, merge `d26a9be…`).
+- **7.9 — Documentation & Housekeeping** — 🔄 closing via this docs-only slice on `docs/phase-7-9-housekeeping` (base master `d40356d…`). Records the shipped evidence above and Founder-resolved **C1 Version A** (Phase 8 next) already reflected in README/CLAUDE via PR **#21**. **Still deferred (out of this slice):** Auth-adjacent `infrastructure/**/provision.ts` comment refresh.
+
+> Independent QA remains absent (`QA_PROTOCOL.md`); temporary Foreman QA is not Independent QA.
 
 ---
 
@@ -79,4 +85,4 @@ test coverage, accessibility, and launch-day observability. Every milestone ende
 - **Mobile drawer** implements open-focus, Escape-to-close, and focus-restore, but **not** full keyboard tab-cycle containment (a possible follow-up).
 - **Accessibility:** no per-page icon-only-control sweep (shared controls are labelled); **no contrast changes** were made — those require design sign-off.
 - **`GET /api/health`** is intentionally minimal and unauthenticated (liveness only, no sensitive data); the deeper configured-state check remains `GET /api/readiness`.
-- The **deferred milestones** above remain outstanding.
+- The previously deferred **7.3c / 7.5 / 7.6** are Founder-merged; **7.9** is closing via this docs housekeeping. The Auth-adjacent `infrastructure/**/provision.ts` comment refresh remains deferred outside this slice.

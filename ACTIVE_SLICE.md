@@ -4,45 +4,41 @@
 
 | Field | Value |
 | --- | --- |
-| **Branch for this reconcile** | `docs/sot-post-pr4-reconcile` |
-| **Base commit (checked out)** | `7a55a4e3399a08267c9d476e7a56278e9d568f1c` (`7a55a4e` — merge of PR #4) |
+| **Branch for this slice** | `docs/phase-7-9-housekeeping` |
+| **Base commit (checked out)** | `d40356d7295435cc9d193b18629e7f73dc7da3c6` (`d40356d` — master tip; merge of PR #23) |
 | **Branch cut from** | current `master` (see `CURRENT_STATE.md`) |
-| **Prior slice** | Mobile navigation keyboard focus containment — **closed complete** (see `COMPLETED_WORK.md`) |
+| **Architect requestId** | `5dd5c0d5-7df4-4922-80fa-d52ad15a9ef1` |
+| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23 on master |
 
 ---
 
 ## Active implementation slice
 
-**There is currently NO active implementation slice.**
+**Name:** Phase **7.9** — Documentation & Housekeeping (Founder-authorized; Architect-approved).
 
-The mobile-navigation focus-containment slice is closed complete (PR #4 merged at
-`7a55a4e3399a08267c9d476e7a56278e9d568f1c`). No successor product slice has been named.
+**Status:** 🔄 closing via this docs-only pass — records shipped deferred Phase 7 follow-ons and Founder-resolved **C1 Version A**; does **not** invent Phase 8/9 product-phase completion.
 
-The next implementation slice will be **named by Foreman/Architect** under the autonomous
-development loop authorized by the Founder (`DECISIONS.md` **O8**), within the boundaries of the
-Constitution, Roadmap, Architecture Guardrails, and Founder-reserved actions.
+**Allowlist ONLY:**
 
-Agents must **not** infer, propose-and-start, or self-authorize the next product slice from
-`MASTER_ROADMAP.md`, `docs/status.json`, or the Tracker — the roadmap narrative itself is an
-unresolved conflict (`DECISIONS.md` **C1**). Founder-reserved actions still require the Founder.
+1. `PHASE_7_COMPLETION.md`
+2. `COMPLETED_WORK.md`
+3. `docs/status.json`
+4. `DECISIONS.md`
+5. `ACTIVE_SLICE.md`
+6. `CURRENT_STATE.md`
 
----
+**Out of scope / forbidden:** `infrastructure/**/provision.ts` (still deferred); `README.md` / `CLAUDE.md` (already C1-aligned in PR #21 — prefer not to touch); `app/`, `domains/`, migrations, secrets, code; any change to PR **#1**; silent resolve/alter of **C2–C7**; push/PR by the implementing agent.
 
-## Current work (documentation only)
+**Facts recorded:**
 
-**Name:** SoT post-PR-#4 reconcile — record the merged mobile-nav slice and clear the stale
-"SoT operational refresh is active" text.
+- **7.3c** — PRs **#16**, **#17**, **#18** (Founder-merged)
+- **7.5** — PR **#19** (merge `3906e25…`)
+- **7.6** — PR **#20** (merge `d26a9be…`)
+- **7.9** — this slice
+- **C1** — Founder-resolved Version A (Phase 8 next) — PR **#21**; **C2–C7** remain unresolved verbatim
+- Master tip / Phase 8 validation evidence: hermetic E2E **#22** + perf **#23** (not product-phase completion)
 
-**Scope:** `ACTIVE_SLICE.md`, `CURRENT_STATE.md`, `COMPLETED_WORK.md`, `DECISIONS.md` (operational
-records only).
-
-**Out of scope / forbidden:** the other five SoT files; `app/`, `domains/`, `shared/`, `supabase/`,
-`middleware.ts`, package files, Vercel config, `.env*`, secrets, migrations, RLS/auth, billing,
-deploy; any change to PR #1; resolving `DECISIONS.md` **C1–C7**; commit / push / merge by the
-implementing agent.
-
-**Done when:** the four allowlisted files reflect the facts above, `git diff --name-only` shows
-nothing outside the allowlist plus `CLAUDE_SLICE_REPORT.md`, and C1–C7 remain present and unresolved.
+**Done when:** allowlisted files reflect the facts above; `git diff --name-only` ⊆ allowlist; `docs/status.json` valid JSON; C1 marked Founder-resolved Version A; C2–C7 still present unresolved; commit created (no push).
 
 ---
 
@@ -50,23 +46,18 @@ nothing outside the allowlist plus `CLAUDE_SLICE_REPORT.md`, and C1–C7 remain 
 
 - **SoT pack** — closed complete, PR #2 merged at `945f3084…` (`COMPLETED_WORK.md`, `DECISIONS.md` O1).
 - **SoT operational refresh** — closed complete, PR #3 merged at `2ea64c9…` (`COMPLETED_WORK.md`).
-  This file previously described that refresh as the active slice; that text was stale and is now
-  superseded.
-- **Mobile navigation keyboard focus containment** — closed complete, PR #4 merged at
-  `7a55a4e3399a08267c9d476e7a56278e9d568f1c` (`COMPLETED_WORK.md`, `DECISIONS.md` O7).
+- **Mobile navigation keyboard focus containment** — closed complete, PR #4 merged at `7a55a4e…` (`COMPLETED_WORK.md`, `DECISIONS.md` O7).
+- **SoT post-PR-#4 reconcile** — closed complete, PR #5 merged at `ef9502c…`.
+- **Phase 7.3c / 7.5 / 7.6** — Founder-merged (PRs **#16–#20**); see `COMPLETED_WORK.md`.
+- **C1 Version A docs bind** — Founder-merged PR **#21** (`c72181f…`).
 
 ---
 
 ## Explicitly NOT claimed complete
 
-Do **not** mark as complete solely because of the merged mobile-nav slice or this documentation
-change:
-
-- Launch Phase 8 / 9 / 10 product outcomes (sources conflict — see `MASTER_ROADMAP.md`, `DECISIONS.md` C1).
-- Campaign Rendering production M2 / full runtime proof (C6).
+- Launch Phase **8 / 9 / 10 product outcomes** as complete (C1 Version A says Phase 8 is **next** / not complete; Tracker/`status.json` parallel claims are non-binding for “what is next”).
+- Campaign Rendering production M2 / full runtime proof (**C6** still open).
 - **Independent QA pass** — Independent QA does not exist; temporary Foreman QA is not Independent QA.
-- Any broader accessibility, migration, billing, auth, or provider outcome beyond the three
-  mobile-nav files named in `COMPLETED_WORK.md`.
-
-Product “current” strings in `docs/status.json` (Steps 4–6, CR-\*, Phase 13, etc.) remain
-**historical / parallel evidence** until the Founder re-points live status.
+- Auth-adjacent `infrastructure/**/provision.ts` comment refresh (explicitly deferred from this 7.9 allowlist).
+- Any resolution of **C2–C7**.
+- PR **#1** (remains **OPEN**, untouched — `DECISIONS.md` O5).
