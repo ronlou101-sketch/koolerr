@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `d40356d7295435cc9d193b18629e7f73dc7da3c6`) |
+| **Base for new implementation branches** | current **`master`** (tip `4dad95f0b9ffaefea458ee34386271e573e61b73`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -36,16 +36,29 @@ QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
 
 ---
 
-## Phase 7 deferred follow-ons — ✅ SHIPPED / 🔄 CLOSING (Founder-merged evidence)
+## Phase 7 deferred follow-ons — ✅ SHIPPED (Founder-merged evidence)
 
 | Milestone | Evidence | Status |
 | --- | --- | --- |
 | **7.3c** Dogfooding service tests + org-scope + `NOT_FOUND` | PRs **#16**, **#17**, **#18** | ✅ Founder-merged |
 | **7.5** Stripe webhook-secret SSOT + prod startup assert | PR **#19** (merge `3906e25…`) | ✅ Founder-merged |
 | **7.6** Layout auth dedupe | PR **#20** (merge `d26a9be…`) | ✅ Founder-merged |
-| **7.9** Documentation & Housekeeping | this slice `docs/phase-7-9-housekeeping` (base `d40356d…`) | 🔄 closing (docs-only; `infrastructure/**/provision.ts` still deferred) |
+| **7.9** Documentation & Housekeeping | PR **#24** (merge `85ef083…`) | ✅ Founder-merged (docs-only; follows existing 7.9 record; no broader phase closure claim; `infrastructure/**/provision.ts` still deferred) |
 
-Also on master tip `d40356d…` (not Phase 7 product completion): **C1 Version A** docs bind (PR **#21**); Phase 8 hermetic dogfooding Campaign Architect journey E2E (PR **#22**); Phase 8 Campaign Architect perf baseline (PR **#23**).
+---
+
+## PRs #25–#28 — verified historical / merged facts (not Phase 8 product completion)
+
+| PR | Merge | Record |
+| --- | --- | --- |
+| **#25** | `f1daf6f…` | AMG draft ADR-027 + governance |
+| **#26** | `b17e625…` | ADR-027 **Accepted — not Activated** |
+| **#27** | `c685e95…` | AMG activation record **NOT ACTIVATED** |
+| **#28** | `4dad95f…` | Phase 8 hermetic validation evidence; hermetic journey+perf **PASS** at recorded revision; **NOT** live-provider |
+
+**AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled.
+
+Also on master tip `4dad95f…` (not Phase 7/8 product completion): **C1 Version A** docs bind (PR **#21**); Phase 8 hermetic E2E (PR **#22**) + perf baseline (PR **#23**) as earlier validation evidence; live-provider validation remains outstanding (**Founder-executed**).
 
 **Independent QA** remains absent. PR **#1** remains **OPEN** and untouched.
 
@@ -85,11 +98,11 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 - Status: Complete; tagged `phase-7-complete`.
 - Test count cited in original Phase 7 report: 756 → **833** (+77) for the core required milestones.
 - Core milestones completed (7.1, 7.2, 7.3a, 7.3b, 7.4, 7.7, 7.8) per `PHASE_7_COMPLETION.md`.
-- Previously deferred follow-ons now Founder-merged / closing:
+- Previously deferred follow-ons now Founder-merged:
   - **7.3c** dogfooding service tests + org-scope + `NOT_FOUND` — PRs **#16**, **#17**, **#18**
   - **7.5** Stripe webhook-secret SSOT + prod startup assert — PR **#19** (merge `3906e25…`)
   - **7.6** layout auth dedupe — PR **#20** (merge `d26a9be…`)
-  - **7.9** documentation & housekeeping — closing via this docs-only slice (`docs/phase-7-9-housekeeping` on master tip `d40356d…`); does not touch `infrastructure/**/provision.ts` (still deferred)
+  - **7.9** documentation & housekeeping — ✅ Founder-merged PR **#24** (merge `85ef083…`); does not touch `infrastructure/**/provision.ts` (still deferred)
 - Independent QA remains absent (`QA_PROTOCOL.md`); temporary Foreman QA is not Independent QA.
 
 ---
@@ -101,7 +114,7 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 | `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**) | **Next** / not complete | Planned |
 | `FOUNDATION_003`, Tracker, `status.json` current[10] | ✅ `phase-8-complete` (historical/parallel claim) | ✅ `phase-9-complete` (historical/parallel claim) |
 
-**C1** is Founder-resolved **Version A** (Phase 8 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion from this housekeeping. Master tip `d40356d…` includes Phase 8 hermetic E2E (**PR #22**) and perf baseline (**PR #23**) as validation evidence only.
+**C1** is Founder-resolved **Version A** (Phase 8 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion from this housekeeping. Master tip `4dad95f…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), and hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider) as validation evidence only. Live-provider validation outstanding (**Founder-executed**). **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**).
 
 ---
 
