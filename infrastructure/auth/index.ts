@@ -7,6 +7,6 @@
  * See infrastructure/auth/resolve.ts for full documentation.
  */
 
-export { getApiKeyPlatformContext, getRequestPlatformContext } from './resolve'
+export { getApiKeyPlatformContext, getRequestAuthEmail, getRequestPlatformContext } from './resolve'
 export { provisionPlatformAccount } from './provision'
 export type { ProvisionError, ProvisionResult } from './provision'

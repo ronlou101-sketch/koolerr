@@ -19,6 +19,10 @@
  * Both functions return null (not an error) when the request is unauthenticated.
  * Callers that require authentication should treat a null return as a 401.
  *
+ * getRequestAuthEmail() exposes the already-resolved Supabase Auth email for
+ * UI/founder gating without a second getUser(). It shares the same React
+ * cache()-deduped getUser path as getRequestPlatformContext().
+ *
  * Infrastructure placement rationale:
  * This file imports from both @/shared (PlatformContext, env, session client) and
  * @/domains/identity (identityService). The infrastructure/ layer is the only
@@ -30,6 +34,7 @@
  * See docs/adr/ADR-005-authentication-pattern.md
  */
 
+import { cache } from 'react'
 import type { OrganizationId } from '@/shared/types'
 import { createPlatformContext } from '@/shared/context'
 import type { PlatformContext } from '@/shared/context'
@@ -38,6 +43,37 @@ import { createSessionServerClient } from '@/shared/lib/supabase-session'
 import { identityService } from '@/domains/identity'
 import { bootstrapPlatform, isPlatformBootstrapped } from '@/infrastructure/platform'
 import { logger } from '@/shared/lib/logger'
+
+type CachedAuthUser = {
+  user: { id: string; email?: string | null } | null
+  error: { message: string } | null
+}
+
+/**
+ * Request-scoped auth user lookup. React cache() dedupes within a single
+ * server render/request so layout + context resolution share one getUser().
+ */
+const getCachedAuthUser = cache(async (): Promise<CachedAuthUser> => {
+  const supabase = await createSessionServerClient()
+
+  // getUser() validates the session against the Supabase Auth server.
+  // Never use getSession() here — it reads from storage without server validation.
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  return { user, error }
+})
+
+/**
+ * Auth email from the same cached getUser() used by getRequestPlatformContext.
+ * Does not change PlatformContext shape or auth semantics.
+ */
+export async function getRequestAuthEmail(): Promise<string | undefined> {
+  const { user } = await getCachedAuthUser()
+  return user?.email ?? undefined
+}
 
 /**
  * Resolve a PlatformContext from the current request's Supabase Auth session.
@@ -59,14 +95,7 @@ export async function getRequestPlatformContext(
   // import that this file and its callers actually use.
   if (!isPlatformBootstrapped()) await bootstrapPlatform()
 
-  const supabase = await createSessionServerClient()
-
-  // getUser() validates the session against the Supabase Auth server.
-  // Never use getSession() here — it reads from storage without server validation.
-  const {
-    data: { user: authUser },
-    error: getUserError,
-  } = await supabase.auth.getUser()
+  const { user: authUser, error: getUserError } = await getCachedAuthUser()
 
   if (!authUser?.email) {
     logger.debug('resolve: no auth session', { reason: getUserError?.message ?? '(no error)' })
