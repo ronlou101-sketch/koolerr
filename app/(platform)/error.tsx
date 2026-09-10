@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 /**
  * Error boundary for all platform routes.
@@ -10,6 +10,12 @@ import { useEffect } from 'react'
  * fetching, instead of crashing to the raw error page. It shows a friendly,
  * non-sensitive message with a retry (reset) and an escape hatch to the dashboard.
  * The detailed error is logged for debugging but never shown to the user.
+ *
+ * Accessibility: the segment's content is replaced without a navigation, so focus
+ * would otherwise stay on whatever the customer last touched — or be lost to the
+ * body — leaving a screen-reader or keyboard user with no idea the page failed.
+ * On mount focus moves to the heading, which puts the explanation first and the
+ * two recovery controls one Tab away.
  */
 export default function PlatformError({
   error,
@@ -18,13 +24,24 @@ export default function PlatformError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const headingRef = useRef<HTMLHeadingElement>(null)
+
   useEffect(() => {
     console.error('[platform] route error', error)
   }, [error])
 
+  // Mount only: a retry that fails again remounts this boundary, and moving focus
+  // on every re-render would yank it back from the control the customer chose.
+  useEffect(() => {
+    headingRef.current?.focus()
+  }, [])
+
   return (
     <div className="mx-auto max-w-md py-16 text-center">
-      <h1 className="text-xl font-semibold text-foreground">This page didn&apos;t load right</h1>
+      {/* tabIndex -1 makes the heading a focus target without adding it to the tab order. */}
+      <h1 ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-foreground">
+        This page didn&apos;t load right
+      </h1>
       <p className="mt-3 text-sm text-muted-foreground">
         Sorry about that — this page didn&apos;t load the way it should. Try again, or head back to
         your dashboard.
