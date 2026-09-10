@@ -367,10 +367,14 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
     // create new campaign records as supplementary execution campaigns.
     const campaign =
       index === 0 && input.existingCampaignId
-        ? await _dogfoodingRepository.updateCampaignDetails(input.existingCampaignId, {
-            planId: plan.id,
-            engagementRunId,
-          })
+        ? await _dogfoodingRepository.updateCampaignDetails(
+            input.existingCampaignId,
+            {
+              planId: plan.id,
+              engagementRunId,
+            },
+            organizationId
+          )
         : await _dogfoodingRepository.createCampaign({
             organizationId,
             objectiveId: objective.id,
@@ -509,7 +513,7 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
       await recordProgress(input, `creative:${campaign.id}`, 'failed', String(e))
     }
 
-    await _dogfoodingRepository.updateCampaignStatus(campaign.id, 'ready')
+    await _dogfoodingRepository.updateCampaignStatus(campaign.id, 'ready', organizationId)
   }
 
   // ── Finalise ────────────────────────────────────────────────────────────────

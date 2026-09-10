@@ -476,32 +476,42 @@ export class SupabaseDogfoodingRepository implements IDogfoodingRepository {
 
   async updateCampaignStatus(
     id: string,
-    status: DogfoodingCampaign['status']
+    status: DogfoodingCampaign['status'],
+    organizationId: OrganizationId
   ): Promise<DogfoodingCampaign> {
+    // The organization filter is part of the UPDATE predicate, not a post-hoc check,
+    // so a cross-organization id matches no row and mutates nothing.
     const { data, error } = await this.supabase
       .from('dogfooding_campaigns')
       .update({ status })
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .select()
-      .single()
+      .maybeSingle()
     if (error) throw new Error(`[DOGFOODING_REPO] updateCampaignStatus: ${error.message}`)
+    if (!data) throw new Error(`[DOGFOODING_REPO] updateCampaignStatus: Campaign ${id} not found`)
     return toCampaign(data as Record<string, unknown>)
   }
 
   async updateCampaignDetails(
     id: string,
-    updates: { planId?: string; engagementRunId?: string }
+    updates: { planId?: string; engagementRunId?: string },
+    organizationId: OrganizationId
   ): Promise<DogfoodingCampaign> {
     const patch: Record<string, unknown> = {}
     if (updates.planId !== undefined) patch.plan_id = updates.planId
     if (updates.engagementRunId !== undefined) patch.engagement_run_id = updates.engagementRunId
+    // The organization filter is part of the UPDATE predicate, not a post-hoc check,
+    // so a cross-organization id matches no row and mutates nothing.
     const { data, error } = await this.supabase
       .from('dogfooding_campaigns')
       .update(patch)
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .select()
-      .single()
+      .maybeSingle()
     if (error) throw new Error(`[DOGFOODING_REPO] updateCampaignDetails: ${error.message}`)
+    if (!data) throw new Error(`[DOGFOODING_REPO] updateCampaignDetails: Campaign ${id} not found`)
     return toCampaign(data as Record<string, unknown>)
   }
 

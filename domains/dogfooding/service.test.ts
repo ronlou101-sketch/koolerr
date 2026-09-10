@@ -443,6 +443,101 @@ describe('DogfoodingService — campaigns', () => {
   })
 })
 
+// ── Campaign updates (repository contract) ──────────────────────────────────
+
+/**
+ * `updateCampaignStatus` and `updateCampaignDetails` are repository-only today —
+ * no DogfoodingService method exposes them — so the organization-scoping contract
+ * required by ADR-026 is asserted against the repository directly.
+ */
+describe('InMemoryDogfoodingRepository — campaign updates are organization-scoped', () => {
+  let repo: InMemoryDogfoodingRepository
+  beforeEach(() => {
+    repo = new InMemoryDogfoodingRepository()
+  })
+
+  /** Reads a campaign back through the organization-scoped list interface. */
+  async function readCampaign(
+    id: string,
+    organizationId: OrganizationId
+  ): Promise<DogfoodingCampaign> {
+    const campaign = (await repo.listCampaigns(organizationId)).find((c) => c.id === id)
+    if (!campaign) throw new Error(`campaign ${id} not visible to ${organizationId}`)
+    return campaign
+  }
+
+  it('updateCampaignStatus updates the campaign for its owning organization', async () => {
+    const created = await repo.createCampaign(campaignInput())
+    const updated = await repo.updateCampaignStatus(created.id, 'ready', ORG)
+    expect(updated.status).toBe('ready')
+    expect((await readCampaign(created.id, ORG)).status).toBe('ready')
+  })
+
+  it('updateCampaignStatus rejects an unknown campaign', async () => {
+    await expect(repo.updateCampaignStatus('campaign_missing', 'ready', ORG)).rejects.toThrow(
+      'not found'
+    )
+  })
+
+  it('updateCampaignStatus refuses another organization’s campaign and mutates nothing', async () => {
+    const created = await repo.createCampaign(campaignInput())
+    await expect(repo.updateCampaignStatus(created.id, 'ready', OTHER_ORG)).rejects.toThrow(
+      'not found'
+    )
+
+    const untouched = await readCampaign(created.id, ORG)
+    expect(untouched.status).toBe('planning')
+    expect(untouched.updatedAt).toEqual(created.updatedAt)
+  })
+
+  it('updateCampaignDetails links plan and engagement run for its owning organization', async () => {
+    const created = await repo.createCampaign(campaignInput())
+    const updated = await repo.updateCampaignDetails(
+      created.id,
+      { planId: 'plan_1', engagementRunId: 'run_1' },
+      ORG
+    )
+    expect(updated.planId).toBe('plan_1')
+    expect(updated.engagementRunId).toBe('run_1')
+
+    const persisted = await readCampaign(created.id, ORG)
+    expect(persisted.planId).toBe('plan_1')
+    expect(persisted.engagementRunId).toBe('run_1')
+  })
+
+  it('updateCampaignDetails rejects an unknown campaign', async () => {
+    await expect(
+      repo.updateCampaignDetails('campaign_missing', { planId: 'plan_1' }, ORG)
+    ).rejects.toThrow('not found')
+  })
+
+  it('updateCampaignDetails refuses another organization’s campaign and mutates nothing', async () => {
+    const created = await repo.createCampaign(campaignInput())
+    await expect(
+      repo.updateCampaignDetails(
+        created.id,
+        { planId: 'plan_x', engagementRunId: 'run_x' },
+        OTHER_ORG
+      )
+    ).rejects.toThrow('not found')
+
+    const untouched = await readCampaign(created.id, ORG)
+    expect(untouched.planId).toBeNull()
+    expect(untouched.engagementRunId).toBeNull()
+    expect(untouched.updatedAt).toEqual(created.updatedAt)
+  })
+
+  it('scopes campaign updates by organization, not by id alone', async () => {
+    const mine = await repo.createCampaign(campaignInput())
+    const theirs = await repo.createCampaign(campaignInput({ organizationId: OTHER_ORG }))
+
+    await repo.updateCampaignStatus(theirs.id, 'ready', OTHER_ORG)
+
+    expect((await readCampaign(theirs.id, OTHER_ORG)).status).toBe('ready')
+    expect((await readCampaign(mine.id, ORG)).status).toBe('planning')
+  })
+})
+
 // ── Marketing plan ──────────────────────────────────────────────────────────
 
 describe('DogfoodingService — marketing plan', () => {
