@@ -85,6 +85,7 @@ describe('the copy the customer reads', () => {
  *   vitest.
  * - The logging call, which is unchanged by this fix: full error detail still
  *   goes to `logger.error`, which is where it belongs.
- * - `app/global-error.tsx`, which renders the same raw `error.message` and is
- *   outside this change's allowlist.
+ * - The rendered `app/global-error.tsx`, which now reuses the same helper and
+ *   copy and so is covered by these tests for what it may show, but — like the
+ *   root boundary above — not for its markup.
  */
