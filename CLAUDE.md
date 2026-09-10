@@ -161,9 +161,11 @@ public/           — Public-facing static assets
 
 ## Current Phase
 
-The official roadmap is the **Active Execution Roadmap (Phases 7–12)** defined in
-`Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md` and mirrored in `docs/KOOLERR_MASTER_TRACKER.md`
-and `docs/status.json`. That roadmap is the single source of truth for what is built next.
+The Active Execution Roadmap is **Phases 7–12** (see
+`Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md`). Founder-resolved **C1 Version A** binds this
+file and `README.md`: Phase 7 is complete; **Phase 8 — Final Product Validation** is the next
+binding phase. Do **not** adopt Tracker / `docs/status.json` Phase 10 claims as next-step
+authority for this sequence.
 
 **Phase 7 — Launch Readiness is ✅ complete** (tagged `phase-7-complete`): mobile navigation,
 terminology consistency, loading/error resilience, critical service-layer test coverage,
@@ -172,10 +174,12 @@ billing, Business Brain, and multi-Workforce architecture from earlier phases ar
 
 **The forward roadmap:**
 
-1. **Phase 8 — Final Product Validation** ⬜ Next — end-to-end workflow validation, real campaign
-   generation, AI provider validation (HeyGen, Higgsfield, ElevenLabs, etc.), performance
-   validation, and production bug fixes found during validation. **No new features** unless
-   required to complete the customer journey.
+1. **Phase 8 — Final Product Validation** ⬜ **Next (Founder-approved under C1 Version A)** — not
+   complete. Non-reserved scope: end-to-end customer-journey validation; provider-validation
+   evidence requirements (HeyGen, Higgsfield, ElevenLabs, etc. as already mentioned); performance
+   validation; production bug fixes discovered through validation; **no new features** unless
+   required to complete the customer journey. Phase 8 docs scope does **not** authorize deploy,
+   migrations, or production credential/secret handling.
 2. **Phase 9 — Koolerr Academy** ⬜ — **a required production phase that must be completed before
    any beta customer is invited**, so every beta customer has full Academy access on Day 1
    (in-platform searchable knowledge base + HeyGen AI instructor videos; every major feature gets
@@ -183,13 +187,17 @@ billing, Business Brain, and multi-Workforce architecture from earlier phases ar
 3. **Phase 10 — Private Beta** ⬜ · **Phase 11 — Public Launch** ⬜ · **Phase 12 — Scale &
    Optimization** ⬜.
 
+**Reserved (not part of this Phase 8 docs scope):** Campaign Rendering **M2 prove-in-production**
+(deploy, migrations, production credentials/secrets, live production proof) remains **reserved**
+and requires separate Founder authorization — not implied by Phase 8 start.
+
 Do not begin a phase before the current one is approved complete. If a request would introduce a
 later-phase capability out of sequence, say so before proceeding.
 
 > **Numbering note:** Earlier revisions of this file and the trackers used different phase
 > numbering (e.g. an architectural Phase 1–5+ in FOUNDATION_003, and a Phase 1–10 delivery scheme
 > in the master tracker). Those are preserved as historical context; the Phase 7–12 sequence above
-> is the sole forward roadmap.
+> is the sole forward roadmap under C1 Version A.
 
 ---
 
