@@ -65,13 +65,28 @@ export interface IDogfoodingRepository {
     objectiveId: string,
     organizationId: OrganizationId
   ): Promise<DogfoodingCampaign[]>
+  /**
+   * Updates a campaign's status within its owning organization.
+   *
+   * `organizationId` is required — a campaign belonging to another organization
+   * must never be mutated, even if its id is known. Implementations reject a
+   * cross-organization or unknown id as not found rather than silently updating.
+   */
   updateCampaignStatus(
     id: string,
-    status: DogfoodingCampaign['status']
+    status: DogfoodingCampaign['status'],
+    organizationId: OrganizationId
   ): Promise<DogfoodingCampaign>
+  /**
+   * Updates a campaign's plan and engagement-run links within its owning organization.
+   *
+   * `organizationId` is required for the same reason as {@link updateCampaignStatus}:
+   * knowing a campaign id must not be sufficient to mutate another organization's row.
+   */
   updateCampaignDetails(
     id: string,
-    updates: { planId?: string; engagementRunId?: string }
+    updates: { planId?: string; engagementRunId?: string },
+    organizationId: OrganizationId
   ): Promise<DogfoodingCampaign>
 
   // Ad Copy

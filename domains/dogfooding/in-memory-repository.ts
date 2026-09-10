@@ -142,10 +142,11 @@ export class InMemoryDogfoodingRepository implements IDogfoodingRepository {
 
   async updateCampaignStatus(
     id: string,
-    status: DogfoodingCampaign['status']
+    status: DogfoodingCampaign['status'],
+    organizationId: OrganizationId
   ): Promise<DogfoodingCampaign> {
     const c = this.campaigns.get(id)
-    if (!c) throw new Error(`Campaign ${id} not found`)
+    if (!c || c.organizationId !== organizationId) throw new Error(`Campaign ${id} not found`)
     const updated = { ...c, status, updatedAt: now() }
     this.campaigns.set(id, updated)
     return updated
@@ -153,10 +154,11 @@ export class InMemoryDogfoodingRepository implements IDogfoodingRepository {
 
   async updateCampaignDetails(
     id: string,
-    updates: { planId?: string; engagementRunId?: string }
+    updates: { planId?: string; engagementRunId?: string },
+    organizationId: OrganizationId
   ): Promise<DogfoodingCampaign> {
     const c = this.campaigns.get(id)
-    if (!c) throw new Error(`Campaign ${id} not found`)
+    if (!c || c.organizationId !== organizationId) throw new Error(`Campaign ${id} not found`)
     const updated = {
       ...c,
       ...(updates.planId !== undefined ? { planId: updates.planId } : {}),
