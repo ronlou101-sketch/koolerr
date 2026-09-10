@@ -219,7 +219,7 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
       status: 'failed',
       updatedAt: new Date(),
     })
-    await _dogfoodingRepository.updateObjectiveStatus(objective.id, 'paused')
+    await _dogfoodingRepository.updateObjectiveStatus(objective.id, 'paused', organizationId)
     return
   }
 
@@ -279,7 +279,7 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
       status: 'failed',
       updatedAt: new Date(),
     })
-    await _dogfoodingRepository.updateObjectiveStatus(objective.id, 'paused')
+    await _dogfoodingRepository.updateObjectiveStatus(objective.id, 'paused', organizationId)
     return
   }
 
@@ -320,7 +320,7 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
       status: 'failed',
       updatedAt: new Date(),
     })
-    await _dogfoodingRepository.updateObjectiveStatus(objective.id, 'paused')
+    await _dogfoodingRepository.updateObjectiveStatus(objective.id, 'paused', organizationId)
     return
   }
 
@@ -514,7 +514,12 @@ export async function runDogfoodingPipeline(input: DogfoodingPipelineInput): Pro
 
   // ── Finalise ────────────────────────────────────────────────────────────────
 
-  await _dogfoodingRepository.updateObjectiveStatus(objective.id, 'active', engagementRunId)
+  await _dogfoodingRepository.updateObjectiveStatus(
+    objective.id,
+    'active',
+    organizationId,
+    engagementRunId
+  )
 
   await workforceEngineService.updateEngagementRunStatus({
     tenantId,
