@@ -4,8 +4,20 @@
 
 | Field | Value |
 | --- | --- |
-| **Canonical working branch** | `feat/phase-5-6-launch-integrity` |
-| **HEAD before SoT pack commit** | `b5283625f7e6f78a9382a9a51d4340abdee0f2da` |
+| **Base for new implementation branches** | current **`master`** (tip `945f30840680790fcdbced49790a28372e9aab47`) |
+| **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
+
+---
+
+## Foreman SoT pack slice — ✅ COMPLETE (agent-ops work, not product work)
+
+**Evidence:** PR **#2** (`docs: Foreman canonical SoT pack (docs-only)`), **merged** into `master` at SHA **`945f30840680790fcdbced49790a28372e9aab47`** (`945f308`).
+
+- Delivered: the nine root Foreman SoT markdown files, documentation-only.
+- Outcome: the SoT pack now lives on `master`; subsequent Claude Code implementation branches are cut from `master` (`DECISIONS.md` O2).
+- Slice closed: `ACTIVE_SLICE.md` has moved on to the SoT operational refresh.
+
+**This closes an operating-documentation slice only.** It completes **no** product phase, milestone, or launch gate, and it does **not** resolve any conflict in `DECISIONS.md` (C1–C7 remain open).
 
 ---
 
