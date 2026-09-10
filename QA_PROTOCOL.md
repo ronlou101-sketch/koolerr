@@ -40,6 +40,12 @@ Known limitation from Phase 7 report: Vitest runs in **`node` environment** — 
 
 There is no separate QA agent, QA workflow, or QA gate beyond implementer tests + static checks + founder/CTO review described in `docs/KOOLERR_ENGINEERING_CHARTER.md`.
 
+### Independent QA Gate #2 (definition-only cross-link)
+
+> **Shared status (binding).** AMG / Auto-Merge Governance remains **NOT ACTIVATED**. Gate #2 docs are **definition-only** and do **not** create enforcement or approval authority. Gate #2 owner designation remains **TBD** (Founder follow-up). **Temporary Foreman QA is not Independent QA.**
+
+Definition pack (not activated / not enforced): [`docs/governance/independent-qa-gate-2/README.md`](docs/governance/independent-qa-gate-2/README.md). Independent QA remains **not operationally available** — owner TBD; definition docs only.
+
 ---
 
 ## Temporary Foreman QA (Founder-approved substitute)
