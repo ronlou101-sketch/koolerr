@@ -353,17 +353,17 @@ describe('DogfoodingService — objectives', () => {
     )
   })
 
-  it('updateObjectiveStatus reports INTERNAL_ERROR for an unknown objective', async () => {
+  it('updateObjectiveStatus reports NOT_FOUND for an unknown objective', async () => {
     const result = await dogfoodingService.updateObjectiveStatus('objective_missing', 'active', ORG)
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.INTERNAL_ERROR)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
   })
 
   it('updateObjectiveStatus refuses another organization’s objective', async () => {
     const created = unwrap(await dogfoodingService.createObjective(objectiveInput()))
     const result = await dogfoodingService.updateObjectiveStatus(created.id, 'paused', OTHER_ORG)
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.INTERNAL_ERROR)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
   })
 
   it('updateObjectiveStatus leaves the other organization’s objective unmutated', async () => {
@@ -626,18 +626,30 @@ describe('DogfoodingService — ad copy variants', () => {
     expect(rejected.approvedAt).toBeNull()
   })
 
+  it('approveAdCopyVariant reports NOT_FOUND for an unknown variant', async () => {
+    const result = await dogfoodingService.approveAdCopyVariant('variant_missing', null, ORG)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
+  })
+
   it('approveAdCopyVariant refuses a variant owned by another organization', async () => {
     const seeded = await repo.createAdCopyVariant(copyVariantInput())
     const result = await dogfoodingService.approveAdCopyVariant(seeded.id, null, OTHER_ORG)
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.INTERNAL_ERROR)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
+  })
+
+  it('rejectAdCopyVariant reports NOT_FOUND for an unknown variant', async () => {
+    const result = await dogfoodingService.rejectAdCopyVariant('variant_missing', null, ORG)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
   })
 
   it('rejectAdCopyVariant refuses a variant owned by another organization', async () => {
     const seeded = await repo.createAdCopyVariant(copyVariantInput())
     const result = await dogfoodingService.rejectAdCopyVariant(seeded.id, null, OTHER_ORG)
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.INTERNAL_ERROR)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
   })
 })
 
@@ -685,18 +697,30 @@ describe('DogfoodingService — creatives', () => {
     expect(rejected.approvedAt).toBeNull()
   })
 
+  it('approveCreative reports NOT_FOUND for an unknown creative', async () => {
+    const result = await dogfoodingService.approveCreative('creative_missing', null, ORG)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
+  })
+
   it('approveCreative refuses a creative owned by another organization', async () => {
     const seeded = await repo.createCreative(creativeInput())
     const result = await dogfoodingService.approveCreative(seeded.id, null, OTHER_ORG)
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.INTERNAL_ERROR)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
+  })
+
+  it('rejectCreative reports NOT_FOUND for an unknown creative', async () => {
+    const result = await dogfoodingService.rejectCreative('creative_missing', null, ORG)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
   })
 
   it('rejectCreative refuses a creative owned by another organization', async () => {
     const seeded = await repo.createCreative(creativeInput())
     const result = await dogfoodingService.rejectCreative(seeded.id, null, OTHER_ORG)
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.INTERNAL_ERROR)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
   })
 })
 
@@ -823,6 +847,16 @@ describe('DogfoodingService — campaign assets', () => {
     expect(found?.status).toBe('approved')
   })
 
+  it('updateCampaignAssetStatus reports NOT_FOUND for an unknown asset', async () => {
+    const result = await dogfoodingService.updateCampaignAssetStatus(
+      'asset_missing',
+      'approved',
+      ORG
+    )
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
+  })
+
   it('updateCampaignAssetStatus refuses an asset owned by another organization', async () => {
     const created = unwrap(await dogfoodingService.createCampaignAsset(assetInput()))
     const result = await dogfoodingService.updateCampaignAssetStatus(
@@ -831,7 +865,7 @@ describe('DogfoodingService — campaign assets', () => {
       OTHER_ORG
     )
     expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.INTERNAL_ERROR)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.NOT_FOUND)
   })
 })
 

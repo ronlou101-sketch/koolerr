@@ -161,6 +161,15 @@ export interface IDogfoodingService {
   ): Promise<PlatformResult<CampaignPublishEvent[]>>
 }
 
+/** Maps repo absence/inaccessible-ownership throws ("… not found") to NOT_FOUND; else INTERNAL_ERROR. */
+function mapUpdateMutatorError(e: unknown): { code: PlatformErrorCode; message: string } {
+  const message = String(e)
+  const code = /not found/i.test(message)
+    ? PlatformErrorCode.NOT_FOUND
+    : PlatformErrorCode.INTERNAL_ERROR
+  return { code, message }
+}
+
 let _repo: IDogfoodingRepository = new InMemoryDogfoodingRepository()
 
 export function _configureDogfoodingRepository(repo: IDogfoodingRepository): void {
@@ -239,7 +248,7 @@ class DogfoodingService implements IDogfoodingService {
       )
       return ok(objective)
     } catch (e) {
-      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+      return err(mapUpdateMutatorError(e))
     }
   }
 
@@ -354,7 +363,7 @@ class DogfoodingService implements IDogfoodingService {
     try {
       return ok(await _repo.approveAdCopyVariant(id, note, organizationId))
     } catch (e) {
-      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+      return err(mapUpdateMutatorError(e))
     }
   }
 
@@ -366,7 +375,7 @@ class DogfoodingService implements IDogfoodingService {
     try {
       return ok(await _repo.rejectAdCopyVariant(id, note, organizationId))
     } catch (e) {
-      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+      return err(mapUpdateMutatorError(e))
     }
   }
 
@@ -378,7 +387,7 @@ class DogfoodingService implements IDogfoodingService {
     try {
       return ok(await _repo.approveCreative(id, note, organizationId))
     } catch (e) {
-      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+      return err(mapUpdateMutatorError(e))
     }
   }
 
@@ -390,7 +399,7 @@ class DogfoodingService implements IDogfoodingService {
     try {
       return ok(await _repo.rejectCreative(id, note, organizationId))
     } catch (e) {
-      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+      return err(mapUpdateMutatorError(e))
     }
   }
 
@@ -434,7 +443,7 @@ class DogfoodingService implements IDogfoodingService {
     try {
       return ok(await _repo.updateCampaignAssetStatus(id, status, organizationId))
     } catch (e) {
-      return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })
+      return err(mapUpdateMutatorError(e))
     }
   }
 
