@@ -1,15 +1,16 @@
 # ADR-027 — Auto-Merge Governance
 
-- Status: **Proposed** (drafting-only; **not** Accepted; **not** Activated)
+- Status: **Accepted — not Activated** (records the governance decision only; **does not** activate auto-merge)
 - Date: 2026-09-10
-- Author: KOOLERR FOREMAN / Claude under Architect direction (`2ec3800b…`; consult lineage includes `31f8ff9c…`)
+- Author: KOOLERR FOREMAN / Claude under Architect direction (`244270e7…` status update; lineage `2ec3800b…`, `31f8ff9c…`)
 - CTO Review: Architect consult (Preview MCP) — policy draft clearance only; does **not** activate controls
-- Founder Approval: **Required** before any Accepted / Activated transition; merge of this documentation PR remains Founder-gated
+- Founder Approval: **Accepted** as governance documentation (status update); **Activation** (tooling / eligibility) remains **not** approved and requires a separate Founder decision; merges remain Founder-gated
 - Supersedes / Superseded by: none — companion operational policy: [`docs/governance/auto-merge-governance.md`](../governance/auto-merge-governance.md)
 
-> Governed by the Koolerr Engineering Charter. This ADR records a **proposed** governance
-> framework for any future auto-merge eligibility. It is **documentation only**. It does **not**
-> enable GitHub auto-merge, branch protection changes, CI bots, workflows, tokens, or permissions.
+> Governed by the Koolerr Engineering Charter. This ADR is **Accepted — not Activated**: it records
+> the governance decision only. Acceptance does **not** activate auto-merge or authorize operational
+> implementation. It is **documentation only**. It does **not** enable GitHub auto-merge, branch
+> protection changes, CI bots, workflows, tokens, permissions, or enforcement mechanisms.
 > Documentation alone confers **no** auto-merge eligibility. Controls described here are **not
 > active**.
 
@@ -27,8 +28,9 @@ and revocation procedure, any future tooling change would risk:
 - treating Architect clearance or documentation PRs as de-facto auto-merge eligibility;
 - enabling merge automation without Founder-gated activation and rollback.
 
-This ADR and its companion policy draft that framework **only**. They intentionally do **not**
-resolve C2–C7, touch PR #1, or introduce tooling.
+This ADR and its companion policy record that framework **only**. They intentionally do **not**
+resolve C2–C7, touch PR #1, or introduce tooling. **Independent QA** remains **not available** at
+the time of this status update.
 
 ### Review-role distinctions (mandatory)
 
@@ -44,9 +46,12 @@ Temporary Foreman QA ≠ Independent QA. Architect clearance ≠ Founder merge. 
 
 ## Decision
 
-1. **Drafting-only status.** ADR-027 is **Proposed**. Until the Founder separately and explicitly
-   Accepts this ADR **and** approves a distinct activation decision (tooling, branch protection, CI
-   gates — out of scope here), **nothing is auto-merge eligible**. Default eligibility set is empty.
+1. **Accepted — not Activated.** ADR-027 is **Accepted** as the governance decision record. It is
+   **not Activated**. Acceptance does **not** activate auto-merge or authorize operational
+   implementation. Until the Founder separately and explicitly approves a distinct **activation**
+   decision (tooling, branch protection, CI gates, permissions, tokens, enforcement — out of scope
+   here), **nothing is auto-merge eligible**. Default eligibility set remains empty. Future
+   activation conditions are **future-only** and require separate Founder authorization.
 
 2. **Authority model (binding when activated; descriptive now).**
    - **Founder** — sole merge and deploy authority; sole authority to Accept this ADR; sole
@@ -91,21 +96,24 @@ Temporary Foreman QA ≠ Independent QA. Architect clearance ≠ Founder merge. 
 
 ## Consequences
 
-- Stakeholders have a single proposed reference for how auto-merge **would** be governed.
-- No repository behavior changes; no auto-merge enablement; no eligibility conferred by docs alone.
-- Merge of this ADR / companion policy remains Founder-gated.
-- Future activation requires: Founder Acceptance of this (or superseding) ADR **plus** a separate
-  explicit activation decision with tooling and revocation — not this draft alone.
+- Stakeholders have a single **Accepted** reference for how auto-merge **would** be governed if later
+  activated.
+- No repository behavior changes; no auto-merge enablement; no eligibility conferred by docs alone;
+  no tooling, GitHub configuration, CI/workflows, branch protection, permissions, tokens, or
+  enforcement mechanisms are enabled or authorized by this status update.
+- Merges remain Founder-gated.
+- Future activation still requires a separate explicit Founder activation decision with tooling and
+  revocation — Acceptance of this ADR alone is insufficient.
 - Temporary Foreman QA remains clearly labeled as a narrow substitute; Independent QA remains
   unavailable and must not be falsely asserted.
 
 ## Alternatives considered
 
-- **Activate auto-merge with this PR:** rejected — Architect constraints require documentation-only
-  drafting; Founder must separately authorize activation.
+- **Activate auto-merge with this status update:** rejected — Acceptance records the decision only;
+  Founder must separately authorize activation/tooling.
 - **Treat all documentation PRs as auto-merge eligible:** rejected — documentation alone confers no
-  eligibility; this PR is Founder-gated.
+  eligibility; documentation PRs remain Founder-gated.
 - **Equate Temporary Foreman QA with Independent QA:** rejected — roles must remain distinct;
   Independent QA is not available.
-- **Defer any written policy until tooling lands:** rejected — written authority, eligibility,
-  audit, and revocation rules should exist before any activation decision.
+- **Defer recording Acceptance until tooling lands:** rejected — Founder may Accept the governance
+  decision while keeping controls inactive; activation remains a separate decision.

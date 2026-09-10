@@ -1,17 +1,20 @@
 # Auto-Merge Governance (Operational Policy)
 
-**Status:** Drafting-only / **not active**  
+**Status:** **Accepted — not Activated** / **not active** (inactive; non-operational)  
 **Date:** 2026-09-10  
 **Authority record:** [ADR-027 — Auto-Merge Governance](../adr/ADR-027-auto-merge-governance.md)  
-**Authors:** KOOLERR FOREMAN / Claude under Architect direction (`2ec3800b…`; consult lineage includes `31f8ff9c…`)
+**Authors:** KOOLERR FOREMAN / Claude under Architect direction (`244270e7…` status update; lineage `2ec3800b…`, `31f8ff9c…`)
 
-> **Hard constraints.** This document is a proposed operational companion to ADR-027. It is
-> **documentation only**. It does **not** activate auto-merge. It does **not** change GitHub branch
-> protection, CI bots, workflows, tokens, or permissions. **Documentation alone confers no
-> auto-merge eligibility.** Until the Founder separately Accepts ADR-027 (or a superseding ADR) **and**
-> approves an explicit activation decision, the eligibility allowlist is **empty**. All code, CI/CD,
-> permissions, deploy, secrets, security-sensitive, and production-affecting changes remain
-> **Founder-gated** unless the Founder later approves a separate explicit exception.
+> **Hard constraints.** This document is the operational companion to ADR-027. ADR-027 / this
+> policy are **Accepted — not Activated**. Acceptance records the governance decision only and does
+> **not** activate auto-merge or authorize operational implementation. It is **documentation only**.
+> It does **not** change or authorize GitHub branch protection, CI bots, workflows, tokens,
+> permissions, repository settings, or enforcement mechanisms. **Documentation alone confers no
+> auto-merge eligibility.** Until the Founder separately approves an explicit **activation**
+> decision, the eligibility allowlist is **empty**. Any future activation conditions are labeled
+> future-only and require separate Founder authorization. All code, CI/CD, permissions, deploy,
+> secrets, security-sensitive, and production-affecting changes remain **Founder-gated** unless the
+> Founder later approves a separate explicit exception.
 
 This policy does **not** resolve C2–C7 and must **never** touch PR #1.
 
@@ -35,7 +38,7 @@ This policy does **not** turn those controls on.
 | **Architect (CTO)** | Technical and policy review (Preview MCP consult); may clear drafts/designs | **Not** merge, deploy, or activate auto-merge |
 | **Claude / implementing engineer (incl. Foreman implementation)** | Draft and implement within approved scope | **Cannot** self-authorize merge or activation |
 | **Temporary Foreman QA** | Narrow, non-reserved substitute verification when Independent QA is unavailable | **≠** Independent QA; **≠** Founder merge/deploy |
-| **Independent QA** | Reserved dedicated QA function | **Not available** at time of this draft; must not be claimed via Temporary Foreman QA |
+| **Independent QA** | Reserved dedicated QA function | **Not available** at time of this status update; must not be claimed via Temporary Foreman QA |
 
 ### 2.1 Review-role distinctions (do not conflate)
 
@@ -55,7 +58,7 @@ This policy does **not** turn those controls on.
 **Nothing is auto-merge eligible.**
 
 A pull request is **not** auto-merge eligible merely because it is documentation, an ADR, or this
-governance file. The documentation PR that introduces ADR-027 / this policy remains Founder-gated.
+governance file. Documentation / status-update PRs remain Founder-gated.
 
 ### 3.2 Founder-gated classes (remain gated by default)
 
@@ -75,17 +78,19 @@ Founder-gated (non-exhaustive):
 
 Any non-empty allowlist of auto-merge-eligible classes requires:
 
-1. Founder Acceptance of ADR-027 (or superseding ADR), **and**
+1. Founder Acceptance of ADR-027 (or superseding ADR) — **now recorded as Accepted — not Activated**,
+   **and**
 2. A separate Founder-approved **activation** decision that names the allowlist, tooling, gates, and
    revocation path.
 
-Until both exist, treat proposed “docs-only” or “chore” classes as **not** eligible.
+Until activation exists, treat proposed “docs-only” or “chore” classes as **not** eligible.
+Acceptance alone does **not** create eligibility.
 
 ---
 
 ## 4. Rollback / revocation procedure
 
-*Describes the procedure that activation must include. Not operable from this draft alone.*
+*Describes the procedure that activation must include. Not operable from Acceptance alone.*
 
 If auto-merge is ever activated:
 
@@ -97,7 +102,7 @@ If auto-merge is ever activated:
 4. **Re-enable** — only by a new Founder explicit decision; documentation edits alone do not
    re-activate.
 
-Drafting this section does **not** create GitHub or CI controls.
+Accepting this policy does **not** create GitHub or CI controls.
 
 ---
 
@@ -116,8 +121,8 @@ retain at least:
 | Policy pointers | Link **ADR-027** and this file |
 | Rollback readiness | For activation records: named revocation owner/path |
 
-Merging **this** drafting PR requires Founder authority under existing Charter rules; it does not
-use auto-merge.
+Merging documentation / status-update PRs for this policy requires Founder authority under
+existing Charter rules; it does not use auto-merge.
 
 ---
 
@@ -125,11 +130,11 @@ use auto-merge.
 
 | Claim | Truth |
 | --- | --- |
-| “ADR-027 / this policy enables auto-merge” | **False** — drafting only |
+| “ADR-027 / this policy enables auto-merge” | **False** — Accepted records decision only; **not Activated** |
 | “Docs PRs are auto-merge eligible” | **False** — not by virtue of being documentation |
 | “Temporary Foreman QA counts as Independent QA” | **False** |
 | “Architect clearance authorizes merge” | **False** |
-| “Default eligibility” | **Empty** until Founder Accepts + separately activates |
+| “Default eligibility” | **Empty** until Founder separately **activates** (Acceptance alone is insufficient) |
 
 Cross-reference: [ADR-027](../adr/ADR-027-auto-merge-governance.md).
 
