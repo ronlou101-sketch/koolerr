@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `945f30840680790fcdbced49790a28372e9aab47`) |
+| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -23,7 +23,9 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 
 ## Operational records (Founder-set; not conflicts)
 
-These are recorded operating facts, added at the **SoT operational refresh**. They are **not** resolutions of C1–C7 and must not be read as such.
+These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
+were added at the **post-PR-#4 reconcile**. None of them is a resolution of C1–C7 and none may be read
+as such.
 
 ### O1 — SoT pack slice closed
 
@@ -48,6 +50,39 @@ PR **#1** remains **OPEN**. It is a **separate product line** and is **not** the
 ### O6 — Next slice awaits Founder approval
 
 After the SoT operational refresh merges there is no active implementation slice. The next one must be named and approved by the Founder (`ACTIVE_SLICE.md`).
+
+> **Clarified by O8 (not deleted).** O6 remains historically accurate as written at the SoT
+> operational refresh. For the purpose of *continuing the loop*, O8 supplies the Founder
+> authorization O6 required; slice naming moves to Foreman/Architect within the O8 boundaries.
+> Everything else in O6 stands.
+
+### O7 — PR #4 merged (mobile-nav focus containment)
+
+PR **#4**, branch `fix/mobile-nav-focus-trap`, **merged** into `master` at merge SHA
+**`7a55a4e3399a08267c9d476e7a56278e9d568f1c`**. Delivered `app/(platform)/_components/mobile-nav.tsx`,
+`mobile-nav-focus.ts`, and `mobile-nav.test.ts`. Evidence at merge: Vitest **955/955**, Architect
+Option B + evidence-sufficiency approvals, manual keyboard **PASS**, no new dependencies. Recorded in
+`COMPLETED_WORK.md`; the slice is closed in `ACTIVE_SLICE.md`.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+
+### O8 — Founder authorized continuing the autonomous development loop
+
+The Founder has authorized agents to **continue the autonomous development loop** (session
+directive), rather than halting after each merged slice as O6 described.
+
+Boundaries — all still binding:
+
+- Work stays inside `KOOLERR_CONSTITUTION.md`, `MASTER_ROADMAP.md`, and `ARCHITECTURE_GUARDRAILS.md`.
+- Agents **must not** silently resolve, narrow, or reinterpret **C1–C7**. Those remain Founder
+  decisions and must be escalated, not decided.
+- **Founder-reserved actions still require the Founder** — merge/deploy approval, PR #1 (O5),
+  secrets, billing/entitlements, migrations, RLS/auth, destructive operations, architectural changes
+  without an ADR, and calling Architect Preview MCP (`AGENT_OPERATING_INSTRUCTIONS.md` hard stops).
+- Temporary Foreman QA keeps its narrow standing under `QA_PROTOCOL.md` and is never Independent QA.
+
+O8 authorizes *continuation of the loop*. It does **not** authorize any specific product slice, does
+**not** pick a side in the roadmap conflict (**C1**), and does **not** resolve any of C1–C7.
 
 ---
 

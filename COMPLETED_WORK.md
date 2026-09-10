@@ -4,8 +4,50 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `945f30840680790fcdbced49790a28372e9aab47`) |
+| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
+
+---
+
+## Mobile navigation keyboard focus containment — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#4**, branch `fix/mobile-nav-focus-trap`, **merged** into `master` at merge SHA
+**`7a55a4e3399a08267c9d476e7a56278e9d568f1c`** (`7a55a4e`). Slice commits: `f164843`
+(`fix(platform): contain keyboard focus in mobile nav drawer`) and `062455a`
+(`docs(platform): move MobileNav JSDoc onto the component`).
+
+Files delivered on `master`:
+
+- `app/(platform)/_components/mobile-nav.tsx`
+- `app/(platform)/_components/mobile-nav-focus.ts`
+- `app/(platform)/_components/mobile-nav.test.ts`
+
+Verification evidence at merge time:
+
+- **Vitest 955 / 955 passing.**
+- **Architect Option B approved**, plus a separate Architect **evidence-sufficiency** approval.
+- **Manual keyboard verification: PASS.**
+- **No new dependencies** introduced.
+
+**Scope of this claim:** the three files above only. This closes the named slice. It completes **no**
+launch phase, milestone, or gate, asserts no broader accessibility outcome, and resolves **no**
+conflict in `DECISIONS.md` (**C1–C7 remain open**). Foreman QA is **not** Independent QA; Independent
+QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
+
+---
+
+## SoT operational refresh slice — ✅ COMPLETE (agent-ops work, not product work)
+
+**Evidence:** PR **#3** (`docs: SoT operational refresh for master-based Claude workflow`), branch
+`docs/sot-operational-refresh`, **merged** into `master` at SHA **`2ea64c9…`**. Slice commit
+`684c19a`.
+
+- Delivered: documentation-only updates recording the master-based Claude Code workflow, verified
+  Claude Code availability, and the temporary Foreman QA substitute (`DECISIONS.md` O1–O6).
+- Slice closed: `ACTIVE_SLICE.md` no longer describes this refresh as active.
+
+**This closes an operating-documentation slice only.** It completes **no** product phase, milestone,
+or launch gate, and resolves **no** conflict in `DECISIONS.md` (C1–C7 remain open).
 
 ---
 
@@ -15,7 +57,7 @@
 
 - Delivered: the nine root Foreman SoT markdown files, documentation-only.
 - Outcome: the SoT pack now lives on `master`; subsequent Claude Code implementation branches are cut from `master` (`DECISIONS.md` O2).
-- Slice closed: `ACTIVE_SLICE.md` has moved on to the SoT operational refresh.
+- Slice closed: superseded by the SoT operational refresh slice above.
 
 **This closes an operating-documentation slice only.** It completes **no** product phase, milestone, or launch gate, and it does **not** resolve any conflict in `DECISIONS.md` (C1–C7 remain open).
 
