@@ -12,6 +12,11 @@ import {
 import { _configureDogfoodingRepository } from '@/domains/dogfooding'
 import { SupabaseDogfoodingRepository } from '@/domains/dogfooding/supabase-repository'
 import { _configureIdentityRepository } from '@/domains/identity'
+import { _configureChannelsRepository, SupabaseChannelsRepository } from '@/domains/channels'
+import {
+  _configurePublishJobsRepository,
+  SupabasePublishJobsRepository,
+} from '@/domains/publishing'
 import { _configureWorkforceEngineRepository } from '@/domains/workforce-engine'
 import { _configureConsentRepository } from '@/shared/consent'
 import { _configureAuditLogger, SupabaseAuditLogger } from '@/shared/audit'
@@ -137,6 +142,8 @@ export async function bootstrapPlatform(): Promise<PlatformBootstrapResult> {
   _configureWorkforceEngineRepository(new SupabaseWorkforceEngineRepository(supabase))
   _configureDeliverablesRepository(new SupabaseDeliverablesRepository(supabase))
   _configureRenderJobsRepository(new SupabaseRenderJobsRepository(supabase))
+  _configureChannelsRepository(new SupabaseChannelsRepository(supabase))
+  _configurePublishJobsRepository(new SupabasePublishJobsRepository(supabase))
   _configureBillingRepository(new SupabaseBillingRepository(supabase))
   _configureConsentRepository(new SupabaseConsentRepository(supabase, getTenantId))
   _configureDogfoodingRepository(new SupabaseDogfoodingRepository(supabase))

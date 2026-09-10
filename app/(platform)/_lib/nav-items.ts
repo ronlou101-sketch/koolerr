@@ -49,12 +49,14 @@ export const PRIMARY_NAV: NavItem[] = [
  * Creative remains here until its modal replacement lands.
  */
 export const MORE_NAV: NavItem[] = [
+  { href: '/create-video', label: 'Create Video' },
   { href: '/creative', label: 'Creative' },
   { href: '/workforces', label: 'Workforces' },
   { href: '/brain', label: 'Brain' },
   { href: '/analytics', label: 'Analytics' },
   { href: '/billing', label: 'Billing' },
   { href: '/usage', label: 'Usage' },
+  { href: '/channels', label: 'Channels' },
   { href: '/audit', label: 'Audit' },
   { href: '/consent', label: 'Consent' },
 ]

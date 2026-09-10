@@ -47,6 +47,9 @@ const PUBLIC_PATHS: string[] = [
   // Scheduled render-job driver (Vercel Cron): self-secured via CRON_SECRET
   // bearer — the scheduler has no session cookie.
   '/api/cron/render-jobs',
+  // Scheduled publish-job driver (pg_cron): self-secured via CRON_SECRET bearer —
+  // the scheduler has no session cookie, same contract as the render worker.
+  '/api/cron/publish-jobs',
   // Liveness probe for uptime monitors: unauthenticated + domain-free by design.
   '/api/health',
   // Pre-auth checkout: unauthenticated users completing a Stripe checkout

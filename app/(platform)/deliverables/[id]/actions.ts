@@ -3,6 +3,8 @@
 import { redirect } from 'next/navigation'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { deliverablesService } from '@/domains/deliverables'
+import { channelsService } from '@/domains/channels'
+import { publishJobsService } from '@/domains/publishing'
 import { env } from '@/shared/config/env'
 import { asDeliverableId } from '@/shared/types'
 
@@ -64,4 +66,30 @@ export async function rejectDeliverable(deliverableId: string, feedback: string)
   if (result.ok) {
     redirect(`/deliverables/${deliverableId}?rejected=true`)
   }
+}
+
+/**
+ * Enqueue a "publish now" job for an approved video deliverable to the org's
+ * connected YouTube channel (Step 3D-2). Idempotent at the service layer — a
+ * duplicate request while a job is active/published returns the existing job, so
+ * repeated clicks never produce a duplicate upload. The upload itself runs
+ * asynchronously in the publish-jobs worker.
+ */
+export async function publishDeliverableToYouTube(deliverableId: string) {
+  const ctx = await getRequestPlatformContext()
+  if (!ctx || ctx.actor.type !== 'user') return
+
+  const connection = await channelsService.getConnection(ctx.organizationId, 'youtube')
+  if (!connection.ok || !connection.value || connection.value.status !== 'connected') {
+    redirect(`/deliverables/${deliverableId}?published=notconnected`)
+  }
+
+  const enqueued = await publishJobsService.enqueue({
+    organizationId: ctx.organizationId,
+    tenantId: env.platform.tenantId(),
+    deliverableId: asDeliverableId(deliverableId),
+    channelConnectionId: connection.value.id,
+  })
+
+  redirect(`/deliverables/${deliverableId}?published=${enqueued.ok ? 'queued' : 'error'}`)
 }

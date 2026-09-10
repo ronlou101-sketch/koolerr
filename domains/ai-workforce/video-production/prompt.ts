@@ -191,6 +191,53 @@ Requirements:
 - 70-150 words; end on the brief's Call to Action.`
 }
 
+/** Input for turning a customer's plain-language brief into a spokesperson script. */
+export interface CustomerVideoScriptInput {
+  /** What the customer wants the video to say/achieve, in their own words. */
+  description: string
+  /** Optional desired tone (e.g. "friendly", "bold"). */
+  tone?: string
+  /** Optional explicit call to action. */
+  cta?: string
+  /** Target length in seconds (30/60/90/120) — guides script word count. */
+  targetDurationSec: number
+  /** Optional business name to ground the script. */
+  businessName?: string
+}
+
+/**
+ * Builds a spokesperson script prompt from a customer's plain-language description
+ * (Step 4A, AI-assisted creation). Same JSON output contract as
+ * buildVideoScriptPrompt so `parseVideoScript` handles both. Word count scales
+ * with the target duration (~2.5 spoken words/second) to keep length on-budget.
+ */
+export function buildCustomerVideoScriptPrompt(input: CustomerVideoScriptInput): string {
+  const words = Math.round(input.targetDurationSec * 2.5)
+  const forBusiness = input.businessName ? ` for ${input.businessName}` : ''
+
+  return `Write one spokesperson video script${forBusiness} based on the customer's request below.
+
+=== CUSTOMER REQUEST ===
+${input.description.trim()}
+${input.tone ? `\nDesired tone: ${input.tone}` : ''}
+${input.cta ? `Call to action: ${input.cta}` : ''}
+
+=== YOUR TASK ===
+Return a JSON object with this exact structure (no markdown, no code fences):
+
+{
+  "title": "Short title for this script",
+  "script": "The full spoken script — natural spoken words only, opening with a hook and closing with a clear call to action",
+  "platform": "the most likely target platform, e.g. facebook, instagram, tiktok, youtube",
+  "estimatedDurationSec": ${input.targetDurationSec}
+}
+
+Requirements:
+- "script" is what the spokesperson says out loud — no scene directions, no camera notes, no labels.
+- Target about ${words} words (~${input.targetDurationSec} seconds); never exceed a 120-second read.
+- Stay true to the customer's request; do not invent offers or claims they did not describe.`
+}
+
 /**
  * Parses the raw provider response into a VideoScript. Lenient by design — a plain
  * (non-JSON) response is treated as the script itself, with sensible defaults — so a
