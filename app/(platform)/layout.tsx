@@ -2,11 +2,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 import { signOut } from './layout-actions'
-import { getRequestPlatformContext } from '@/infrastructure/auth'
+import { getRequestAuthEmail, getRequestPlatformContext } from '@/infrastructure/auth'
 import { isOwner, isOwnerAlwaysPath } from '@/infrastructure/auth/guards'
 import { billingService } from '@/domains/billing'
 import type { BillingStatus } from '@/domains/billing/types'
-import { createSessionServerClient } from '@/shared/lib/supabase-session'
 import { NotificationBell } from './_components/notification-bell'
 import { MobileNav } from './_components/mobile-nav'
 import { AccountMenu } from './_components/account-menu'
@@ -54,7 +53,9 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   // Live count for the primary-nav "Review" badge (Experience Phase 13 Slice B).
   let pendingReviewCount = 0
 
-  const ctx = await getRequestPlatformContext()
+  // Auth/context (+ email) resolve once via React cache() in resolve.ts;
+  // billing + review stay parallel after organizationId is known.
+  const [ctx, authEmail] = await Promise.all([getRequestPlatformContext(), getRequestAuthEmail()])
   if (ctx) {
     const [subResult, reviewCount] = await Promise.all([
       billingService.getSubscription(ctx.organizationId),
@@ -76,11 +77,8 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   // Every provisioned user holds role:'owner' for their own org, so isOwner()
   // returns true for all users and cannot distinguish the founder. Email is the
   // only reliable discriminator available at this layer without changing shared types.
-  const supabase = await createSessionServerClient()
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser()
-  const isFounder = authUser?.email === 'ronlou101@gmail.com'
+  // Email comes from the same cached getUser() as getRequestPlatformContext — no second session client.
+  const isFounder = authEmail === 'ronlou101@gmail.com'
 
   const { primary, more, owner } = platformNav(isFounder)
   // Resolve the live badge count onto whichever primary item declares it.
@@ -133,7 +131,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
         </div>
         <div className="flex shrink-0 items-center gap-5">
           {ctx && <NotificationBell organizationId={ctx.organizationId} />}
-          <AccountMenu signOutAction={signOut} email={authUser?.email ?? undefined} />
+          <AccountMenu signOutAction={signOut} email={authEmail} />
           <MobileNav primary={primaryNav} more={more} owner={owner} />
         </div>
       </div>
