@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `4dad95f0b9ffaefea458ee34386271e573e61b73`) |
+| **Base for new implementation branches** | current **`master`** (tip `81fe0f9554a1caa47b73f100d6d1a152cb86e521`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -25,8 +25,9 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
 were added at the **post-PR-#4 reconcile**; **O9** at Phase **7.9** docs housekeeping; **O10** at the SoT tip
-reconcile after PRs **#24–#28**. None of them is a resolution of **C2–C7** (still open). **C1** was Founder-resolved Version A
-separately (PR **#21**); O1–O10 must not be read as resolving C2–C7.
+reconcile after PRs **#24–#28**; **O11** at the SoT micro-reconcile after PR **#30** + stale closes.
+None of them is a resolution of **C2–C7** (still open). **C1** was Founder-resolved Version A
+separately (PR **#21**); O1–O11 must not be read as resolving C2–C7.
 
 ### O1 — SoT pack slice closed
 
@@ -95,7 +96,7 @@ Founder authorized Phase 7.9. Recorded when master tip was **`d40356d7295435cc9d
 - **PR #1** remains **OPEN** (O5). Independent QA still absent (O4).
 
 
-### O10 — SoT tip reconcile after PRs #24–#28 (this slice)
+### O10 — SoT tip reconcile after PRs #24–#28
 
 Docs-only tip reconcile on branch `docs/sot-tip-reconcile-24-28` (Architect **057c37c8**). Master tip / base for new branches is **`4dad95f0b9ffaefea458ee34386271e573e61b73`** (PR **#28** merge).
 
@@ -110,6 +111,20 @@ Verified historical / merged facts:
 **AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled. Live-provider validation: outstanding, **Founder-executed**. Phase 8 remains **next / not complete** (C1 Version A). **PR #1** remains **OPEN** (O5). Independent QA still absent (O4).
 
 O10 records tip/history only. It does **not** resolve, narrow, or reinterpret **C2–C7**.
+
+### O11 — SoT micro-reconcile after PR #30 + stale closes (this slice)
+
+Docs-only micro-reconcile on branch `docs/sot-micro-reconcile-30-closes` (Architect **3e826593**). Master tip / base for new branches is **`81fe0f9554a1caa47b73f100d6d1a152cb86e521`** (PR **#30** merge).
+
+Verified facts:
+
+- **#29** SoT tip reconcile after PRs **#24–#28** (merge `b11f03e…`)
+- **#30** stale SoT PR triage disposition record (merge `81fe0f9…`) — `docs/governance/stale-sot-pr-triage.md`
+- PRs **#7, #9, #11, #14, #15**: Founder **CLOSED without merge** (content did **NOT** land; do not imply implemented/merged)
+
+**AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled. Live-provider validation: outstanding, **Founder-executed**. Phase 8 remains **next / not complete** (C1 Version A); hermetic evidence still on master. **PR #1** remains **OPEN** (O5). Independent QA still absent (O4).
+
+O11 records tip/history + Founder-executed closes only. It does **not** resolve, narrow, or reinterpret **C2–C7**.
 
 ---
 

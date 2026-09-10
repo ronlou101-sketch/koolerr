@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `4dad95f0b9ffaefea458ee34386271e573e61b73`) |
+| **Base for new implementation branches** | current **`master`** (tip `81fe0f9554a1caa47b73f100d6d1a152cb86e521`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -58,9 +58,23 @@ QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
 
 **AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled.
 
-Also on master tip `4dad95f…` (not Phase 7/8 product completion): **C1 Version A** docs bind (PR **#21**); Phase 8 hermetic E2E (PR **#22**) + perf baseline (PR **#23**) as earlier validation evidence; live-provider validation remains outstanding (**Founder-executed**).
+Also on master tip `81fe0f9…` (not Phase 7/8 product completion): **C1 Version A** docs bind (PR **#21**); Phase 8 hermetic E2E (PR **#22**) + perf baseline (PR **#23**) + hermetic validation evidence (PR **#28**) as validation evidence; SoT tip reconcile (PR **#29**) + stale triage (PR **#30**); live-provider validation remains outstanding (**Founder-executed**).
 
 **Independent QA** remains absent. PR **#1** remains **OPEN** and untouched.
+
+---
+
+## PRs #29–#30 + stale SoT closes — verified facts (not Phase 8 product completion)
+
+| PR / event | Evidence | Record |
+| --- | --- | --- |
+| **#29** | merge `b11f03e…` | SoT tip reconcile after PRs **#24–#28** |
+| **#30** | merge `81fe0f9…` | Stale SoT PR triage disposition record (`docs/governance/stale-sot-pr-triage.md`) |
+| **#7, #9, #11, #14, #15** | **CLOSED without merge** (Founder-executed) | Content did **NOT** land on master; do not imply implemented/merged |
+
+Master tip / base for new branches: **`81fe0f9554a1caa47b73f100d6d1a152cb86e521`**.
+
+**AMG** remains **parked** / **NOT ACTIVATED**. Phase 8 remains **next / not complete** (C1 Version A); hermetic evidence still on master (PRs **#22/#23/#28**). Live-provider validation outstanding (**Founder-executed**).
 
 ---
 
@@ -114,7 +128,7 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 | `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**) | **Next** / not complete | Planned |
 | `FOUNDATION_003`, Tracker, `status.json` current[10] | ✅ `phase-8-complete` (historical/parallel claim) | ✅ `phase-9-complete` (historical/parallel claim) |
 
-**C1** is Founder-resolved **Version A** (Phase 8 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion from this housekeeping. Master tip `4dad95f…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), and hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider) as validation evidence only. Live-provider validation outstanding (**Founder-executed**). **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**).
+**C1** is Founder-resolved **Version A** (Phase 8 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion from this housekeeping. Master tip `81fe0f9…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), and hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider) as validation evidence only, plus SoT tip reconcile (**PR #29**) and stale SoT PR triage (**PR #30**). Live-provider validation outstanding (**Founder-executed**). **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**). Stale SoT PRs **#7/#9/#11/#14/#15** were Founder-**closed without merge** (content not landed).
 
 ---
 
