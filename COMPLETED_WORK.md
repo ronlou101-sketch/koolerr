@@ -4,8 +4,98 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `bf3c06c7a98c96ea94ba714c5420a190aa33813e`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
+
+---
+
+## Root error boundary — no raw `error.message` — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#12**, branch `fix/root-error-no-raw-message`, **merged** into `master` at merge
+SHA **`bf3c06c7a98c96ea94ba714c5420a190aa33813e`** (`bf3c06c`). Slice commit `528fd7b`
+(`fix(app): stop exposing raw error.message on root error UI`).
+
+Files delivered on `master`:
+
+- `app/error.tsx` — renders fixed copy plus the opaque Next `digest` reference only; the thrown
+  error's message/stack/cause continue to reach `logger.error` for diagnosis.
+- `app/error-copy.ts` — pure copy + display-data helpers (new).
+- `app/error.test.ts` — node-environment vitest over those helpers (new).
+
+Verification evidence at merge time:
+
+- **Vitest 995 / 995 passing.**
+- **Manual verification: PASS.**
+- **Architect approval `d7ad7777…`.**
+- **Founder merged.**
+- **No new dependencies** introduced.
+
+Verified in this reconcile against the tree at `bf3c06c`: `app/error.tsx` contains no render path for
+`error.message` (its only occurrence is the `logger.error` call at line 34); all three files are
+present.
+
+**Scope of this claim:** the three files above only. This closes the named slice. It completes **no**
+launch phase, milestone, or gate, asserts **no** broader error-handling or security outcome, and
+resolves **no** conflict in `DECISIONS.md` (**C1–C7 remain open**). Foreman QA is **not** Independent
+QA; Independent QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
+
+---
+
+## Empty state + platform route error boundary a11y — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#10**, branch `fix/platform-empty-error-a11y`, **merged** into `master` at merge
+SHA **`5f94fa301fc67296ec1bf632fdf1c4044e565b0d`** (`5f94fa3`). Slice commit `3269653`.
+
+Files delivered on `master`: `app/(platform)/_components/empty-state.tsx`, `app/(platform)/error.tsx`
+(announce empty sections via `role=status`; move initial focus to the error heading on mount;
+existing copy, visuals, and recovery actions preserved; no new dependencies).
+
+**Verification evidence:** not recorded in the SoT pack at merge time — the reconcile that would have
+captured it (PR #11) was never merged. Recorded here from git evidence only; do **not** infer a test
+count, Architect approval, or manual-QA result that is not written down.
+
+---
+
+## AccountMenu keyboard navigation — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#8**, branch `fix/account-menu-keyboard-a11y`, **merged** into `master` at merge
+SHA **`aead9eebb3d814a27d189130c94c918f704a5d09`** (`aead9ee`). Slice commit `b9d06ca`.
+
+Files delivered on `master`: `app/(platform)/_components/account-menu.tsx`,
+`app/(platform)/_components/account-menu.test.ts` (focus into Sign out on open; Arrow/Home/End roving
+via the shared `nav-dropdown-focus` helpers; `aria-controls` while open; Escape, outside-click, and
+the sign-out action preserved).
+
+**Verification evidence:** not recorded in the SoT pack at merge time (see the note under PR #10).
+
+---
+
+## Desktop NavDropdown keyboard navigation — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#6**, branch `fix/nav-dropdown-keyboard-a11y`, **merged** into `master` at merge
+SHA **`b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`** (`b2f9327`). Slice commit `341773a`.
+
+Files delivered on `master`: `app/(platform)/_components/nav-dropdown.tsx`,
+`app/(platform)/_components/nav-dropdown-focus.ts` (new), `app/(platform)/_components/nav-dropdown.test.ts`
+(new) — focus into the menu on open, Arrow/Home/End roving among menuitems, `aria-controls` wired,
+Escape and outside-click preserved; pure helpers extracted for node-environment vitest.
+
+**Verification evidence:** not recorded in the SoT pack at merge time (see the note under PR #10).
+
+---
+
+## SoT post-PR-#4 reconcile slice — ✅ COMPLETE (agent-ops work, not product work)
+
+**Evidence:** PR **#5**, branch `docs/sot-post-pr4-reconcile`, **merged** into `master` at merge SHA
+**`ef9502c9d64d9f53086e5239fa5f7174e08c5e01`** (`ef9502c`). Slice commit `ee14c2c`
+(`docs(sot): reconcile SoT after mobile-nav PR #4 merge`).
+
+- Delivered: documentation-only updates to the four operational SoT files recording the merged
+  mobile-nav slice and `DECISIONS.md` O7–O8.
+- Slice closed: superseded by the post-PR-#12 reconcile.
+
+**This closes an operating-documentation slice only.** It completes **no** product phase, milestone,
+or launch gate, and resolves **no** conflict in `DECISIONS.md` (C1–C7 remain open).
 
 ---
 

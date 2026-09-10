@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `bf3c06c7a98c96ea94ba714c5420a190aa33813e`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -24,8 +24,8 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 ## Operational records (Founder-set; not conflicts)
 
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
-were added at the **post-PR-#4 reconcile**. None of them is a resolution of C1–C7 and none may be read
-as such.
+were added at the **post-PR-#4 reconcile**; **O9–O12** were added at the **post-PR-#12 reconcile**.
+None of them is a resolution of C1–C7 and none may be read as such.
 
 ### O1 — SoT pack slice closed
 
@@ -83,6 +83,57 @@ Boundaries — all still binding:
 
 O8 authorizes *continuation of the loop*. It does **not** authorize any specific product slice, does
 **not** pick a side in the roadmap conflict (**C1**), and does **not** resolve any of C1–C7.
+
+### O9 — PR #6 merged (desktop NavDropdown keyboard navigation)
+
+PR **#6**, branch `fix/nav-dropdown-keyboard-a11y`, **merged** into `master` at merge SHA
+**`b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`**. Delivered `app/(platform)/_components/nav-dropdown.tsx`,
+`nav-dropdown-focus.ts`, and `nav-dropdown.test.ts`. Recorded in `COMPLETED_WORK.md`.
+
+Recorded retroactively at the post-PR-#12 reconcile from git evidence. Merge-time verification
+evidence (test counts, Architect or manual-QA results) was **not** captured in the SoT pack and is
+therefore not asserted here.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+
+### O10 — PR #8 merged (AccountMenu keyboard navigation)
+
+PR **#8**, branch `fix/account-menu-keyboard-a11y`, **merged** into `master` at merge SHA
+**`aead9eebb3d814a27d189130c94c918f704a5d09`**. Delivered
+`app/(platform)/_components/account-menu.tsx` and `account-menu.test.ts`. Recorded in
+`COMPLETED_WORK.md`. Same retroactive-recording and unasserted-verification caveats as **O9**.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+
+### O11 — PR #10 merged (empty state + platform route error boundary a11y)
+
+PR **#10**, branch `fix/platform-empty-error-a11y`, **merged** into `master` at merge SHA
+**`5f94fa301fc67296ec1bf632fdf1c4044e565b0d`**. Delivered
+`app/(platform)/_components/empty-state.tsx` and `app/(platform)/error.tsx`. Recorded in
+`COMPLETED_WORK.md`. Same retroactive-recording and unasserted-verification caveats as **O9**.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+
+### O12 — PR #12 merged (root error boundary — no raw `error.message`)
+
+PR **#12**, branch `fix/root-error-no-raw-message`, **merged** into `master` at merge SHA
+**`bf3c06c7a98c96ea94ba714c5420a190aa33813e`**. Delivered `app/error.tsx` (generic copy plus opaque
+`digest` reference only; full error detail still logged), `app/error-copy.ts`, and `app/error.test.ts`.
+Evidence at merge: Vitest **995/995**, manual verification **PASS**, Architect approval
+**`d7ad7777…`**, Founder merged, no new dependencies. Recorded in `COMPLETED_WORK.md`; the slice is
+closed in `ACTIVE_SLICE.md`.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+It asserts no broader security or error-handling outcome beyond the three files named.
+
+### O13 — SoT PRs #7, #9, #11 open but superseded
+
+Three SoT reconcile PRs — **#7**, **#9**, **#11** — remain **OPEN** and are **superseded** by the
+post-PR-#12 reconcile, which records PRs #5, #6, #8, #10, and #12 in a single pass. They were
+overtaken while product PRs merged ahead of them.
+
+They are **recorded, not actioned**: no agent may close, comment on, rebase, push to, or merge them.
+Their disposition is a Founder decision, as with PR #1 under **O5**.
 
 ---
 
