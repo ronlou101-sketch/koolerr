@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `d40356d7295435cc9d193b18629e7f73dc7da3c6`) |
+| **Base for new implementation branches** | current **`master`** (tip `4dad95f0b9ffaefea458ee34386271e573e61b73`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -24,8 +24,9 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 ## Operational records (Founder-set; not conflicts)
 
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
-were added at the **post-PR-#4 reconcile**. None of them is a resolution of **C2–C7** (still open). **C1** was Founder-resolved Version A
-separately (PR **#21**); O1–O8 must not be read as resolving C2–C7.
+were added at the **post-PR-#4 reconcile**; **O9** at Phase **7.9** docs housekeeping; **O10** at the SoT tip
+reconcile after PRs **#24–#28**. None of them is a resolution of **C2–C7** (still open). **C1** was Founder-resolved Version A
+separately (PR **#21**); O1–O10 must not be read as resolving C2–C7.
 
 ### O1 — SoT pack slice closed
 
@@ -84,14 +85,31 @@ Boundaries — all still binding:
 O8 authorizes *continuation of the loop*. It does **not** authorize any specific product slice and
 does **not** resolve **C2–C7**. (**C1** was Founder-resolved Version A separately — PR **#21**.)
 
-### O9 — Phase 7.9 docs housekeeping (this slice) + deferred follow-ons on master
+### O9 — Phase 7.9 docs housekeeping + deferred follow-ons on master
 
-Founder authorized Phase 7.9. On master tip **`d40356d7295435cc9d193b18629e7f73dc7da3c6`**:
+Founder authorized Phase 7.9. Recorded when master tip was **`d40356d7295435cc9d193b18629e7f73dc7da3c6`** (historical; superseded as tip by later merges — see **O10**):
 
 - **7.3c / 7.5 / 7.6** Founder-merged (PRs **#16–#18**, **#19** `3906e25…`, **#20** `d26a9be…`).
-- **7.9** closing via docs-only branch `docs/phase-7-9-housekeeping` (this reconcile).
+- **7.9** closed via docs-only branch `docs/phase-7-9-housekeeping` (later merged as PR **#24**, `85ef083…`).
 - **C1 Version A** already on master via PR **#21**; Phase 8 hermetic E2E (**#22**) + perf (**#23**) are validation evidence only — not a product-phase completion claim.
 - **PR #1** remains **OPEN** (O5). Independent QA still absent (O4).
+
+
+### O10 — SoT tip reconcile after PRs #24–#28 (this slice)
+
+Docs-only tip reconcile on branch `docs/sot-tip-reconcile-24-28` (Architect **057c37c8**). Master tip / base for new branches is **`4dad95f0b9ffaefea458ee34386271e573e61b73`** (PR **#28** merge).
+
+Verified historical / merged facts:
+
+- **#24** Phase 7.9 docs housekeeping (merge `85ef083…`) — follows existing 7.9 record; no broader phase closure claim
+- **#25** AMG draft ADR-027 + governance (merge `f1daf6f…`)
+- **#26** ADR-027 Accepted — not Activated (merge `b17e625…`)
+- **#27** AMG activation record **NOT ACTIVATED** (merge `c685e95…`)
+- **#28** Phase 8 hermetic validation evidence (merge `4dad95f…`); hermetic journey+perf **PASS** at recorded revision; **NOT** live-provider
+
+**AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled. Live-provider validation: outstanding, **Founder-executed**. Phase 8 remains **next / not complete** (C1 Version A). **PR #1** remains **OPEN** (O5). Independent QA still absent (O4).
+
+O10 records tip/history only. It does **not** resolve, narrow, or reinterpret **C2–C7**.
 
 ---
 
