@@ -13,6 +13,7 @@ import {
   cancelSubscriptionAtPeriodEnd,
   verifyStripeWebhook,
 } from './index'
+import { env } from '@/shared/config/env'
 
 /**
  * Stripe integration tests.
@@ -411,18 +412,37 @@ describe('cancelSubscriptionAtPeriodEnd', () => {
   })
 })
 
+describe('env.stripe.webhookSecret', () => {
+  afterEach(() => {
+    delete process.env.STRIPE_WEBHOOK_SECRET
+  })
+
+  it('throws via required() when STRIPE_WEBHOOK_SECRET is unset', () => {
+    delete process.env.STRIPE_WEBHOOK_SECRET
+    expect(() => env.stripe.webhookSecret()).toThrow(/STRIPE_WEBHOOK_SECRET/)
+  })
+
+  it('returns the configured value when set (accessor wiring)', () => {
+    // Synthetic test value only — not a real Stripe signing secret.
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_accessor_value'
+    expect(env.stripe.webhookSecret()).toBe('whsec_test_accessor_value')
+  })
+})
+
 describe('verifyStripeWebhook', () => {
   afterEach(() => {
     delete process.env.STRIPE_WEBHOOK_SECRET
     vi.restoreAllMocks()
   })
 
-  it('returns false when STRIPE_WEBHOOK_SECRET is not set (non-production)', async () => {
+  it('returns false when webhook secret is not set (non-production)', async () => {
+    delete process.env.STRIPE_WEBHOOK_SECRET
     const result = await verifyStripeWebhook('payload', 't=1,v1=abc')
     expect(result).toBe(false)
   })
 
-  it('throws in production when STRIPE_WEBHOOK_SECRET is not set', async () => {
+  it('throws in production when webhook secret is not set', async () => {
+    delete process.env.STRIPE_WEBHOOK_SECRET
     vi.stubEnv('NODE_ENV', 'production')
     await expect(verifyStripeWebhook('payload', 't=1,v1=abc')).rejects.toThrow(
       'STRIPE_WEBHOOK_SECRET is not set'
@@ -449,9 +469,13 @@ describe('verifyStripeWebhook', () => {
     expect(result).toBe(false)
   })
 
-  it('returns true for a valid HMAC-SHA-256 signature', async () => {
+  it('returns true for a valid HMAC-SHA-256 signature via env accessor', async () => {
+    // Synthetic test secret — not a real Stripe webhook signing secret.
     const secret = 'whsec_testsecretvalue'
     process.env.STRIPE_WEBHOOK_SECRET = secret
+    // Confirm verification consumes the SSOT accessor, not a hardcoded path.
+    expect(env.stripe.webhookSecret()).toBe(secret)
+
     const payload = '{"type":"checkout.session.completed"}'
     const timestamp = Math.floor(Date.now() / 1000)
     const signedPayload = `${timestamp}.${payload}`
