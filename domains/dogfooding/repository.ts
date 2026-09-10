@@ -33,9 +33,17 @@ export interface IDogfoodingRepository {
   createObjective(input: CreateObjectiveInput): Promise<DogfoodingObjective>
   findObjectiveById(id: string, organizationId: OrganizationId): Promise<DogfoodingObjective | null>
   listObjectives(organizationId: OrganizationId): Promise<DogfoodingObjective[]>
+  /**
+   * Updates an objective's status within its owning organization.
+   *
+   * `organizationId` is required — an objective belonging to another organization
+   * must never be mutated, even if its id is known. Implementations reject a
+   * cross-organization or unknown id as not found rather than silently updating.
+   */
   updateObjectiveStatus(
     id: string,
     status: DogfoodingObjective['status'],
+    organizationId: OrganizationId,
     engagementRunId?: string
   ): Promise<DogfoodingObjective>
 

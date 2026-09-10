@@ -85,10 +85,11 @@ export class InMemoryDogfoodingRepository implements IDogfoodingRepository {
   async updateObjectiveStatus(
     id: string,
     status: DogfoodingObjective['status'],
+    organizationId: OrganizationId,
     engagementRunId?: string
   ): Promise<DogfoodingObjective> {
     const obj = this.objectives.get(id)
-    if (!obj) throw new Error(`Objective ${id} not found`)
+    if (!obj || obj.organizationId !== organizationId) throw new Error(`Objective ${id} not found`)
     const updated = {
       ...obj,
       status,

@@ -364,17 +364,22 @@ export class SupabaseDogfoodingRepository implements IDogfoodingRepository {
   async updateObjectiveStatus(
     id: string,
     status: DogfoodingObjective['status'],
+    organizationId: OrganizationId,
     engagementRunId?: string
   ): Promise<DogfoodingObjective> {
     const patch: Record<string, unknown> = { status }
     if (engagementRunId) patch.engagement_run_id = engagementRunId
+    // The organization filter is part of the UPDATE predicate, not a post-hoc check,
+    // so a cross-organization id matches no row and mutates nothing.
     const { data, error } = await this.supabase
       .from('dogfooding_objectives')
       .update(patch)
       .eq('id', id)
+      .eq('organization_id', organizationId)
       .select()
-      .single()
+      .maybeSingle()
     if (error) throw new Error(`[DOGFOODING_REPO] updateObjectiveStatus: ${error.message}`)
+    if (!data) throw new Error(`[DOGFOODING_REPO] updateObjectiveStatus: Objective ${id} not found`)
     return toObjective(data as Record<string, unknown>)
   }
 

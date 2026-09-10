@@ -40,9 +40,16 @@ export interface IDogfoodingService {
     organizationId: OrganizationId
   ): Promise<PlatformResult<DogfoodingObjective>>
   listObjectives(organizationId: OrganizationId): Promise<PlatformResult<DogfoodingObjective[]>>
+  /**
+   * Updates an objective's status within `organizationId`.
+   *
+   * The organization is required so the write can never reach another
+   * organization's objective; an unknown or cross-organization id fails.
+   */
   updateObjectiveStatus(
     id: string,
     status: DogfoodingObjective['status'],
+    organizationId: OrganizationId,
     engagementRunId?: string
   ): Promise<PlatformResult<DogfoodingObjective>>
 
@@ -220,10 +227,16 @@ class DogfoodingService implements IDogfoodingService {
   async updateObjectiveStatus(
     id: string,
     status: DogfoodingObjective['status'],
+    organizationId: OrganizationId,
     engagementRunId?: string
   ): Promise<PlatformResult<DogfoodingObjective>> {
     try {
-      const objective = await _repo.updateObjectiveStatus(id, status, engagementRunId)
+      const objective = await _repo.updateObjectiveStatus(
+        id,
+        status,
+        organizationId,
+        engagementRunId
+      )
       return ok(objective)
     } catch (e) {
       return err({ code: PlatformErrorCode.INTERNAL_ERROR, message: String(e) })

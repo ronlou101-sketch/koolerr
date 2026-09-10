@@ -336,7 +336,7 @@ describe('DogfoodingService — objectives', () => {
 
   it('updateObjectiveStatus changes the status', async () => {
     const created = unwrap(await dogfoodingService.createObjective(objectiveInput()))
-    const updated = unwrap(await dogfoodingService.updateObjectiveStatus(created.id, 'active'))
+    const updated = unwrap(await dogfoodingService.updateObjectiveStatus(created.id, 'active', ORG))
     expect(updated.status).toBe('active')
     expect(updated.engagementRunId).toBeNull()
   })
@@ -344,7 +344,7 @@ describe('DogfoodingService — objectives', () => {
   it('updateObjectiveStatus attaches the engagement run when supplied', async () => {
     const created = unwrap(await dogfoodingService.createObjective(objectiveInput()))
     const updated = unwrap(
-      await dogfoodingService.updateObjectiveStatus(created.id, 'completed', 'run_1')
+      await dogfoodingService.updateObjectiveStatus(created.id, 'completed', ORG, 'run_1')
     )
     expect(updated.status).toBe('completed')
     expect(updated.engagementRunId).toBe('run_1')
@@ -354,9 +354,38 @@ describe('DogfoodingService — objectives', () => {
   })
 
   it('updateObjectiveStatus reports INTERNAL_ERROR for an unknown objective', async () => {
-    const result = await dogfoodingService.updateObjectiveStatus('objective_missing', 'active')
+    const result = await dogfoodingService.updateObjectiveStatus('objective_missing', 'active', ORG)
     expect(result.ok).toBe(false)
     if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.INTERNAL_ERROR)
+  })
+
+  it('updateObjectiveStatus refuses another organization’s objective', async () => {
+    const created = unwrap(await dogfoodingService.createObjective(objectiveInput()))
+    const result = await dogfoodingService.updateObjectiveStatus(created.id, 'paused', OTHER_ORG)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.error.code).toBe(PlatformErrorCode.INTERNAL_ERROR)
+  })
+
+  it('updateObjectiveStatus leaves the other organization’s objective unmutated', async () => {
+    const created = unwrap(await dogfoodingService.createObjective(objectiveInput()))
+    await dogfoodingService.updateObjectiveStatus(created.id, 'completed', OTHER_ORG, 'run_x')
+
+    const untouched = unwrap(await dogfoodingService.getObjective(created.id, ORG))
+    expect(untouched.status).toBe('draft')
+    expect(untouched.engagementRunId).toBeNull()
+    expect(untouched.updatedAt).toEqual(created.updatedAt)
+  })
+
+  it('updateObjectiveStatus scopes by organization, not by id alone', async () => {
+    const mine = unwrap(await dogfoodingService.createObjective(objectiveInput()))
+    const theirs = unwrap(
+      await dogfoodingService.createObjective(objectiveInput({ organizationId: OTHER_ORG }))
+    )
+
+    unwrap(await dogfoodingService.updateObjectiveStatus(theirs.id, 'active', OTHER_ORG))
+
+    expect(unwrap(await dogfoodingService.getObjective(theirs.id, OTHER_ORG)).status).toBe('active')
+    expect(unwrap(await dogfoodingService.getObjective(mine.id, ORG)).status).toBe('draft')
   })
 
   it('surfaces objectives created directly through the repository', async () => {
@@ -1069,7 +1098,10 @@ const serviceCalls: Array<[string, () => Promise<PlatformResult<unknown>>]> = [
   ['createCampaign', () => dogfoodingService.createCampaign(campaignInput())],
   ['getObjective', () => dogfoodingService.getObjective('objective_1', ORG)],
   ['listObjectives', () => dogfoodingService.listObjectives(ORG)],
-  ['updateObjectiveStatus', () => dogfoodingService.updateObjectiveStatus('objective_1', 'active')],
+  [
+    'updateObjectiveStatus',
+    () => dogfoodingService.updateObjectiveStatus('objective_1', 'active', ORG),
+  ],
   ['getMarketingPlan', () => dogfoodingService.getMarketingPlan('objective_1', ORG)],
   ['listCampaigns', () => dogfoodingService.listCampaigns(ORG)],
   [
