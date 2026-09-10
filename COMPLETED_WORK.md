@@ -4,8 +4,93 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `5f94fa301fc67296ec1bf632fdf1c4044e565b0d`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
+
+---
+
+## EmptyState + platform route error boundary accessibility — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#10**, branch `fix/platform-empty-error-a11y`, **merged** into `master` at merge
+SHA **`5f94fa301fc67296ec1bf632fdf1c4044e565b0d`** (`5f94fa3` — the current tip). Slice commit
+`3269653` (`fix(platform): a11y for empty state and route error boundary`).
+
+Files delivered on `master`:
+
+- `app/(platform)/_components/empty-state.tsx` — the empty box becomes a `role="status"` region, so a
+  surface that swaps a list for it during a client transition announces rather than emptying silently.
+- `app/(platform)/error.tsx` — focus moves to the error heading on mount only, so a keyboard or
+  screen-reader user learns the page failed instead of being left on a control that is gone.
+
+Verification evidence at merge time:
+
+- **Vitest 987 / 987 passing.**
+- **Manual verification against the real components in a browser: PASS.**
+- Architect consultation **`b773f361…` escalated**.
+- **Founder merged.**
+- **No new dependencies** introduced.
+
+**Scope of this claim:** the two files above only. This closes the named slice. It completes **no**
+launch phase, milestone, or gate, asserts **no** platform-wide accessibility outcome, and resolves
+**no** conflict in `DECISIONS.md` (**C1–C7 remain open**). The manual browser PASS is
+implementer/Foreman evidence; Foreman QA is **not** Independent QA, which does not exist
+(`QA_PROTOCOL.md`).
+
+---
+
+## AccountMenu keyboard navigation — ✅ COMPLETE (product slice, recorded retroactively)
+
+**Evidence:** PR **#8**, branch `fix/account-menu-keyboard-a11y`, **merged** into `master` at merge
+SHA **`aead9eebb3d814a27d189130c94c918f704a5d09`** (`aead9ee`). Slice commit `b9d06ca`
+(`fix(platform): keyboard navigation for AccountMenu`).
+
+Files delivered on `master`:
+
+- `app/(platform)/_components/account-menu.tsx`
+- `app/(platform)/_components/account-menu.test.ts`
+
+**Evidence caveat:** this slice is recorded here at the post-PR-#10 reconcile, not at its own merge.
+The merge, commit, and file list are verified from git history on `master`. The slice's own
+verification record (test count at merge, Architect consultation, manual QA result) was **not**
+captured in the SoT pack at the time and is **not** reconstructed or assumed here. Do not cite a
+verification result for this slice that no document records.
+
+**Scope of this claim:** the two files above only. No phase, milestone, gate, or broader
+accessibility outcome; resolves nothing in **C1–C7**.
+
+---
+
+## Desktop NavDropdown keyboard navigation — ✅ COMPLETE (product slice, recorded retroactively)
+
+**Evidence:** PR **#6**, branch `fix/nav-dropdown-keyboard-a11y`, **merged** into `master` at merge
+SHA **`b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`** (`b2f9327`). Slice commit `341773a`
+(`fix(platform): keyboard navigation for desktop NavDropdown`).
+
+Files delivered on `master`:
+
+- `app/(platform)/_components/nav-dropdown.tsx`
+- `app/(platform)/_components/nav-dropdown-focus.ts`
+- `app/(platform)/_components/nav-dropdown.test.ts`
+
+**Evidence caveat:** identical to the AccountMenu slice above — recorded retroactively from git
+history; no verification result is asserted beyond the merge itself.
+
+**Scope of this claim:** the three files above only. No phase, milestone, gate, or broader
+accessibility outcome; resolves nothing in **C1–C7**.
+
+---
+
+## SoT post-PR-#4 reconcile slice — ✅ COMPLETE (agent-ops work, not product work)
+
+**Evidence:** PR **#5**, branch `docs/sot-post-pr4-reconcile`, **merged** into `master` at merge SHA
+**`ef9502c9d64d9f53086e5239fa5f7174e08c5e01`** (`ef9502c`). Slice commit `ee14c2c`
+(`docs(sot): reconcile SoT after mobile-nav PR #4 merge`).
+
+- Delivered: documentation-only updates recording the merged mobile-nav slice (`DECISIONS.md` O7–O8).
+- Slice closed: superseded by this post-PR-#10 reconcile.
+
+**This closes an operating-documentation slice only.** It completes **no** product phase, milestone,
+or launch gate, and resolves **no** conflict in `DECISIONS.md` (C1–C7 remain open).
 
 ---
 

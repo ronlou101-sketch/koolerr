@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `5f94fa301fc67296ec1bf632fdf1c4044e565b0d`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -24,8 +24,8 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 ## Operational records (Founder-set; not conflicts)
 
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
-were added at the **post-PR-#4 reconcile**. None of them is a resolution of C1–C7 and none may be read
-as such.
+were added at the **post-PR-#4 reconcile**; **O9–O11** are added at this **post-PR-#10 reconcile**.
+None of them is a resolution of C1–C7 and none may be read as such.
 
 ### O1 — SoT pack slice closed
 
@@ -83,6 +83,48 @@ Boundaries — all still binding:
 
 O8 authorizes *continuation of the loop*. It does **not** authorize any specific product slice, does
 **not** pick a side in the roadmap conflict (**C1**), and does **not** resolve any of C1–C7.
+
+### O9 — PR #6 merged (desktop NavDropdown keyboard navigation)
+
+PR **#6**, branch `fix/nav-dropdown-keyboard-a11y`, **merged** into `master` at merge SHA
+**`b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`** (`b2f9327`). Slice commit `341773a`
+(`fix(platform): keyboard navigation for desktop NavDropdown`). Delivered
+`app/(platform)/_components/nav-dropdown.tsx`, `nav-dropdown-focus.ts`, and `nav-dropdown.test.ts`.
+
+Recorded retroactively at the post-PR-#10 reconcile: the merge itself is verified from git history on
+`master`. Per-slice verification evidence (test counts, Architect and manual-QA records) was **not**
+captured in the SoT pack at that merge, and is **not** reconstructed here — see `COMPLETED_WORK.md`.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+
+### O10 — PR #8 merged (AccountMenu keyboard navigation)
+
+PR **#8**, branch `fix/account-menu-keyboard-a11y`, **merged** into `master` at merge SHA
+**`aead9eebb3d814a27d189130c94c918f704a5d09`** (`aead9ee`). Slice commit `b9d06ca`
+(`fix(platform): keyboard navigation for AccountMenu`). Delivered
+`app/(platform)/_components/account-menu.tsx` and `account-menu.test.ts`.
+
+Recorded retroactively at the post-PR-#10 reconcile, on the same basis and with the same evidence
+caveat as **O9**.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+
+### O11 — PR #10 merged (EmptyState / platform route error boundary a11y)
+
+PR **#10**, branch `fix/platform-empty-error-a11y`, **merged** into `master` at merge SHA
+**`5f94fa301fc67296ec1bf632fdf1c4044e565b0d`** (`5f94fa3`) — the current `master` tip. Slice commit
+`3269653` (`fix(platform): a11y for empty state and route error boundary`). Delivered
+`app/(platform)/_components/empty-state.tsx` (`role="status"` region) and `app/(platform)/error.tsx`
+(focus moved to the heading on mount only).
+
+Evidence at merge: **Vitest 987/987 passing**; **manual real-component browser verification: PASS**;
+Architect consultation **`b773f361…` escalated**; **Founder merged**. No new dependencies.
+
+Recorded in `COMPLETED_WORK.md`; the slice is closed in `ACTIVE_SLICE.md`.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
+Foreman QA is not Independent QA, and the manual browser PASS above is implementer/Foreman evidence
+only.
 
 ---
 
