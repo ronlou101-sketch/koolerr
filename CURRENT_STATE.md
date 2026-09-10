@@ -4,11 +4,30 @@
 
 | Field | Value |
 | --- | --- |
-| **Canonical working branch (founder-authorized)** | `feat/phase-5-6-launch-integrity` |
-| **HEAD before SoT pack commit** | `b5283625f7e6f78a9382a9a51d4340abdee0f2da` (`b528362 docs: record Step 6 provider verification`) |
-| **`origin/master`** | `95dab5f` — feat is **5 commits ahead**, **0 behind** |
+| **Base for new implementation branches** | current **`master`** |
+| **`master` / `origin/master` tip** | `945f30840680790fcdbced49790a28372e9aab47` (`945f308` — merge of PR #2, SoT pack) |
+| **Branch of this refresh slice** | `docs/sot-operational-refresh`, cut from `945f3084…` |
 | **Working tree at capture** | clean |
-| **Default branch (GitHub)** | `master` (note: `CLAUDE.md` Git Standards say “Branch from `main`” — naming conflict) |
+| **Default branch (GitHub)** | `master` (note: `CLAUDE.md` Git Standards say “Branch from `main`” — naming conflict, `DECISIONS.md` C3) |
+| **Historical SoT locus** | `feat/phase-5-6-launch-integrity` — the branch the original SoT pack was written against; **no longer the branch new work is cut from** |
+
+---
+
+## Branching workflow (updated at this refresh)
+
+- **Future Claude Code implementation branches are cut from current `master`** — **not** from `feat/phase-5-6-launch-integrity`.
+- `master` now contains the nine-file Foreman SoT pack via the **PR #2 merge** at `945f3084…`.
+- `feat/phase-5-6-launch-integrity` remains a historical product branch. Its five product commits (YouTube publishing, customer video creation, Steps 5–6 docs, video selection fix — see `MASTER_ROADMAP.md`) are **not** asserted here to be on `master`; the working clone is **shallow (depth 1)**, so ancestry could not be verified in this session. `DECISIONS.md` **C5** stands unresolved.
+- The SoT files **not** on this slice's allowlist (`KOOLERR_CONSTITUTION.md`, `MASTER_ROADMAP.md`, `ARCHITECTURE_GUARDRAILS.md`, and the historical tables inside `COMPLETED_WORK.md` / `DECISIONS.md`) still carry `feat/phase-5-6-launch-integrity` in their headers as the SoT-creation locus. That is **preserved deliberately**, not overlooked — realigning them is a Founder-approved follow-up, not this slice.
+
+---
+
+## Open pull requests
+
+| PR | State | Disposition |
+| --- | --- | --- |
+| **PR #1** | **OPEN** | **Separate product line. Untouched by this slice and not its vehicle.** No agent may push to, rebase, merge, close, or comment on it without explicit Founder instruction. |
+| **PR #2** | **MERGED** | Foreman SoT pack (docs-only). Merge SHA `945f30840680790fcdbced49790a28372e9aab47`. Closed the SoT-pack slice — see `COMPLETED_WORK.md`. |
 
 ---
 
@@ -42,10 +61,11 @@ Deploy target documented in README + ADR-022: **Vercel + Supabase**.
 
 ## Agent toolchain status (declared for Foreman SoT; not inventing product state)
 
-| Capability | Status at SoT pack |
+| Capability | Status at this refresh |
 | --- | --- |
 | Architect Preview MCP | Declared **operational** — **do not call** from agent sessions unless founder explicitly directs |
-| Claude Code | **Not installed** in this execution environment |
-| Independent QA | **Not available** |
+| Claude Code | **Installed and authenticated** through `claude.ai` (verified). Supersedes the SoT-pack-era “not installed” record. |
+| Independent QA | **Still NOT available** |
+| Temporary Foreman QA | **Founder-approved substitute**, and **only** for narrowly scoped, non-reserved slices — see `QA_PROTOCOL.md` |
 
 See `AGENT_OPERATING_INSTRUCTIONS.md`.

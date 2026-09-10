@@ -4,8 +4,8 @@
 
 | Field | Value |
 | --- | --- |
-| **Canonical working branch** | `feat/phase-5-6-launch-integrity` |
-| **HEAD before SoT pack commit** | `b5283625f7e6f78a9382a9a51d4340abdee0f2da` |
+| **Base for new implementation branches** | current **`master`** (tip `945f30840680790fcdbced49790a28372e9aab47`) |
+| **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
 
@@ -21,7 +21,39 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 
 ---
 
+## Operational records (Founder-set; not conflicts)
+
+These are recorded operating facts, added at the **SoT operational refresh**. They are **not** resolutions of C1–C7 and must not be read as such.
+
+### O1 — SoT pack slice closed
+
+PR **#2** merged; merge SHA **`945f30840680790fcdbced49790a28372e9aab47`**. The nine-file Foreman SoT pack is on `master`. Recorded in `COMPLETED_WORK.md`.
+
+### O2 — Implementation branches are cut from `master`
+
+Future Claude Code implementation branches are cut from **current `master`**, not from `feat/phase-5-6-launch-integrity`. That feat branch is historical. This is a branching-workflow decision only — it does **not** speak to what is or is not merged into `master` (see **C5**, still open).
+
+### O3 — Claude Code available
+
+Claude Code is **installed and authenticated through `claude.ai`** (verified). This supersedes the SoT-pack-era record of “not installed.”
+
+### O4 — Independent QA still unavailable; temporary Foreman QA approved
+
+Independent QA does **not** exist. The Founder has approved **temporary Foreman QA** as a substitute, **only** for narrowly scoped, non-reserved slices, per `QA_PROTOCOL.md`. It is not Independent QA and must never be described as such. Its standing versus Engineering Charter roles remains open under **C7**.
+
+### O5 — PR #1 open and untouched
+
+PR **#1** remains **OPEN**. It is a **separate product line** and is **not** the vehicle for the SoT-pack or SoT-refresh slices. No agent may push to, rebase, merge, close, or comment on it without explicit Founder instruction.
+
+### O6 — Next slice awaits Founder approval
+
+After the SoT operational refresh merges there is no active implementation slice. The next one must be named and approved by the Founder (`ACTIVE_SLICE.md`).
+
+---
+
 ## Unresolved SoT conflicts (founder action required)
+
+**C1–C7 below are preserved verbatim and remain UNRESOLVED.** Nothing in the operational records above resolves, narrows, or reinterprets them — in particular the roadmap-narrative conflict **C1** (README/CLAUDE vs Tracker/`status.json`) is untouched. Agents must not pick a side.
 
 ### C1 — Launch phase completion narrative
 
