@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -24,8 +24,8 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 ## Operational records (Founder-set; not conflicts)
 
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
-were added at the **post-PR-#4 reconcile**. None of them is a resolution of C1–C7 and none may be read
-as such.
+were added at the **post-PR-#4 reconcile**; **O9** was added at the **post-PR-#6 reconcile**. None of
+them is a resolution of C1–C7 and none may be read as such.
 
 ### O1 — SoT pack slice closed
 
@@ -83,6 +83,21 @@ Boundaries — all still binding:
 
 O8 authorizes *continuation of the loop*. It does **not** authorize any specific product slice, does
 **not** pick a side in the roadmap conflict (**C1**), and does **not** resolve any of C1–C7.
+
+### O9 — PR #6 merged (desktop NavDropdown keyboard accessibility)
+
+PR **#6**, branch `fix/nav-dropdown-keyboard-a11y`, **merged** into `master` at merge SHA
+**`b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`**. Delivered
+`app/(platform)/_components/nav-dropdown.tsx`, `nav-dropdown-focus.ts`, and `nav-dropdown.test.ts` —
+focus into the open menu, Arrow/Home/End navigation, and `aria-controls`, with the key-handling logic
+in a pure helper module plus tests. Evidence at merge: Vitest **979/979**, real-component browser
+verification **PASS**, Architect re-review `5a8aa70e…` **technically suitable**, Founder merged.
+Recorded in `COMPLETED_WORK.md`; the slice is closed in `ACTIVE_SLICE.md`.
+
+The prior post-PR-#4 SoT reconcile (PR **#5**, merge SHA `ef9502c…`) is likewise on `master` and is
+recorded in `COMPLETED_WORK.md` / `CURRENT_STATE.md`; it needs no operational record of its own.
+
+This is a record of a merge, not a phase, gate, or milestone claim, and it resolves nothing in C1–C7.
 
 ---
 

@@ -4,8 +4,52 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) |
+| **Base for new implementation branches** | current **`master`** (tip `b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
+
+---
+
+## Desktop NavDropdown keyboard accessibility — ✅ COMPLETE (product slice)
+
+**Evidence:** PR **#6**, branch `fix/nav-dropdown-keyboard-a11y`, **merged** into `master` at merge
+SHA **`b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`** (`b2f9327`). Slice commit `341773a`
+(`fix(platform): keyboard navigation for desktop NavDropdown`).
+
+Delivered: moving focus into the open menu, Arrow / Home / End key navigation, and `aria-controls`
+wiring, with the key-handling logic factored into a pure helper module plus tests.
+
+Files delivered on `master`:
+
+- `app/(platform)/_components/nav-dropdown.tsx`
+- `app/(platform)/_components/nav-dropdown-focus.ts`
+- `app/(platform)/_components/nav-dropdown.test.ts`
+
+Verification evidence at merge time:
+
+- **Vitest 979 / 979 passing.**
+- **Real-component browser verification: PASS.**
+- **Architect re-review `5a8aa70e…`: technically suitable.**
+- **Founder merged.**
+
+**Scope of this claim:** the three files above only. This closes the named slice. It completes **no**
+launch phase, milestone, or gate, asserts no broader accessibility or navigation outcome, and resolves
+**no** conflict in `DECISIONS.md` (**C1–C7 remain open**). Foreman QA is **not** Independent QA;
+Independent QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
+
+---
+
+## SoT post-PR-#4 reconcile slice — ✅ COMPLETE (agent-ops work, not product work)
+
+**Evidence:** PR **#5** (`docs(sot): reconcile SoT after mobile-nav PR #4 merge`), branch
+`docs/sot-post-pr4-reconcile`, **merged** into `master` at SHA **`ef9502c…`**. Slice commit `ee14c2c`.
+
+- Delivered: documentation-only updates to `ACTIVE_SLICE.md`, `CURRENT_STATE.md`,
+  `COMPLETED_WORK.md`, and `DECISIONS.md` recording the merged mobile-nav slice (`DECISIONS.md`
+  O7–O8).
+- Slice closed: `ACTIVE_SLICE.md` no longer describes that reconcile as active.
+
+**This closes an operating-documentation slice only.** It completes **no** product phase, milestone,
+or launch gate, and resolves **no** conflict in `DECISIONS.md` (C1–C7 remain open).
 
 ---
 

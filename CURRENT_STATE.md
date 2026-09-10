@@ -1,13 +1,13 @@
 # CURRENT_STATE.md
 
-> Foreman SoT: observed repository / branch state. Evidence-cited. Last reconciled after the PR #4 merge.
+> Foreman SoT: observed repository / branch state. Evidence-cited. Last reconciled after the PR #6 merge.
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`**, tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c` |
-| **`master` / `origin/master` tip** | `7a55a4e3399a08267c9d476e7a56278e9d568f1c` (`7a55a4e` — merge of PR #4, mobile-nav focus containment) |
-| **Prior recorded tips** | `2ea64c9` (merge of PR #3, SoT operational refresh) → `945f30840680790fcdbced49790a28372e9aab47` (`945f308`, merge of PR #2, SoT pack) |
-| **Branch of this reconcile** | `docs/sot-post-pr4-reconcile`, cut from `7a55a4e…` |
+| **Base for new implementation branches** | current **`master`**, tip `b2f9327c61a6af567e78e1b4fb0fdca3acda2e64` |
+| **`master` / `origin/master` tip** | `b2f9327c61a6af567e78e1b4fb0fdca3acda2e64` (`b2f9327` — merge of PR #6, NavDropdown keyboard a11y) |
+| **Prior recorded tips** | `ef9502c` (merge of PR #5, SoT post-PR-#4 reconcile) → `7a55a4e3399a08267c9d476e7a56278e9d568f1c` (`7a55a4e`, merge of PR #4, mobile-nav focus containment) → `2ea64c9` (merge of PR #3, SoT operational refresh) → `945f30840680790fcdbced49790a28372e9aab47` (`945f308`, merge of PR #2, SoT pack) |
+| **Branch of this reconcile** | `docs/sot-post-pr6-reconcile`, cut from `b2f9327…` |
 | **Working tree at capture** | clean |
 | **Default branch (GitHub)** | `master` (note: `CLAUDE.md` Git Standards say “Branch from `main`” — naming conflict, `DECISIONS.md` C3) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` — the branch the original SoT pack was written against; **no longer the branch new work is cut from** |
@@ -16,8 +16,8 @@
 
 ## Branching workflow
 
-- **Future Claude Code implementation branches are cut from current `master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) — **not** from `feat/phase-5-6-launch-integrity`.
-- `master` contains the nine-file Foreman SoT pack via the **PR #2 merge** at `945f3084…`, its operational refresh via the **PR #3 merge** at `2ea64c9…`, and the mobile-nav focus-containment slice via the **PR #4 merge** at `7a55a4e…`.
+- **Future Claude Code implementation branches are cut from current `master`** (tip `b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`) — **not** from `feat/phase-5-6-launch-integrity`.
+- `master` contains the nine-file Foreman SoT pack via the **PR #2 merge** at `945f3084…`, its operational refresh via the **PR #3 merge** at `2ea64c9…`, the mobile-nav focus-containment slice via the **PR #4 merge** at `7a55a4e…`, the post-PR-#4 SoT reconcile via the **PR #5 merge** at `ef9502c…`, and the NavDropdown keyboard-a11y slice via the **PR #6 merge** at `b2f9327…`.
 - `feat/phase-5-6-launch-integrity` remains a historical product branch. Its five product commits (YouTube publishing, customer video creation, Steps 5–6 docs, video selection fix — see `MASTER_ROADMAP.md`) are **not** asserted here to be on `master`; the working clone is **shallow (depth 1)**, so ancestry could not be verified in this session. `DECISIONS.md` **C5** stands unresolved.
 - The SoT files **not** on this reconcile's allowlist (`KOOLERR_CONSTITUTION.md`, `MASTER_ROADMAP.md`, `ARCHITECTURE_GUARDRAILS.md`, `AGENT_OPERATING_INSTRUCTIONS.md`, `QA_PROTOCOL.md`, and the historical tables inside `COMPLETED_WORK.md` / `DECISIONS.md`) still carry earlier SHAs and `feat/phase-5-6-launch-integrity` as the SoT-creation locus. That is **preserved deliberately**, not overlooked — realigning them is a Founder-approved follow-up, not this reconcile.
 
@@ -31,6 +31,8 @@
 | **PR #2** | **MERGED** | Foreman SoT pack (docs-only). Merge SHA `945f30840680790fcdbced49790a28372e9aab47`. Closed the SoT-pack slice — see `COMPLETED_WORK.md`. |
 | **PR #3** | **MERGED** | SoT operational refresh (docs-only), from `docs/sot-operational-refresh`. Merge SHA `2ea64c9…`. Closed the refresh slice — see `COMPLETED_WORK.md`. |
 | **PR #4** | **MERGED** | Mobile navigation keyboard focus containment, from `fix/mobile-nav-focus-trap`. Merge SHA `7a55a4e3399a08267c9d476e7a56278e9d568f1c`. Closed the mobile-nav product slice — see `COMPLETED_WORK.md`. |
+| **PR #5** | **MERGED** | SoT post-PR-#4 reconcile (docs-only), from `docs/sot-post-pr4-reconcile`. Merge SHA `ef9502c…`. Closed that documentation slice — see `COMPLETED_WORK.md`. |
+| **PR #6** | **MERGED** | Desktop NavDropdown keyboard accessibility, from `fix/nav-dropdown-keyboard-a11y`. Merge SHA `b2f9327c61a6af567e78e1b4fb0fdca3acda2e64`. Closed the NavDropdown product slice — see `COMPLETED_WORK.md`. |
 
 ---
 
