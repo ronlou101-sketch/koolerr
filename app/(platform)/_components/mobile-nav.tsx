@@ -3,18 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { NavItem } from '../_lib/nav-items'
+import {
+  FOCUSABLE_SELECTOR,
+  describeFocusCandidate,
+  focusTrapTarget,
+  isFocusCandidate,
+} from './mobile-nav-focus'
 
-/**
- * Mobile navigation drawer for the platform header (Phase 11 grouped IA).
- *
- * Rendered only below the `sm` breakpoint (the desktop bar handles larger screens).
- * A hamburger opens a right-side drawer that mirrors the desktop groups: the
- * primary items first, then a "More" section, then a founder-only "Owner" section.
- * Tapping a link or the backdrop closes it.
- *
- * Accessibility: the panel is a labelled modal dialog. On open, focus moves to the
- * Close button; Escape closes it; on close, focus returns to the trigger.
- */
 export function MobileNav({
   primary,
   more,
@@ -27,11 +22,40 @@ export function MobileNav({
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        setOpen(false)
+        return
+      }
+      if (e.key !== 'Tab') return
+
+      const dialog = dialogRef.current
+      if (!dialog) return
+
+      const focusables = Array.from(
+        dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      ).filter((el) => isFocusCandidate(describeFocusCandidate(el)))
+
+      if (focusables.length === 0) {
+        // Nothing inside to land on — refuse the move rather than let focus leave.
+        e.preventDefault()
+        return
+      }
+
+      const active = document.activeElement
+      const target = focusTrapTarget(
+        focusables,
+        active instanceof HTMLElement ? active : null,
+        e.shiftKey
+      )
+      if (!target) return
+
+      e.preventDefault()
+      target.focus()
     }
     document.addEventListener('keydown', onKeyDown)
     closeButtonRef.current?.focus()
@@ -92,6 +116,7 @@ export function MobileNav({
 
       {open && (
         <div
+          ref={dialogRef}
           className="fixed inset-0 z-50"
           role="dialog"
           aria-modal="true"
