@@ -99,4 +99,15 @@ export const env = {
       return required('CRON_SECRET')
     },
   },
+  stripe: {
+    /**
+     * Stripe webhook signing secret (`whsec_...`).
+     * Used by `verifyStripeWebhook` to authenticate inbound Stripe events.
+     * Never exposed to the client. Required in production — asserted at
+     * Node.js server startup via instrumentation.
+     */
+    webhookSecret(): string {
+      return required('STRIPE_WEBHOOK_SECRET')
+    },
+  },
 }

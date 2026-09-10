@@ -1,3 +1,4 @@
+import { env } from '@/shared/config/env'
 import { logger } from '@/shared/lib/logger'
 
 /**
@@ -374,8 +375,12 @@ export async function cancelSubscriptionAtPeriodEnd(
  * Returns true if the signature is valid, false otherwise.
  */
 export async function verifyStripeWebhook(payload: string, sigHeader: string): Promise<boolean> {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET
-  if (!secret) {
+  let secret: string
+  try {
+    secret = env.stripe.webhookSecret()
+  } catch {
+    // Preserve prior public behavior: production hard-fails; non-prod rejects.
+    // Secret sourced only via env.stripe.webhookSecret() (SSOT).
     if (process.env.NODE_ENV === 'production') {
       throw new Error(
         '[STRIPE] STRIPE_WEBHOOK_SECRET is not set. ' +

@@ -16,6 +16,21 @@
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
+    // Phase 7.5: fail fast in production if the Stripe webhook signing secret
+    // is missing. Dev/test must stay unblocked — do not call the required
+    // accessor unless NODE_ENV is production.
+    if (process.env.NODE_ENV === 'production') {
+      const { env } = await import('@/shared/config/env')
+      try {
+        env.stripe.webhookSecret()
+      } catch {
+        throw new Error(
+          '[CONFIG] STRIPE_WEBHOOK_SECRET is required in production but is not set. ' +
+            'Set the Stripe webhook signing secret before starting the server.'
+        )
+      }
+    }
+
     const { bootstrapPlatform } = await import('@/infrastructure/platform')
     try {
       await bootstrapPlatform()
