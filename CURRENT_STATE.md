@@ -1,33 +1,36 @@
 # CURRENT_STATE.md
 
-> Foreman SoT: observed repository / branch state at SoT pack creation. Evidence-cited.
+> Foreman SoT: observed repository / branch state. Evidence-cited. Last reconciled after the PR #4 merge.
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** |
-| **`master` / `origin/master` tip** | `945f30840680790fcdbced49790a28372e9aab47` (`945f308` — merge of PR #2, SoT pack) |
-| **Branch of this refresh slice** | `docs/sot-operational-refresh`, cut from `945f3084…` |
+| **Base for new implementation branches** | current **`master`**, tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c` |
+| **`master` / `origin/master` tip** | `7a55a4e3399a08267c9d476e7a56278e9d568f1c` (`7a55a4e` — merge of PR #4, mobile-nav focus containment) |
+| **Prior recorded tips** | `2ea64c9` (merge of PR #3, SoT operational refresh) → `945f30840680790fcdbced49790a28372e9aab47` (`945f308`, merge of PR #2, SoT pack) |
+| **Branch of this reconcile** | `docs/sot-post-pr4-reconcile`, cut from `7a55a4e…` |
 | **Working tree at capture** | clean |
 | **Default branch (GitHub)** | `master` (note: `CLAUDE.md` Git Standards say “Branch from `main`” — naming conflict, `DECISIONS.md` C3) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` — the branch the original SoT pack was written against; **no longer the branch new work is cut from** |
 
 ---
 
-## Branching workflow (updated at this refresh)
+## Branching workflow
 
-- **Future Claude Code implementation branches are cut from current `master`** — **not** from `feat/phase-5-6-launch-integrity`.
-- `master` now contains the nine-file Foreman SoT pack via the **PR #2 merge** at `945f3084…`.
+- **Future Claude Code implementation branches are cut from current `master`** (tip `7a55a4e3399a08267c9d476e7a56278e9d568f1c`) — **not** from `feat/phase-5-6-launch-integrity`.
+- `master` contains the nine-file Foreman SoT pack via the **PR #2 merge** at `945f3084…`, its operational refresh via the **PR #3 merge** at `2ea64c9…`, and the mobile-nav focus-containment slice via the **PR #4 merge** at `7a55a4e…`.
 - `feat/phase-5-6-launch-integrity` remains a historical product branch. Its five product commits (YouTube publishing, customer video creation, Steps 5–6 docs, video selection fix — see `MASTER_ROADMAP.md`) are **not** asserted here to be on `master`; the working clone is **shallow (depth 1)**, so ancestry could not be verified in this session. `DECISIONS.md` **C5** stands unresolved.
-- The SoT files **not** on this slice's allowlist (`KOOLERR_CONSTITUTION.md`, `MASTER_ROADMAP.md`, `ARCHITECTURE_GUARDRAILS.md`, and the historical tables inside `COMPLETED_WORK.md` / `DECISIONS.md`) still carry `feat/phase-5-6-launch-integrity` in their headers as the SoT-creation locus. That is **preserved deliberately**, not overlooked — realigning them is a Founder-approved follow-up, not this slice.
+- The SoT files **not** on this reconcile's allowlist (`KOOLERR_CONSTITUTION.md`, `MASTER_ROADMAP.md`, `ARCHITECTURE_GUARDRAILS.md`, `AGENT_OPERATING_INSTRUCTIONS.md`, `QA_PROTOCOL.md`, and the historical tables inside `COMPLETED_WORK.md` / `DECISIONS.md`) still carry earlier SHAs and `feat/phase-5-6-launch-integrity` as the SoT-creation locus. That is **preserved deliberately**, not overlooked — realigning them is a Founder-approved follow-up, not this reconcile.
 
 ---
 
-## Open pull requests
+## Pull requests
 
 | PR | State | Disposition |
 | --- | --- | --- |
-| **PR #1** | **OPEN** | **Separate product line. Untouched by this slice and not its vehicle.** No agent may push to, rebase, merge, close, or comment on it without explicit Founder instruction. |
+| **PR #1** | **OPEN** | **Separate product line. Untouched by this reconcile and not its vehicle.** No agent may push to, rebase, merge, close, or comment on it without explicit Founder instruction (`DECISIONS.md` O5). |
 | **PR #2** | **MERGED** | Foreman SoT pack (docs-only). Merge SHA `945f30840680790fcdbced49790a28372e9aab47`. Closed the SoT-pack slice — see `COMPLETED_WORK.md`. |
+| **PR #3** | **MERGED** | SoT operational refresh (docs-only), from `docs/sot-operational-refresh`. Merge SHA `2ea64c9…`. Closed the refresh slice — see `COMPLETED_WORK.md`. |
+| **PR #4** | **MERGED** | Mobile navigation keyboard focus containment, from `fix/mobile-nav-focus-trap`. Merge SHA `7a55a4e3399a08267c9d476e7a56278e9d568f1c`. Closed the mobile-nav product slice — see `COMPLETED_WORK.md`. |
 
 ---
 
