@@ -94,6 +94,12 @@ See [conflict-of-interest.md](./conflict-of-interest.md). Temporary Foreman QA r
 
 Cross-link from repo root: [`QA_PROTOCOL.md`](../../../QA_PROTOCOL.md) (Independent QA section).
 
+**Operational readiness dependency (definition only).** Future AMG activation that depends on
+Gate #2 also depends on the planning / evidence checklist in
+[`../amg-operational-readiness.md`](../amg-operational-readiness.md). That checklist does **not**
+make Gate #2 operational, designate an owner, or activate AMG. Status remains **DEFINITION-ONLY**;
+owner **TBD**; AMG **NOT ACTIVATED**.
+
 ---
 
 ## 8. Out of scope
