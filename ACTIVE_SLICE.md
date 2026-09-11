@@ -4,19 +4,19 @@
 
 | Field | Value |
 | --- | --- |
-| **Branch for this slice** | `docs/sot-tip-reconcile-29-33` |
-| **Base commit (checked out)** | `505e0413a2d6fc0918c0ed6dc97d95650d777353` (`505e041` — master tip; merge of PR #33) |
+| **Branch for this slice** | `docs/sot-tip-reconcile-34` |
+| **Base commit (checked out)** | `a12a097d6d04761cbbf273e6bf6f27100ecad9d7` (`a12a097` — master tip; merge of PR #34) |
 | **Branch cut from** | current `master` (see `CURRENT_STATE.md`) |
-| **Architect requestId** | `91f692eb` |
-| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33 |
+| **Architect requestId** | `411cc55a` |
+| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33; SoT tip reconcile #29–#33 (PR #34) |
 
 ---
 
 ## Active implementation slice
 
-**Name:** SoT tip reconcile after PRs **#29–#33** (docs-only; Architect **91f692eb**).
+**Name:** SoT tip micro-reconcile after PR **#34** (docs-only; Architect **411cc55a**).
 
-**Status:** 🔄 closing via this docs-only pass — **no active product slice**; after commit, idle / **awaiting next Founder priority**. Does **not** invent Phase 8 product-phase completion.
+**Status:** idle / **awaiting next Founder priority** after commit — **no active product slice**. Does **not** invent Phase 8 product-phase completion. Does **not** select a new product slice.
 
 **Allowlist ONLY:**
 
@@ -30,14 +30,13 @@
 
 **Facts recorded:**
 
-- Master tip / base for new branches: **`505e0413a2d6fc0918c0ed6dc97d95650d777353`** (PR **#33** merge)
-- **#29** docs(sot): reconcile SoT tip after PRs #24–#28 (merge `b11f03e…`)
-- **#30** docs(governance): stale SoT PR triage disposition record (merge `81fe0f9…`)
-- **#32** Independent QA Gate #2 definition-only pack (merge `aa9c106…`) — Gate #2 **definition-only / not operational**; owner **TBD**
-- **#33** AMG operational-readiness checklist (definition only) (merge `505e041…`) — does **not** activate AMG
+- Master tip / base for new branches: **`a12a097d6d04761cbbf273e6bf6f27100ecad9d7`** (PR **#34** merge)
+- **#34** docs(sot): reconcile SoT tip after PRs #29–#33 (merge `a12a097…`) — prior SoT files still said tip `505e041…`; this micro-reconcile closes that lag
+- Prior merged (already on tip via #34): **#29** SoT tip #24–#28; **#30** stale SoT PR triage; **#32** Gate #2 definition-only; **#33** AMG operational-readiness checklist definition only
 - Closed **without merge** (content did not land; #30 triage + Founder action): **#7, #9, #11, #14, #15**
-- **PR #31** OPEN — noted overlapping/stale vs tip `505e041…` (predates #32/#33); **disposition unchanged**
+- **PR #31** OPEN — noted overlapping/stale vs tip `a12a097…` (predates #32/#33/#34); **disposition unchanged**
 - **AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled; owner designation **TBD** (Founder held TBD 2026-09-11)
+- Gate #2 **definition-only / not operational**; owner **TBD**
 - Temporary Foreman QA ≠ Independent QA; Independent QA still not operationally available
 - Live-provider validation: outstanding, **Founder-executed**
 - **Phase 8:** **next / not complete** (C1 Version A); hermetic E2E/perf/evidence ≠ Phase 8 final product validation complete
@@ -63,6 +62,7 @@
 - **Stale SoT PR triage disposition** — Founder-merged PR **#30** (`81fe0f9…`); Founder closed #7/#9/#11/#14/#15 without merge.
 - **Independent QA Gate #2 definition-only pack** — Founder-merged PR **#32** (`aa9c106…`; definition-only — not operational; owner TBD).
 - **AMG operational-readiness checklist (definition only)** — Founder-merged PR **#33** (`505e041…`; AMG still **NOT ACTIVATED**).
+- **SoT tip reconcile after PRs #29–#33** — Founder-merged PR **#34** (`a12a097…`).
 
 ---
 

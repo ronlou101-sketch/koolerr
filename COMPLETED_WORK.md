@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `505e0413a2d6fc0918c0ed6dc97d95650d777353`) |
+| **Base for new implementation branches** | current **`master`** (tip `a12a097d6d04761cbbf273e6bf6f27100ecad9d7`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -77,7 +77,17 @@ Closed **without merge** (content did not land; #30 triage + Founder action; ver
 
 **PR #31** remains **OPEN** — overlapping/stale vs tip `505e041…` (predates #32/#33); disposition **unchanged** (not decided here).
 
-Master tip **`505e041…`**. **AMG** still **parked / NOT ACTIVATED**. Gate #2 still definition-only / not operational; owner **TBD** (Founder held TBD 2026-09-11). Temporary Foreman QA ≠ Independent QA. Phase 8 remains **next / not complete** (C1 Version A). Live-provider validation outstanding (**Founder-executed**).
+Master tip at that reconcile was **`505e041…`**. **AMG** still **parked / NOT ACTIVATED**. Gate #2 still definition-only / not operational; owner **TBD** (Founder held TBD 2026-09-11). Temporary Foreman QA ≠ Independent QA. Phase 8 remains **next / not complete** (C1 Version A). Live-provider validation outstanding (**Founder-executed**).
+
+---
+
+## PR #34 — verified historical / merged fact (docs/SoT tip only; not Phase 8 product completion)
+
+| PR | Merge | Record |
+| --- | --- | --- |
+| **#34** | `a12a097…` | docs(sot): reconcile SoT tip after PRs #29–#33 — docs-only tip/history; closed SoT lag still recording tip `505e041…` |
+
+Master tip **`a12a097…`**. **PR #31** remains **OPEN** — overlapping/stale vs tip `a12a097…` (predates #32/#33/#34); disposition **unchanged**. **AMG** still **parked / NOT ACTIVATED**. Gate #2 still definition-only / not operational; owner **TBD**. Temporary Foreman QA ≠ Independent QA. Phase 8 remains **next / not complete** (C1 Version A). Live-provider validation outstanding (**Founder-executed**). **PR #1** remains **OPEN** untouched. **C2–C7** unresolved.
 
 ---
 
@@ -131,7 +141,7 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 | `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**) | **Next** / not complete | Planned |
 | `FOUNDATION_003`, Tracker, `status.json` current[10] | ✅ `phase-8-complete` (historical/parallel claim) | ✅ `phase-9-complete` (historical/parallel claim) |
 
-**C1** is Founder-resolved **Version A** (Phase 8 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion from this housekeeping. Master tip `505e041…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), and hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider) as validation evidence only — hermetic evidence ≠ Phase 8 final product validation complete. Live-provider validation outstanding (**Founder-executed**). **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
+**C1** is Founder-resolved **Version A** (Phase 8 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion from this housekeeping. Master tip `a12a097…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), and hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider) as validation evidence only — hermetic evidence ≠ Phase 8 final product validation complete. Live-provider validation outstanding (**Founder-executed**). **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
 
 ---
 
