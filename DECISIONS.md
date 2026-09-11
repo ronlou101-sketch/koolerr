@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `4dad95f0b9ffaefea458ee34386271e573e61b73`) |
+| **Base for new implementation branches** | current **`master`** (tip `505e0413a2d6fc0918c0ed6dc97d95650d777353`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -25,8 +25,8 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
 were added at the **post-PR-#4 reconcile**; **O9** at Phase **7.9** docs housekeeping; **O10** at the SoT tip
-reconcile after PRs **#24–#28**. None of them is a resolution of **C2–C7** (still open). **C1** was Founder-resolved Version A
-separately (PR **#21**); O1–O10 must not be read as resolving C2–C7.
+reconcile after PRs **#24–#28**; **O11** at the SoT tip reconcile after PRs **#29–#33**. None of them is a resolution of **C2–C7** (still open). **C1** was Founder-resolved Version A
+separately (PR **#21**); O1–O11 must not be read as resolving C2–C7.
 
 ### O1 — SoT pack slice closed
 
@@ -95,7 +95,7 @@ Founder authorized Phase 7.9. Recorded when master tip was **`d40356d7295435cc9d
 - **PR #1** remains **OPEN** (O5). Independent QA still absent (O4).
 
 
-### O10 — SoT tip reconcile after PRs #24–#28 (this slice)
+### O10 — SoT tip reconcile after PRs #24–#28
 
 Docs-only tip reconcile on branch `docs/sot-tip-reconcile-24-28` (Architect **057c37c8**). Master tip / base for new branches is **`4dad95f0b9ffaefea458ee34386271e573e61b73`** (PR **#28** merge).
 
@@ -110,6 +110,26 @@ Verified historical / merged facts:
 **AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled. Live-provider validation: outstanding, **Founder-executed**. Phase 8 remains **next / not complete** (C1 Version A). **PR #1** remains **OPEN** (O5). Independent QA still absent (O4).
 
 O10 records tip/history only. It does **not** resolve, narrow, or reinterpret **C2–C7**.
+
+
+### O11 — SoT tip reconcile after PRs #29–#33 (this slice)
+
+Docs-only tip reconcile on branch `docs/sot-tip-reconcile-29-33` (Architect **91f692eb**). Master tip / base for new branches is **`505e0413a2d6fc0918c0ed6dc97d95650d777353`** (PR **#33** merge).
+
+Verified historical / merged facts (after prior SoT tip `4dad95f…` / PR **#28**):
+
+- **#29** docs(sot): reconcile SoT tip after PRs #24–#28 (merge `b11f03e…`)
+- **#30** docs(governance): stale SoT PR triage disposition record (merge `81fe0f9…`)
+- **#32** Independent QA Gate #2 definition-only pack (merge `aa9c106…`) — Gate #2 **definition-only / not operational**; owner **TBD**
+- **#33** AMG operational-readiness checklist (definition only) (merge `505e041…`) — does **not** activate AMG
+
+Closed **without merge** (content did not land; recorded in #30 triage + Founder action; verified via `gh pr view`): **#7, #9, #11, #14, #15**.
+
+**PR #31** remains **OPEN** — noted as overlapping/stale relative to verified tip `505e041…` (predates #32/#33). **Disposition unchanged** in this record (no close/supersede/merge decision).
+
+**AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled. Gate #2 definition-only / not operational; owner designation **TBD** (Founder held TBD on 2026-09-11). Temporary Foreman QA ≠ Independent QA; Independent QA still not operationally available. Live-provider validation: outstanding, **Founder-executed**. Phase 8 remains **next / not complete** (C1 Version A); hermetic E2E/perf/evidence ≠ Phase 8 final product validation complete. **PR #1** remains **OPEN** (O5).
+
+O11 records tip/history only. It does **not** resolve, narrow, or reinterpret **C2–C7**. It does **not** activate AMG, appoint an owner, or dispose PR **#31**.
 
 ---
 
