@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `4dad95f0b9ffaefea458ee34386271e573e61b73`) |
+| **Base for new implementation branches** | current **`master`** (tip `505e0413a2d6fc0918c0ed6dc97d95650d777353`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -58,9 +58,26 @@ QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
 
 **AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled.
 
-Also on master tip `4dad95f…` (not Phase 7/8 product completion): **C1 Version A** docs bind (PR **#21**); Phase 8 hermetic E2E (PR **#22**) + perf baseline (PR **#23**) as earlier validation evidence; live-provider validation remains outstanding (**Founder-executed**).
+Also previously on tip `4dad95f…` (not Phase 7/8 product completion): **C1 Version A** docs bind (PR **#21**); Phase 8 hermetic E2E (PR **#22**) + perf baseline (PR **#23**) as earlier validation evidence; live-provider validation remains outstanding (**Founder-executed**).
 
-**Independent QA** remains absent. PR **#1** remains **OPEN** and untouched.
+**Independent QA** remains absent / not operationally available. PR **#1** remains **OPEN** and untouched.
+
+---
+
+## PRs #29–#33 — verified historical / merged facts (docs/governance only; not Phase 8 product completion)
+
+| PR | Merge | Record |
+| --- | --- | --- |
+| **#29** | `b11f03e…` | docs(sot): reconcile SoT tip after PRs #24–#28 |
+| **#30** | `81fe0f9…` | docs(governance): stale SoT PR triage disposition record |
+| **#32** | `aa9c106…` | Independent QA Gate #2 definition-only pack — Gate #2 **definition-only / not operational**; owner **TBD** |
+| **#33** | `505e041…` | AMG operational-readiness checklist (definition only) — AMG remains **NOT ACTIVATED** / **parked**; owner **TBD** |
+
+Closed **without merge** (content did not land; #30 triage + Founder action; verified `gh pr view`): **#7, #9, #11, #14, #15**.
+
+**PR #31** remains **OPEN** — overlapping/stale vs tip `505e041…` (predates #32/#33); disposition **unchanged** (not decided here).
+
+Master tip **`505e041…`**. **AMG** still **parked / NOT ACTIVATED**. Gate #2 still definition-only / not operational; owner **TBD** (Founder held TBD 2026-09-11). Temporary Foreman QA ≠ Independent QA. Phase 8 remains **next / not complete** (C1 Version A). Live-provider validation outstanding (**Founder-executed**).
 
 ---
 
@@ -114,7 +131,7 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 | `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**) | **Next** / not complete | Planned |
 | `FOUNDATION_003`, Tracker, `status.json` current[10] | ✅ `phase-8-complete` (historical/parallel claim) | ✅ `phase-9-complete` (historical/parallel claim) |
 
-**C1** is Founder-resolved **Version A** (Phase 8 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion from this housekeeping. Master tip `4dad95f…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), and hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider) as validation evidence only. Live-provider validation outstanding (**Founder-executed**). **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**).
+**C1** is Founder-resolved **Version A** (Phase 8 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion from this housekeeping. Master tip `505e041…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), and hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider) as validation evidence only — hermetic evidence ≠ Phase 8 final product validation complete. Live-provider validation outstanding (**Founder-executed**). **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
 
 ---
 
