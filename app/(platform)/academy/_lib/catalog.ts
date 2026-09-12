@@ -313,6 +313,190 @@ export const COURSES: Course[] = [
       },
     ],
   },
+  {
+    id: 'campaign-architect',
+    title: 'Campaign Architect',
+    description:
+      'Use the in-platform campaign wizard — AI Campaign Architect — to set a goal, add optional focus, create a campaign, and review the work your marketing team produces.',
+    audience: 'Anyone launching a campaign',
+    icon: '🎯',
+    modules: [
+      {
+        id: 'campaign-wizard',
+        title: 'The Campaign Wizard',
+        lessons: [
+          {
+            id: 'meet-campaign-architect',
+            title: 'Meet Campaign Architect',
+            summary: 'What the in-platform campaign wizard does and when to open it.',
+            estimatedMinutes: 5,
+            content: {
+              overview:
+                'Campaign Architect is the in-platform campaign wizard. From Campaigns, New campaign opens a guided conversation: you name the outcome you want, optionally add focus, and your marketing team researches, plans, and produces the work. You manage the outcome — you do not configure a pipeline.',
+              walkthrough: [
+                'Open Campaigns — the everyday place to start and follow campaigns.',
+                'Choose New campaign to open the Campaign Architect wizard.',
+                'Read the opening question: what you want your marketing team to do.',
+                'Leave the wizard if you only wanted to browse existing campaigns — nothing is created until you confirm.',
+              ],
+              bestPractices: [
+                'Start from Campaigns so the new work appears on the same list you already watch.',
+                'Open the wizard when you have a concrete outcome in mind, not a vague “make marketing.”',
+              ],
+              commonMistakes: [
+                'Looking for a separate Campaign Architect app — the wizard lives inside Campaigns.',
+                'Expecting the wizard to publish immediately; it creates work for you to review first.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I cannot find New campaign.',
+                  solution:
+                    'Open Campaigns in the primary navigation. New campaign is the entry on that page. Bookmarks to the older start page still host the same wizard.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Campaigns', href: '/runs' }],
+          },
+          {
+            id: 'pick-a-campaign-goal',
+            title: 'Pick a Campaign Goal',
+            summary: 'Choose a guided goal so the team knows the outcome you want.',
+            estimatedMinutes: 6,
+            content: {
+              overview:
+                'The first field in Campaign Architect is a one-tap goal. Presets cover leads, phone calls, appointments, a specific service, brand awareness, and repeat customers. “Something else…” is the only path that reveals a free-text outcome. The selected goal becomes the assignment your marketing team receives.',
+              walkthrough: [
+                'Open New campaign so the goal list is visible.',
+                'Tap the outcome that matches what you want — more leads, more calls, more appointments, promote a service, build awareness, or increase repeat customers.',
+                'If none fit, choose Something else… and write the outcome in your own words.',
+                'Confirm a goal is selected before you look at optional focus — Create campaign stays unavailable until a goal exists.',
+              ],
+              bestPractices: [
+                'Prefer a preset when it already states the outcome; presets are clearer than a long custom sentence.',
+                'When you use Something else…, write a single outcome (for example weekend bookings), not a list of tactics.',
+              ],
+              commonMistakes: [
+                'Skipping the goal and hoping optional focus will carry the assignment — the wizard requires a goal.',
+                'Writing a custom goal that describes tools or steps instead of the business result.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'Create campaign stays disabled.',
+                  solution:
+                    'Select a preset goal, or choose Something else… and type a non-empty outcome. The wizard will not start without that assignment.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Campaigns', href: '/runs' }],
+          },
+          {
+            id: 'add-optional-focus',
+            title: 'Add Optional Focus',
+            summary: 'Give extra context — audience, location, timing, or offer — before you create.',
+            estimatedMinutes: 5,
+            content: {
+              overview:
+                'After the goal, Campaign Architect offers an optional focus field: anything you want the team to weigh — audience, location, timing, promotion, budget, or seasonality. It is extra context, not a second goal. Leave it blank when the goal already says enough.',
+              walkthrough: [
+                'Keep your selected goal in place.',
+                'If you have a constraint or emphasis, add it in the optional focus field.',
+                'Use short, concrete notes (who, where, when, or which offer) rather than restating the goal.',
+                'Leave the field empty when you do not have extra context — that is valid.',
+              ],
+              bestPractices: [
+                'Add focus only when it changes the work: a neighborhood, a weekend window, a specific offer.',
+                'Finish your business profile before you rely on the wizard; missing profile details are a common reason a create attempt cannot start.',
+              ],
+              commonMistakes: [
+                'Pasting a long brief that contradicts the selected goal.',
+                'Treating optional focus as required and blocking yourself when you have nothing extra to say.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'The wizard asks me to finish my business profile first.',
+                  solution:
+                    'Complete the business profile, then return to Campaigns and open New campaign again. The team needs that profile before it can start.',
+                },
+              ],
+            },
+            resources: [{ label: 'Start onboarding', href: '/onboarding' }],
+          },
+          {
+            id: 'create-and-follow-progress',
+            title: 'Create the Campaign and Follow Progress',
+            summary: 'Start the campaign and watch the marketing team research, plan, and produce.',
+            estimatedMinutes: 7,
+            content: {
+              overview:
+                'Create campaign hands your goal (and optional focus) to the marketing team. You should see a short “getting started” state, then live progress: researching your market, planning the campaign, and creating content. A typical run takes a few minutes. Stay on the wizard or return to Campaigns — the work continues either way.',
+              walkthrough: [
+                'Confirm your goal (and optional focus, if any), then choose Create campaign.',
+                'Wait through the brief getting-started state; do not tap Create campaign again.',
+                'Watch the progress narration until the team finishes or you choose to leave.',
+                'If you leave, reopen Campaigns to see the new item on the list while it is still working.',
+              ],
+              bestPractices: [
+                'Give one clear assignment and let the run finish before starting another for the same outcome.',
+                'Use the progress states as a status readout, not as a place to edit the goal mid-run.',
+              ],
+              commonMistakes: [
+                'Starting several campaigns at once and hitting the daily create limit.',
+                'Assuming a quiet progress view means nothing happened — check Campaigns for the new item.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'Create campaign returns a friendly error and nothing starts.',
+                  solution:
+                    'Try again in a moment. If the wizard suggests finishing your business profile, do that first. If you recently started several campaigns, wait for the rolling daily limit to reset.',
+                },
+                {
+                  problem: 'The campaign did not finish.',
+                  solution:
+                    'Open the campaign details from Campaigns. Earlier work is kept when a later step cannot complete; fix the surfaced issue and start a new campaign if you still need the outcome.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Campaigns', href: '/runs' }],
+          },
+          {
+            id: 'review-campaign-work',
+            title: 'Review the Work After Launch',
+            summary: 'Open the finished work, see campaign details, or start another campaign.',
+            estimatedMinutes: 6,
+            content: {
+              overview:
+                'When Campaign Architect finishes, the wizard offers a handoff: review the work, see the campaign details, or start another campaign. Review is where you accept or send back what the team produced. Nothing is treated as final until you decide.',
+              walkthrough: [
+                'When the wizard says the work is ready, choose Review it to open the produced pieces.',
+                'Or choose See the details to open the campaign record you just created.',
+                'Approve items you want to keep; send back the ones that miss the mark.',
+                'Use Start another campaign only when you have a new outcome — it resets the wizard.',
+              ],
+              bestPractices: [
+                'Review promptly so pending items do not pile up on Home.',
+                'Say why you send work back; the next campaign improves when the miss is specific.',
+              ],
+              commonMistakes: [
+                'Approving without opening the full piece.',
+                'Expecting a video on every campaign — some runs skip video and still deliver the rest.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I closed the wizard and cannot find the finished work.',
+                  solution:
+                    'Open Deliverables for the pieces, or Campaigns for the campaign record. Both remain after the wizard closes.',
+                },
+              ],
+            },
+            resources: [
+              { label: 'Open Deliverables', href: '/deliverables' },
+              { label: 'Open Campaigns', href: '/runs' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 // ── Onboarding paths (guided sequences by customer type) ──────────────────────

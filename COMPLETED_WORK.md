@@ -4,7 +4,7 @@
 
 | Field                                    | Value                                                                                                     |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Base for new implementation branches** | current **`master`** (tip `114f129eea0f5ab1caa4655dc2820204ba0318e8`)                                     |
+| **Base for new implementation branches** | current **`master`** (tip `b160cc6f3b000640fa57ec65b0393816540c6487`)                                     |
 | **Historical SoT locus**                 | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -136,17 +136,29 @@ Library only. **No UI** in that PR. Phase 9 is **not complete**. Phase 8 remains
 
 ---
 
-## Phase 9 Academy catalog-search UI — IN PR / OPENED (Architect 602f4a7d)
+## PR #38 — verified historical / merged fact (UI only; not Phase 9 product completion)
 
-Hermetic catalog-search client control on the existing `/academy` page. Calls only
-`searchCatalog()` from the merged library. Empty/whitespace matches the library contract
-(unfiltered catalog in source order, no error). Matching and no-result states render
-locally. No new routes, APIs, providers, or catalog/search-library edits.
+| PR      | Merge      | Record                                                                                          |
+| ------- | ---------- | ----------------------------------------------------------------------------------------------- |
+| **#38** | `b160cc6…` | feat(academy): Phase 9 hermetic catalog-search UI — `/academy` control calling `searchCatalog()` |
 
-**Completed-in-PR only — not merged.** Phase 9 is **not complete**. Searchable KB in this
-slice is **only this control**, not full Academy. Existing `app/(platform)/academy` catalog
-is **not** Phase 9 complete. Phase 8 remains **DEFERRED/HELD**; live-provider **unresolved /
-not closed**.
+Verified `origin/master` tip at this slice start: **`b160cc6f3b000640fa57ec65b0393816540c6487`**.
+
+UI on the existing `/academy` page only. Phase 9 is **not complete**. Phase 8 remains
+**DEFERRED/HELD**; live-provider **unresolved / not closed**.
+
+---
+
+## Phase 9 hermetic catalog coverage — IN PR / OPENED (Architect a9a18798)
+
+Exactly one new static major-feature course (Campaign Architect / in-platform campaign
+wizard) with five `LessonContent` lessons and no `videoUrl`, plus hermetic
+`catalog-coverage.test.ts`. Existing courses, lessons, paths, search, and progress are
+unchanged in meaning. `ONBOARDING_PATHS` left unchanged.
+
+**Completed-in-PR only — not merged.** Phase 9 is **not complete**. Existing
+`app/(platform)/academy` catalog is **not** Phase 9 complete. Phase 8 remains
+**DEFERRED/HELD**; live-provider **unresolved / not closed**.
 
 **PR #31** remains **OPEN** — disposition **unchanged**. **AMG** still **parked / NOT
 ACTIVATED**. Gate #2 still definition-only / not operational; owner **TBD**. Temporary Foreman
@@ -201,10 +213,10 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 
 | Source                                                                                                | Phase 8                                                            | Phase 9                                                                                     |
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed                      | **Next** — catalog-search UI in PR (Architect **602f4a7d**); not complete; not full Academy |
+| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed                      | **Next** — hermetic catalog coverage in PR (Architect **a9a18798**); not complete; one Campaign Architect course only |
 | `FOUNDATION_003`, Tracker, `status.json` current[10]                                                  | ✅ `phase-8-complete` (historical/parallel claim; **non-binding**) | ✅ `phase-9-complete` (historical/parallel claim; **non-binding**)                          |
 
-**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding**. Master tip `114f129…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider), the Phase 9 search **spec** (**PR #36**), and the hermetic search **library** (**PR #37**) — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. This PR adds the catalog-search **UI** on `/academy` only. Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
+**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding**. Master tip `b160cc6…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider), the Phase 9 search **spec** (**PR #36**), hermetic search **library** (**PR #37**), and catalog-search **UI** (**PR #38**) — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. This PR adds **one Campaign Architect course** + hermetic coverage tests only. Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
 
 ---
 
