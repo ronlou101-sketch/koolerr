@@ -392,7 +392,8 @@ export const COURSES: Course[] = [
           {
             id: 'add-optional-focus',
             title: 'Add Optional Focus',
-            summary: 'Give extra context — audience, location, timing, or offer — before you create.',
+            summary:
+              'Give extra context — audience, location, timing, or offer — before you create.',
             estimatedMinutes: 5,
             content: {
               overview:
@@ -618,7 +619,8 @@ export const COURSES: Course[] = [
           {
             id: 'manage-billing',
             title: 'Manage Billing and Renewals',
-            summary: 'Update payment details and read when the plan renews — without changing the package.',
+            summary:
+              'Update payment details and read when the plan renews — without changing the package.',
             estimatedMinutes: 5,
             content: {
               overview:
@@ -650,7 +652,8 @@ export const COURSES: Course[] = [
           {
             id: 'cancel-subscription',
             title: 'Cancel a Subscription and Troubleshoot',
-            summary: 'End the plan at the period date, or recover when a billing action does not finish.',
+            summary:
+              'End the plan at the period date, or recover when a billing action does not finish.',
             estimatedMinutes: 6,
             content: {
               overview:
@@ -693,6 +696,213 @@ export const COURSES: Course[] = [
       },
     ],
   },
+  {
+    id: 'publishing',
+    title: 'Publishing to YouTube & Social',
+    description:
+      'Use the in-platform publish flow — choose where your marketing team prepares posts, read How to publish on the campaign report, and post to YouTube or social yourself.',
+    audience: 'Anyone ready to post approved work',
+    icon: '📣',
+    modules: [
+      {
+        id: 'youtube-and-social-publish',
+        title: 'YouTube & Social Publish',
+        lessons: [
+          {
+            id: 'meet-publishing',
+            title: 'Meet Publishing',
+            summary:
+              'What publishing means here — packages and instructions, not an auto-post button.',
+            estimatedMinutes: 5,
+            content: {
+              overview:
+                'Publishing in Koolerr is the step after your marketing team writes and creates. The team prepares platform packages and a How to publish guide on the campaign report. You still post to YouTube or social yourself — Koolerr does not upload for you. Review first; nothing is treated as final until you decide.',
+              walkthrough: [
+                'Finish a campaign so the team can prepare your posts.',
+                'Watch progress reach Preparing your posts — that is the publishing step.',
+                'When the campaign finishes, open Deliverables and look for the campaign report.',
+                'Read Your platform packages and How to publish before you leave Koolerr to post.',
+              ],
+              bestPractices: [
+                'Treat the report as the publish brief — packages and instructions live there, not in a separate Publishing app.',
+                'Approve the work you intend to post before you follow the How to publish steps.',
+              ],
+              commonMistakes: [
+                'Looking for a Publish button that posts to YouTube or social automatically — that control is not in the product.',
+                'Expecting the campaign wizard to publish as soon as you create a campaign.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I cannot find a Publishing page.',
+                  solution:
+                    'There is no separate Publishing app. Open Deliverables, then the campaign report — Your platform packages and How to publish are the publish flow.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Deliverables', href: '/deliverables' }],
+          },
+          {
+            id: 'choose-where-you-publish',
+            title: 'Choose Where You Publish',
+            summary:
+              'Set preferred platforms in onboarding, including YouTube Shorts and social channels.',
+            estimatedMinutes: 6,
+            content: {
+              overview:
+                'Where you publish starts in onboarding, on Your online presence. Preferred platforms tell the marketing team which channels to prepare: Facebook, Instagram, TikTok, YouTube Shorts, LinkedIn, and Google Business. Selecting YouTube Shorts also offers an optional YouTube URL. You can return and enrich this later as your presence changes.',
+              walkthrough: [
+                'Open Onboarding and continue to Your online presence.',
+                'Read the prompt: choose where you want your marketing team to publish content.',
+                'Tap the platforms you actually use — include YouTube Shorts if you post Shorts.',
+                'If you selected YouTube Shorts, add your YouTube URL when you have it (youtube.com/@yourchannel).',
+              ],
+              bestPractices: [
+                'Select only the channels you will actually post to — unused platforms add packages you will skip.',
+                'Add the YouTube URL when you pick YouTube Shorts so the team can write toward your channel.',
+              ],
+              commonMistakes: [
+                'Selecting every platform “just in case” and then wondering why the report lists channels you do not use.',
+                'Skipping Your online presence and expecting YouTube Shorts packages anyway.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I do not see a YouTube URL field.',
+                  solution:
+                    'Tap YouTube Shorts first. The optional YouTube URL field appears only after that platform is selected.',
+                },
+                {
+                  problem: 'I already finished onboarding and need to change platforms.',
+                  solution:
+                    'Return to Onboarding and update Your online presence. The Brain is meant to grow as your channels change.',
+                },
+              ],
+            },
+            resources: [{ label: 'Start onboarding', href: '/onboarding' }],
+          },
+          {
+            id: 'find-how-to-publish',
+            title: 'Find How to Publish on the Campaign Report',
+            summary:
+              'Open the report in Deliverables and read packages, instructions, and schedule.',
+            estimatedMinutes: 6,
+            content: {
+              overview:
+                'After a campaign finishes, the publish brief is the campaign report in Deliverables. Reports & Documents lists it. Open the report to read Summary, What’s included, Your platform packages, How to publish, Recommended schedule, and Quality review — only the sections that have content appear.',
+              walkthrough: [
+                'Open Deliverables and find Reports & Documents.',
+                'Open the campaign report — not a single video or caption by itself.',
+                'Read Your platform packages to see which channels were prepared (YouTube Shorts and social).',
+                'Read How to publish and Recommended schedule before you leave to post.',
+              ],
+              bestPractices: [
+                'Use How to publish as the step list for each platform — it is written for that package.',
+                'Check Recommended schedule so YouTube Shorts and social posts go out in the suggested window.',
+              ],
+              commonMistakes: [
+                'Opening only a video or image and assuming the caption and schedule are missing — they live on the report.',
+                'Publishing before you read Quality review on the same report.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'Reports & Documents is empty.',
+                  solution:
+                    'The report appears after a campaign finishes and delivers it. Start a campaign first, then return to Deliverables.',
+                },
+                {
+                  problem: 'The report has a summary but no How to publish section.',
+                  solution:
+                    'Only populated fields render. If How to publish is missing, read Your platform packages and the pieces in Deliverables, then post from those.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Deliverables', href: '/deliverables' }],
+          },
+          {
+            id: 'publish-to-youtube-or-social',
+            title: 'Publish to YouTube or Social',
+            summary:
+              'Follow How to publish — upload the Short or post, then use the recommended time.',
+            estimatedMinutes: 8,
+            content: {
+              overview:
+                'You post outside Koolerr, using the report as the brief. For YouTube Shorts, How to publish typically walks YouTube Studio: upload the video, paste the title and description, set visibility, and publish at the recommended time. Social packages follow the same pattern for Facebook, Instagram, TikTok, LinkedIn, or Google Business. Approve the pieces you intend to post first.',
+              walkthrough: [
+                'Approve the video, caption, and report items you want to post — Review is where you accept or send work back.',
+                'Open the campaign report and copy the How to publish steps for YouTube Shorts or the social channel you are posting to.',
+                'Open that platform (YouTube Studio or the social app), upload or attach the piece from Deliverables, and paste the title or caption from the package.',
+                'Set visibility or the post to public and publish at the Recommended schedule time.',
+              ],
+              bestPractices: [
+                'Post one platform at a time so you can match each package’s title, caption, and time.',
+                'Keep the report open while you upload — the instructions are step-by-step for that channel.',
+              ],
+              commonMistakes: [
+                'Uploading the video without the title and description from the YouTube Shorts package.',
+                'Posting immediately and ignoring Recommended schedule.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I cannot find the video file to upload.',
+                  solution:
+                    'Open Deliverables, open the video piece, and use Open video to download or copy it. Then return to YouTube Studio or the social app.',
+                },
+                {
+                  problem: 'The campaign skipped video and I still want a YouTube Short.',
+                  solution:
+                    'Some campaigns skip video and still deliver the rest. Use the social packages that did arrive, or start another campaign when you need a Short.',
+                },
+              ],
+            },
+            resources: [
+              { label: 'Open Deliverables', href: '/deliverables' },
+              { label: 'Open Review', href: '/approvals' },
+            ],
+          },
+          {
+            id: 'confirm-published-status',
+            title: 'Confirm What Was Published',
+            summary:
+              'Read Published status on Deliverables and recover when a section or post is missing.',
+            estimatedMinutes: 5,
+            content: {
+              overview:
+                'Deliverables shows a status on each piece: Draft, Ready for you, Approved, Sent back, or Published. Published means that piece is treated as posted. Use the list to see what is still waiting on you versus what you already published. If you closed the report, Campaigns and Deliverables still hold the campaign and the pieces.',
+              walkthrough: [
+                'Return to Deliverables after you post.',
+                'Read the status badge on the video, image, or report you used.',
+                'If a piece still says Ready for you, finish Review before you treat it as posted.',
+                'If you lost the report, open Campaigns for the campaign record or Deliverables for the pieces.',
+              ],
+              bestPractices: [
+                'Review promptly so Ready for you items do not pile up on Home before you publish.',
+                'Confirm the platform post itself (YouTube or social) — the Koolerr badge is your in-app status, not the live channel.',
+              ],
+              commonMistakes: [
+                'Assuming Approved means already posted — Approved means you accepted the work; you still publish.',
+                'Expecting every campaign to show a video — skipped video still leaves other packages you can post.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I posted on YouTube but Deliverables does not say Published.',
+                  solution:
+                    'The in-app badge updates when the piece is marked Published in Koolerr. The live YouTube or social post is separate — confirm it on that platform.',
+                },
+                {
+                  problem: 'I closed the wizard and cannot find the publish brief.',
+                  solution:
+                    'Open Deliverables for the report and pieces, or Campaigns for the campaign record. Both remain after the wizard closes.',
+                },
+              ],
+            },
+            resources: [
+              { label: 'Open Deliverables', href: '/deliverables' },
+              { label: 'Open Campaigns', href: '/runs' },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 // ── Onboarding paths (guided sequences by customer type) ──────────────────────
@@ -711,7 +921,13 @@ export const ONBOARDING_PATHS: OnboardingPath[] = [
     customerType: 'Content Marketer',
     title: 'Content Marketer Path',
     description: 'Focus on producing on-brand content at volume and reviewing it efficiently.',
-    courseIds: ['getting-started', 'business-brain', 'ai-workforce', 'deliverables-approvals', 'campaign-architect'],
+    courseIds: [
+      'getting-started',
+      'business-brain',
+      'ai-workforce',
+      'deliverables-approvals',
+      'campaign-architect',
+    ],
   },
   {
     id: 'operator',
