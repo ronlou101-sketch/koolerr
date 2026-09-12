@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getRequestPlatformContext } from '@/infrastructure/auth'
 import { COURSES, ONBOARDING_PATHS, courseLessons, getCourse } from './_lib/catalog'
+import { CatalogSearch } from './_components/catalog-search'
 import { OverallProgress, CourseProgressBadge } from './_components/progress-widgets'
 
 export default async function AcademyPage() {
@@ -16,6 +17,8 @@ export default async function AcademyPage() {
       </div>
 
       <OverallProgress />
+
+      <CatalogSearch />
 
       {/* Guided onboarding paths by customer type */}
       <section className="space-y-3">
