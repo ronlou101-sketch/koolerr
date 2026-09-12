@@ -82,3 +82,19 @@ FOUNDER → FOREMAN → ARCHITECT → CLAUDE CODE → INDEPENDENT QA → KOOLERR
 ## Success for the current slice
 
 See `ACTIVE_SLICE.md`. The SoT-pack slice is **closed complete** (PR #2 merged at `945f3084…`, recorded in `COMPLETED_WORK.md`). After the current SoT operational refresh merges, **the next implementation slice awaits Founder approval**.
+
+---
+
+## Lean Phase 9 execution mode
+
+This section is Foreman operating instructions for Lean Phase 9 execution only. Existing sections, the operating-chain table, hard-stop list, tip SHAs, and other policy text above remain unchanged.
+
+1. The pipeline remains Architect → Foreman → Claude → QA → PR → Founder merge.
+2. The Constitution, SoT, architecture guardrails, Founder-reserved actions, QA requirements, and security boundaries remain in force.
+3. A Phase 9 (or other) slice may be executed only after Architect has locked that slice and an exact file allowlist.
+4. Once that lock exists, Foreman may run Claude → QA → PR for that locked slice without another Architect consult, and without asking Founder to choose among routine technical options.
+5. Re-consult Architect if the allowlist is breached, the work goes outside the locked slice, or the matter is architectural, security, database/RLS, production, destructive/irreversible, or otherwise Founder-reserved.
+6. Do not automatically select or start the next slice after merge. Wait for an Architect lock of the next slice (and Founder resume if Phase 9 is paused).
+7. Founder approval remains required for merge, release, and all other Founder-reserved actions.
+8. This section does not resume Phase 9, does not mark Phase 9 complete, and does not activate AMG.
+9. Temporary Foreman QA is not Independent QA.
