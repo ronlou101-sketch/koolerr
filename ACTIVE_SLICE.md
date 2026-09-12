@@ -2,51 +2,49 @@
 
 > Foreman SoT: the **one** active slice for agent work right now.
 
-| Field                         | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Branch for this slice**     | `cursor/phase-9-catalog-coverage-1213`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **Base commit (checked out)** | `b160cc6f3b000640fa57ec65b0393816540c6487` (`b160cc6` — master tip; merge of PR #38). Verified against `origin/master`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Branch cut from**           | current `master` (see `CURRENT_STATE.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **Architect requestId**       | `a9a18798` (implementation allowlist). Confirming consult `ece9ccd9`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33; SoT tip reconcile #29–#33 (PR #34); SoT tip reconcile #34 (PR #35); Academy Catalog Search Foundation docs/spec (PR #36); Phase 9 hermetic catalog search library (PR #37); Phase 9 Academy catalog-search UI (PR #38) |
+| Field                         | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Branch for this slice**     | `cursor/phase-9-marketer-onboarding-path-1c00`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Base commit (checked out)** | `276dfd6b83ae8fb14812b7b8cd18af486f9d01c7` (`276dfd6` — master tip; merge of PR #39). Verified against `origin/master`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Branch cut from**           | current `master` (see `CURRENT_STATE.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Architect requestId**       | `c3883718` (implementation allowlist). Confirming consult `5ae6695b`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33; SoT tip reconcile #29–#33 (PR #34); SoT tip reconcile #34 (PR #35); Academy Catalog Search Foundation docs/spec (PR #36); Phase 9 hermetic catalog search library (PR #37); Phase 9 Academy catalog-search UI (PR #38); Phase 9 hermetic catalog coverage — one Campaign Architect course (PR #39) |
 
 ---
 
 ## Active implementation slice
 
-**Name:** Phase 9 hermetic catalog coverage — one Campaign Architect course (Architect **a9a18798**).
+**Name:** Phase 9 marketer onboarding path includes campaign-architect (Architect **c3883718**).
 
-**Status:** **active / completed-in-PR** — exactly one new static major-feature course
-(Campaign Architect / in-platform campaign wizard) with five `LessonContent` lessons,
-plus hermetic `catalog-coverage.test.ts`. **Not** Phase 8 complete. **Not** Phase 9
-complete. Existing catalog courses, paths, search, and progress are unchanged in meaning.
-No UI / page / route work in this slice.
+**Status:** **active / completed-in-PR** — append existing course id `campaign-architect` to the
+marketer `ONBOARDING_PATHS` entry only (exactly once, append-only), plus hermetic
+`onboarding-path-coverage.test.ts`. **Not** Phase 8 complete. **Not** Phase 9 complete.
+Founder and operator path membership and order are unchanged. No course lesson content,
+course metadata, UI, search, progress, `videoUrl`, or provider edits.
 
-**Allowlist ONLY (Architect a9a18798):**
+**Allowlist ONLY (Architect c3883718):**
 
 1. `app/(platform)/academy/_lib/catalog.ts`
-2. `app/(platform)/academy/_lib/catalog-coverage.test.ts` (new)
+2. `app/(platform)/academy/_lib/onboarding-path-coverage.test.ts` (new)
 3. `ACTIVE_SLICE.md`
 4. `CURRENT_STATE.md`
 5. `COMPLETED_WORK.md`
 6. `docs/status.json`
 
-**Out of scope / forbidden:** any file outside the 6-path allowlist; `videoUrl`;
-providers; secrets; auth/RLS/DB; production config; Phase 8 / Zone A / live-provider;
-AMG; `README.md` / `CLAUDE.md` / `DECISIONS.md` / `Foundation/`; tracker / AMG files;
-`vitest.config.ts`; search / page / UI files; any change to PR **#1**;
-close/rebase/comment/merge/supersede disposition of PR **#31**; silent resolve/alter of
-**C2–C7**; merge to master.
+**Out of scope / forbidden:** any file outside the 6-path allowlist; lesson / UI / search /
+progress edits; `videoUrl`; providers; secrets; auth/RLS/DB; production config; Phase 8 /
+Zone A / live-provider; AMG; any change to PR **#1**; close/rebase/comment/merge/supersede
+disposition of PR **#31**; silent resolve/alter of **C2–C7**; merge to master.
 
 **Facts recorded:**
 
-- Master tip / base for new branches: **`b160cc6f3b000640fa57ec65b0393816540c6487`** (PR **#38** merge)
-- **PR #38** landed the hermetic catalog-search UI on master; this slice adds one
-  Campaign Architect course + hermetic coverage tests only
+- Master tip / base for new branches: **`276dfd6b83ae8fb14812b7b8cd18af486f9d01c7`** (PR **#39** merge)
+- **PR #39** landed the Campaign Architect catalog course on master; this slice appends that
+  existing course id to the marketer onboarding path only
 - Phase 8 remains **DEFERRED/HELD** (Founder 2026-09-12). Live-provider requirement remains
   **unresolved / not closed**. Hermetic evidence on master (PRs **#21**, **#22**, **#23**,
   **#28**) is **preserved**. Phase 8 is **NOT complete**.
-- Phase 9 is **NOT complete** — one major-feature course only; not full Academy; not released
+- Phase 9 is **NOT complete** — marketer-path append only; not full Academy; not released
 - **AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled; owner
   designation **TBD** (Founder held TBD 2026-09-11)
 - Gate #2 **definition-only / not operational**; owner **TBD**
@@ -56,9 +54,9 @@ close/rebase/comment/merge/supersede disposition of PR **#31**; silent resolve/a
 - **C2–C7:** remain unresolved (verbatim in `DECISIONS.md`)
 
 **Done when:** allowlisted files reflect the facts above; `git diff --name-only` ⊆ allowlist;
-one new 5-lesson Campaign Architect course; existing catalog unchanged in meaning;
-`catalog-coverage.test.ts` passes hermetically; `docs/status.json` valid JSON; C2–C7 still
-present unresolved; commit + push + PR created (**not** merged).
+marketer path is append-only; founder/operator unchanged; `onboarding-path-coverage.test.ts`
+passes hermetically; `docs/status.json` valid JSON; C2–C7 still present unresolved; commit +
+push + PR created (**not** merged).
 
 ---
 
@@ -82,13 +80,14 @@ present unresolved; commit + push + PR created (**not** merged).
 - **Academy Catalog Search Foundation (Hermetic) docs/spec** — Founder-merged PR **#36** (`40880f3…`). Spec-only; not a runtime implementation; Phase 9 still not complete.
 - **Phase 9 hermetic catalog search library** — Founder-merged PR **#37** (`114f129…`). Library + tests only; no UI in that PR; Phase 9 still not complete.
 - **Phase 9 Academy catalog-search UI** — Founder-merged PR **#38** (`b160cc6…`). Hermetic `/academy` search control; Phase 9 still not complete.
+- **Phase 9 hermetic catalog coverage — one Campaign Architect course** — Founder-merged PR **#39** (`276dfd6…`). Course + coverage tests; `ONBOARDING_PATHS` left unchanged in that PR; Phase 9 still not complete.
 
 ---
 
 ## Explicitly NOT claimed complete
 
 - Launch Phase **8** product outcomes — **DEFERRED/HELD**; **not complete / not closed** (live-provider unresolved; hermetic evidence preserved).
-- Launch Phase **9** product outcomes — this slice is **one hermetic catalog course + coverage tests** only; Phase 9 is **not complete**. Existing Academy catalog is **not** Phase 9 complete.
+- Launch Phase **9** product outcomes — this slice is a **marketer-path append + hermetic coverage test** only; Phase 9 is **not complete**. Existing Academy catalog is **not** Phase 9 complete.
 - Launch Phase **10** product outcomes as complete (Tracker/`status.json` parallel claims are non-binding for “what is next”).
 - Live-provider validation (**unresolved / not closed**; Founder stopped Phase 8 live-provider testing 2026-09-12).
 - **AMG** operational enablement / activation (Accepted-not-Activated / **parked** / **NOT ACTIVATED**).
