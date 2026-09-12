@@ -1,5 +1,6 @@
 /**
- * Phase 9 hermetic catalog coverage — Campaign Architect + Billing courses.
+ * Phase 9 hermetic catalog coverage — Campaign Architect + Billing + Publishing
+ * courses.
  *
  * In-process assertions over the static catalog in `catalog.ts`. No network,
  * providers, UI, or schema expansion.
@@ -10,6 +11,7 @@ import type { LessonContent } from './catalog'
 
 const COURSE_ID = 'campaign-architect'
 const BILLING_COURSE_ID = 'billing'
+const PUBLISHING_COURSE_ID = 'publishing'
 
 const EXISTING_COURSE_IDS = [
   'getting-started',
@@ -93,6 +95,7 @@ describe('Phase 9 hermetic catalog coverage — Campaign Architect', () => {
       ...EXISTING_COURSE_IDS,
       COURSE_ID,
       BILLING_COURSE_ID,
+      PUBLISHING_COURSE_ID,
     ])
     expect(courseLessons(getCourse('getting-started')!)).toHaveLength(2)
     expect(courseLessons(getCourse('business-brain')!)).toHaveLength(1)
@@ -123,6 +126,9 @@ describe('Phase 9 hermetic catalog coverage — Campaign Architect', () => {
       )
     ).toBe(true)
     expect(ONBOARDING_PATHS.every((path) => !path.courseIds.includes(BILLING_COURSE_ID))).toBe(true)
+    expect(ONBOARDING_PATHS.every((path) => !path.courseIds.includes(PUBLISHING_COURSE_ID))).toBe(
+      true
+    )
   })
 })
 
@@ -162,3 +168,40 @@ describe('Phase 9 hermetic catalog coverage — Billing', () => {
     }
   })
 })
+
+describe('Phase 9 hermetic catalog coverage — Publishing', () => {
+  it('adds exactly one Publishing course', () => {
+    const matches = COURSES.filter((course) => course.id === PUBLISHING_COURSE_ID)
+    expect(matches).toHaveLength(1)
+
+    const course = getCourse(PUBLISHING_COURSE_ID)
+    expect(course).toBeDefined()
+    expect(course!.title).toBe('Publishing to YouTube & Social')
+    expect(course!.id).toBe(PUBLISHING_COURSE_ID)
+  })
+
+  it('has exactly five lessons', () => {
+    const course = getCourse(PUBLISHING_COURSE_ID)
+    expect(course).toBeDefined()
+    expect(courseLessons(course!)).toHaveLength(5)
+  })
+
+  it('each lesson conforms to LessonContent with required teaching blocks populated', () => {
+    const course = getCourse(PUBLISHING_COURSE_ID)
+    expect(course).toBeDefined()
+
+    for (const lesson of courseLessons(course!)) {
+      expectLessonContentPopulated(lesson.content)
+    }
+  })
+
+  it('has no videoUrl on any lesson of the new course', () => {
+    const course = getCourse(PUBLISHING_COURSE_ID)
+    expect(course).toBeDefined()
+
+    for (const lesson of courseLessons(course!)) {
+      expect(lesson).not.toHaveProperty('videoUrl')
+      expect(lesson.videoUrl).toBeUndefined()
+    }
+  })
+}))
