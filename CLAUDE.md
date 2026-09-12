@@ -163,9 +163,11 @@ public/           — Public-facing static assets
 
 The Active Execution Roadmap is **Phases 7–12** (see
 `Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md`). Founder-resolved **C1 Version A** binds this
-file and `README.md`: Phase 7 is complete; **Phase 8 — Final Product Validation** is the next
-binding phase. Do **not** adopt Tracker / `docs/status.json` Phase 10 claims as next-step
-authority for this sequence.
+file and `README.md`: Phase 7 is complete. **Founder override (2026-09-12, sequencing only):**
+Phase 8 is **DEFERRED/HELD**; the approved next slice is **Phase 9 Academy Catalog Search
+Foundation (Hermetic)** — docs/spec only (Architect **7126fa69** / **32681030**). Do **not**
+adopt Tracker / `docs/status.json` Phase 8–10 complete claims as next-step authority for this
+sequence.
 
 **Phase 7 — Launch Readiness is ✅ complete** (tagged `phase-7-complete`): mobile navigation,
 terminology consistency, loading/error resilience, critical service-layer test coverage,
@@ -174,25 +176,33 @@ billing, Business Brain, and multi-Workforce architecture from earlier phases ar
 
 **The forward roadmap:**
 
-1. **Phase 8 — Final Product Validation** ⬜ **Next (Founder-approved under C1 Version A)** — not
-   complete. Non-reserved scope: end-to-end customer-journey validation; provider-validation
+1. **Phase 8 — Final Product Validation** ⬜ **DEFERRED/HELD** (Founder 2026-09-12) — **not
+   complete / not closed**. Founder stopped live-provider testing: no new credentials, no
+   provider calls, no Zone A. Hermetic evidence on master (PRs **#21**, **#22**, **#23**,
+   **#28**) is preserved. The live-provider requirement remains **unresolved / not closed**.
+   Non-reserved scope when resumed: end-to-end customer-journey validation; provider-validation
    evidence requirements (HeyGen, Higgsfield, ElevenLabs, etc. as already mentioned); performance
    validation; production bug fixes discovered through validation; **no new features** unless
    required to complete the customer journey. Phase 8 docs scope does **not** authorize deploy,
    migrations, or production credential/secret handling.
-2. **Phase 9 — Koolerr Academy** ⬜ — **a required production phase that must be completed before
-   any beta customer is invited**, so every beta customer has full Academy access on Day 1
-   (in-platform searchable knowledge base + HeyGen AI instructor videos; every major feature gets
-   Overview / walkthrough / best practices / common mistakes / troubleshooting).
+2. **Phase 9 — Koolerr Academy** ⬜ — **Next (docs/spec slice):** Academy Catalog Search
+   Foundation (Hermetic) — simple keyword matching only; advanced filters/facets deferred.
+   Spec: `docs/academy/phase-9-catalog-search-foundation.md`. The existing
+   `app/(platform)/academy` catalog is **not** Phase 9 complete. Phase 9 is **not complete /
+   not implemented / not released**. Full Academy remains a required production phase before
+   any beta customer is invited (in-platform searchable knowledge base + HeyGen AI instructor
+   videos; every major feature gets Overview / walkthrough / best practices / common mistakes /
+   troubleshooting). This slice does not implement that.
 3. **Phase 10 — Private Beta** ⬜ · **Phase 11 — Public Launch** ⬜ · **Phase 12 — Scale &
    Optimization** ⬜.
 
 **Reserved (not part of this Phase 8 docs scope):** Campaign Rendering **M2 prove-in-production**
 (deploy, migrations, production credentials/secrets, live production proof) remains **reserved**
-and requires separate Founder authorization — not implied by Phase 8 start.
+and requires separate Founder authorization — not implied by Phase 8 start or by this docs slice.
 
-Do not begin a phase before the current one is approved complete. If a request would introduce a
-later-phase capability out of sequence, say so before proceeding.
+Do not begin a later phase than the Founder-approved next slice. If a request would introduce a
+later-phase capability out of sequence, say so before proceeding. The Founder override above is
+the binding exception that defers Phase 8 and authorizes this Phase 9 docs/spec slice only.
 
 > **Numbering note:** Earlier revisions of this file and the trackers used different phase
 > numbering (e.g. an architectural Phase 1–5+ in FOUNDATION_003, and a Phase 1–10 delivery scheme
