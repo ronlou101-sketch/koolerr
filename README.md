@@ -9,30 +9,42 @@ AI Workforce Platform — V1
 The Active Execution Roadmap is **Phases 7–12** (see
 [`Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md`](Foundation/FOUNDATION_003_DEVELOPMENT_ROADMAP.md)).
 Founder-resolved **C1 Version A** binds this README and [`CLAUDE.md`](CLAUDE.md): Phase 7 is
-complete; **Phase 8 — Final Product Validation** is the next binding phase. Do **not** treat
-Tracker/`docs/status.json` Phase 10 claims as next-step authority for this sequence.
+complete. **Founder override (2026-09-12, sequencing only):** Phase 8 is **DEFERRED/HELD**;
+the approved next slice is **Phase 9 Academy Catalog Search Foundation (Hermetic)** —
+docs/spec only. Do **not** treat Tracker/`docs/status.json` Phase 8–10 complete claims as
+next-step authority for this sequence.
 
-| Phase  | Name                     | Status                                                     |
-| ------ | ------------------------ | ---------------------------------------------------------- |
-| **7**  | Launch Readiness         | ✅ Complete (`phase-7-complete`)                           |
-| **8**  | Final Product Validation | **Next (Founder-approved under C1 Version A)** — not complete |
-| **9**  | Koolerr Academy          | Planned — **required before any beta customer is invited** |
-| **10** | Private Beta             | Planned                                                    |
-| **11** | Public Launch            | Planned                                                    |
-| **12** | Scale & Optimization     | Planned                                                    |
+| Phase  | Name                     | Status                                                                 |
+| ------ | ------------------------ | ---------------------------------------------------------------------- |
+| **7**  | Launch Readiness         | ✅ Complete (`phase-7-complete`)                                       |
+| **8**  | Final Product Validation | **DEFERRED/HELD** (Founder 2026-09-12) — live-provider unresolved; hermetic evidence preserved; **not complete / not closed** |
+| **9**  | Koolerr Academy          | **Next (docs/spec slice)** — Academy Catalog Search Foundation (Hermetic); **not complete / not implemented / not released** |
+| **10** | Private Beta             | Planned                                                                |
+| **11** | Public Launch            | Planned                                                                |
+| **12** | Scale & Optimization     | Planned                                                                |
 
-**Phase 8 scope (non-reserved):** end-to-end customer-journey validation; provider-validation
-evidence requirements (HeyGen, Higgsfield, ElevenLabs, etc. as already mentioned); performance
-validation; production bug fixes discovered through validation; **no new features** unless
-required to complete the customer journey. Phase 8 docs scope does **not** authorize deploy,
-migrations, or production credential/secret handling.
+**Phase 8 status:** **DEFERRED/HELD.** Founder (2026-09-12) stopped live-provider testing:
+no new credentials, no provider calls, no Zone A. Hermetic evidence on master (PRs **#21**,
+**#22**, **#23**, **#28**) is preserved. The live-provider requirement remains **unresolved /
+not closed**. Phase 8 is **not complete**.
+
+**Phase 8 scope (when resumed; still non-reserved):** end-to-end customer-journey validation;
+provider-validation evidence requirements (HeyGen, Higgsfield, ElevenLabs, etc. as already
+mentioned); performance validation; production bug fixes discovered through validation;
+**no new features** unless required to complete the customer journey. Phase 8 docs scope does
+**not** authorize deploy, migrations, or production credential/secret handling.
 
 **Reserved (not part of this Phase 8 docs scope):** Campaign Rendering **M2 prove-in-production**
 (deploy, migrations, production credentials/secrets, live production proof) remains **reserved**
-and requires separate Founder authorization — not implied by Phase 8 start.
+and requires separate Founder authorization — not implied by Phase 8 start or by this docs slice.
 
-**Koolerr Academy (Phase 9) is a required production phase before onboarding the first customer**,
-so every private-beta customer has full Academy access on Day 1.
+**Phase 9 — Academy Catalog Search Foundation (Hermetic)** is the Founder-approved next
+docs/spec slice (Architect **7126fa69** named it; Architect **32681030** approved the 8-path
+docs allowlist). Simple keyword matching only; advanced filters/facets deferred. Spec:
+[`docs/academy/phase-9-catalog-search-foundation.md`](docs/academy/phase-9-catalog-search-foundation.md).
+The existing `app/(platform)/academy` catalog is **not** Phase 9 complete. Phase 9 is **not
+complete / not implemented / not released**. Full Academy remains a required production phase
+before onboarding the first customer; this slice does not implement it.
 
 ---
 

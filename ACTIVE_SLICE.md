@@ -4,46 +4,59 @@
 
 | Field | Value |
 | --- | --- |
-| **Branch for this slice** | `docs/sot-tip-reconcile-34` |
-| **Base commit (checked out)** | `a12a097d6d04761cbbf273e6bf6f27100ecad9d7` (`a12a097` — master tip; merge of PR #34) |
+| **Branch for this slice** | `cursor/academy-catalog-search-foundation-51b3` |
+| **Base commit (checked out)** | `67b9ba54f87eace313f03b9a53db2712dc9d384b` (`67b9ba5` — master tip; merge of PR #35). Verified at slice start. |
 | **Branch cut from** | current `master` (see `CURRENT_STATE.md`) |
-| **Architect requestId** | `411cc55a` |
-| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33; SoT tip reconcile #29–#33 (PR #34) |
+| **Architect requestId** | `32681030` (allowlist; `authorized_scope: docs`). Slice named by Architect `7126fa69`. |
+| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33; SoT tip reconcile #29–#33 (PR #34); SoT tip reconcile #34 (PR #35) |
 
 ---
 
 ## Active implementation slice
 
-**Name:** SoT tip micro-reconcile after PR **#34** (docs-only; Architect **411cc55a**).
+**Name:** Academy Catalog Search Foundation (Hermetic) — Phase 9 docs/spec only (Architect **7126fa69** / **32681030**).
 
-**Status:** idle / **awaiting next Founder priority** after commit — **no active product slice**. Does **not** invent Phase 8 product-phase completion. Does **not** select a new product slice.
+**Status:** **active** — Founder-approved docs slice. Spec:
+`docs/academy/phase-9-catalog-search-foundation.md`. **Not** Phase 8 complete. **Not** Phase 9
+complete / not implemented / not released. Existing `app/(platform)/academy` catalog is **not**
+Phase 9 complete.
 
-**Allowlist ONLY:**
+**Allowlist ONLY (Architect 32681030):**
 
-1. `ACTIVE_SLICE.md`
-2. `CURRENT_STATE.md`
-3. `COMPLETED_WORK.md`
+1. `docs/academy/phase-9-catalog-search-foundation.md` (new)
+2. `README.md`
+3. `CLAUDE.md`
 4. `DECISIONS.md`
-5. `docs/status.json`
+5. `CURRENT_STATE.md`
+6. `ACTIVE_SLICE.md`
+7. `COMPLETED_WORK.md`
+8. `docs/status.json`
 
-**Out of scope / forbidden:** `PHASE_7_COMPLETION.md`; AMG ADR/governance/activation-record/operational-readiness files; Gate #2 definition pack edits; AMG **activation**; Gate #2 / Independent QA **owner appointment**; `README.md` / `CLAUDE.md`; `app/`, `domains/`, migrations, secrets, code, tests, CI; any change to PR **#1**; close/rebase/comment/merge/supersede disposition of PR **#31**; silent resolve/alter of **C2–C7**.
+**Out of scope / forbidden:** `app/`, `domains/`, `infrastructure/`, tests, CI, `package.json`,
+`.env*`, secrets, `Foundation/`, `MASTER_ROADMAP.md`, `docs/KOOLERR_MASTER_TRACKER.md`, AMG /
+governance files, Academy generator, runtime implementation, provider calls, credentials;
+any change to PR **#1**; close/rebase/comment/merge/supersede disposition of PR **#31**; silent
+resolve/alter of **C2–C7**.
 
 **Facts recorded:**
 
-- Master tip / base for new branches: **`a12a097d6d04761cbbf273e6bf6f27100ecad9d7`** (PR **#34** merge)
-- **#34** docs(sot): reconcile SoT tip after PRs #29–#33 (merge `a12a097…`) — prior SoT files still said tip `505e041…`; this micro-reconcile closes that lag
-- Prior merged (already on tip via #34): **#29** SoT tip #24–#28; **#30** stale SoT PR triage; **#32** Gate #2 definition-only; **#33** AMG operational-readiness checklist definition only
-- Closed **without merge** (content did not land; #30 triage + Founder action): **#7, #9, #11, #14, #15**
-- **PR #31** OPEN — noted overlapping/stale vs tip `a12a097…` (predates #32/#33/#34); **disposition unchanged**
+- Master tip / base for new branches: **`67b9ba54f87eace313f03b9a53db2712dc9d384b`** (PR **#35** merge)
+- Founder (2026-09-12): **STOP** Phase 8 live-provider testing. No new credentials, no provider calls, no Zone A. Phase 8 is **DEFERRED/HELD**. Hermetic evidence on master (PRs **#21**, **#22**, **#23**, **#28**) is **preserved**. Live-provider requirement remains **unresolved / not closed**. Phase 8 is **NOT complete**.
+- Founder then approved this Phase 9 docs slice.
+- Architect **7126fa69** named the slice: Academy Catalog Search Foundation (Hermetic). Simple keyword matching only. Advanced filters/facets deferred.
+- Architect **32681030** approved this exact 8-path allowlist. `authorized_scope: docs`.
+- Existing `app/(platform)/academy` catalog is **NOT** Phase 9 complete. Phase 9 is **NOT complete / not implemented / not released**.
+- Prior SoT-tip-reconcile-34 slice is **closed** (PR **#35**).
 - **AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled; owner designation **TBD** (Founder held TBD 2026-09-11)
 - Gate #2 **definition-only / not operational**; owner **TBD**
 - Temporary Foreman QA ≠ Independent QA; Independent QA still not operationally available
-- Live-provider validation: outstanding, **Founder-executed**
-- **Phase 8:** **next / not complete** (C1 Version A); hermetic E2E/perf/evidence ≠ Phase 8 final product validation complete
 - **PR #1:** still **OPEN** untouched
+- **PR #31:** OPEN, disposition **unchanged**
 - **C2–C7:** remain unresolved (verbatim in `DECISIONS.md`)
 
-**Done when:** allowlisted files reflect the facts above; `git diff --name-only` ⊆ allowlist; `docs/status.json` valid JSON; C2–C7 still present unresolved verbatim; commit + push + PR created (**not** merged).
+**Done when:** allowlisted files reflect the facts above; `git diff --name-only` ⊆ allowlist;
+`docs/status.json` valid JSON; C2–C7 still present unresolved verbatim; commit + push + PR
+created (**not** merged).
 
 ---
 
@@ -63,13 +76,16 @@
 - **Independent QA Gate #2 definition-only pack** — Founder-merged PR **#32** (`aa9c106…`; definition-only — not operational; owner TBD).
 - **AMG operational-readiness checklist (definition only)** — Founder-merged PR **#33** (`505e041…`; AMG still **NOT ACTIVATED**).
 - **SoT tip reconcile after PRs #29–#33** — Founder-merged PR **#34** (`a12a097…`).
+- **SoT tip reconcile after PR #34** — Founder-merged PR **#35** (`67b9ba5…`). Prior active slice `docs/sot-tip-reconcile-34` is **closed**.
 
 ---
 
 ## Explicitly NOT claimed complete
 
-- Launch Phase **8 / 9 / 10 product outcomes** as complete (C1 Version A says Phase 8 is **next** / not complete; Tracker/`status.json` parallel claims are non-binding for “what is next”).
-- Live-provider validation (outstanding; **Founder-executed**).
+- Launch Phase **8** product outcomes — **DEFERRED/HELD**; **not complete / not closed** (live-provider unresolved; hermetic evidence preserved).
+- Launch Phase **9** product outcomes — Academy Catalog Search Foundation is a **docs/spec** slice only; Phase 9 is **not complete / not implemented / not released**. Existing Academy catalog is **not** Phase 9 complete.
+- Launch Phase **10** product outcomes as complete (Tracker/`status.json` parallel claims are non-binding for “what is next”).
+- Live-provider validation (**unresolved / not closed**; Founder stopped Phase 8 live-provider testing 2026-09-12).
 - **AMG** operational enablement / activation (Accepted-not-Activated / **parked** / **NOT ACTIVATED**).
 - Independent QA Gate #2 operational availability or owner designation (definition-only; owner **TBD**).
 - Campaign Rendering production M2 / full runtime proof (**C6** still open).

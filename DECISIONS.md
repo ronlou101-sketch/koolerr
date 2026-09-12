@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `a12a097d6d04761cbbf273e6bf6f27100ecad9d7`) |
+| **Base for new implementation branches** | current **`master`** (tip `67b9ba54f87eace313f03b9a53db2712dc9d384b`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -26,8 +26,11 @@ New architectural decisions still require ADRs per Foundation + Engineering Char
 These are recorded operating facts. **O1–O6** were added at the **SoT operational refresh**; **O7–O8**
 were added at the **post-PR-#4 reconcile**; **O9** at Phase **7.9** docs housekeeping; **O10** at the SoT tip
 reconcile after PRs **#24–#28**; **O11** at the SoT tip reconcile after PRs **#29–#33**; **O12** at the SoT tip
-micro-reconcile after PR **#34**. None of them is a resolution of **C2–C7** (still open). **C1** was Founder-resolved Version A
-separately (PR **#21**); O1–O12 must not be read as resolving C2–C7.
+micro-reconcile after PR **#34**; **O13** at the Founder Phase 8 **DEFERRED/HELD** + Phase 9 Academy
+Catalog Search Foundation docs slice. None of them is a resolution of **C2–C7** (still open). **C1** was
+Founder-resolved Version A separately (PR **#21**); O1–O13 must not be read as resolving C2–C7. C1
+sequencing was Founder-amended on 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next docs slice) without
+resolving C2–C7.
 
 ### O1 — SoT pack slice closed
 
@@ -147,6 +150,35 @@ Verified historical / merged fact (after prior SoT tip `505e041…` / PR **#33**
 
 O12 records tip/history only. It does **not** resolve, narrow, or reinterpret **C2–C7**. It does **not** activate AMG, appoint an owner, or dispose PR **#31**.
 
+
+### O13 — Founder Phase 8 DEFERRED/HELD + Academy Catalog Search Foundation (this slice)
+
+Founder (2026-09-12): **STOP** Phase 8 live-provider testing. No new credentials, no provider calls, no
+Zone A. Phase 8 is **DEFERRED/HELD**. Hermetic evidence on master (PRs **#21**, **#22**, **#23**,
+**#28**) is **preserved**. The live-provider requirement remains **unresolved / not closed**. Phase 8
+is **NOT complete**.
+
+Founder then approved this Phase 9 **docs** slice.
+
+Architect **7126fa69** named the slice: **Academy Catalog Search Foundation (Hermetic)**. Simple
+keyword matching only. Advanced filters/facets deferred.
+
+Architect **32681030** approved this exact 8-path allowlist (`authorized_scope: docs`):
+`docs/academy/phase-9-catalog-search-foundation.md` (new); `README.md`; `CLAUDE.md`;
+`DECISIONS.md`; `CURRENT_STATE.md`; `ACTIVE_SLICE.md`; `COMPLETED_WORK.md`; `docs/status.json`.
+
+Existing `app/(platform)/academy` catalog is **NOT** Phase 9 complete. Phase 9 is **NOT complete /
+not implemented / not released**.
+
+Master tip / base for new branches is **`67b9ba54f87eace313f03b9a53db2712dc9d384b`** (PR **#35**
+merge of `docs/sot-tip-reconcile-34`). Verified against `origin/master` at slice start.
+
+**AMG** remains **parked / NOT ACTIVATED**. Gate #2 **definition-only**; owner **TBD**. **PR #1**
+remains **OPEN** untouched. **PR #31** remains **OPEN**, disposition **unchanged**.
+
+O13 records the Founder deferral and this docs slice. It does **not** resolve, narrow, or
+reinterpret **C2–C7**. It does **not** activate AMG, appoint an owner, or dispose PR **#31**.
+
 ---
 
 ## Founder-resolved conflicts
@@ -155,9 +187,10 @@ O12 records tip/history only. It does **not** resolve, narrow, or reinterpret **
 
 **Resolved by Founder** (evidence: PR **#21**, merge `c72181f…` — already reflected in `README.md` / `CLAUDE.md`).
 
-- **Binding (Version A):** `README.md` + `CLAUDE.md` → Phase 7 ✅; **Phase 8 — Final Product Validation** is next (not complete).
-- **Non-binding for “what is next”:** `FOUNDATION_003` + `docs/KOOLERR_MASTER_TRACKER.md` + `docs/status.json` Phase 8–10 complete/in-progress claims remain historical/parallel evidence; do not treat them as next-step authority under Version A.
-- Agents follow Version A for forward roadmap narrative. This does **not** invent Phase 8/9 product-phase completion.
+- **Binding (Version A):** `README.md` + `CLAUDE.md` → Phase 7 ✅; originally **Phase 8 — Final Product Validation** is next (not complete).
+- **Founder override (2026-09-12, sequencing only):** Phase 8 is **DEFERRED/HELD** (live-provider unresolved / not closed; hermetic evidence on master via PRs **#21**, **#22**, **#23**, **#28** is preserved; Phase 8 is **not complete**). The approved next slice is **Phase 9 Academy Catalog Search Foundation (Hermetic)** — docs/spec only (Architect **7126fa69** / **32681030**). Phase 9 is **not complete / not implemented / not released**. Existing `app/(platform)/academy` catalog is **not** Phase 9 complete.
+- **Non-binding for “what is next”:** `FOUNDATION_003` + `docs/KOOLERR_MASTER_TRACKER.md` + `docs/status.json` Phase 8–10 complete/in-progress claims remain historical/parallel evidence; do not treat them as next-step authority under Version A. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding**.
+- Agents follow Version A plus this Founder sequencing override for forward roadmap narrative. This does **not** invent Phase 8/9 product-phase completion.
 
 Original options preserved for audit:
 
