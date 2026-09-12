@@ -2,10 +2,10 @@
 
 > Foreman SoT: completed work **as claimed by sources**. Does not invent completion. Conflicts preserved.
 
-| Field | Value |
-| --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `67b9ba54f87eace313f03b9a53db2712dc9d384b`) |
-| **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
+| Field                                    | Value                                                                                                     |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Base for new implementation branches** | current **`master`** (tip `40880f30174b6a30ca56d2a13b66cb6b806294cf`)                                     |
+| **Historical SoT locus**                 | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
 
@@ -38,22 +38,22 @@ QA did not sign off, because it does not exist (`QA_PROTOCOL.md`).
 
 ## Phase 7 deferred follow-ons — ✅ SHIPPED (Founder-merged evidence)
 
-| Milestone | Evidence | Status |
-| --- | --- | --- |
-| **7.3c** Dogfooding service tests + org-scope + `NOT_FOUND` | PRs **#16**, **#17**, **#18** | ✅ Founder-merged |
-| **7.5** Stripe webhook-secret SSOT + prod startup assert | PR **#19** (merge `3906e25…`) | ✅ Founder-merged |
-| **7.6** Layout auth dedupe | PR **#20** (merge `d26a9be…`) | ✅ Founder-merged |
-| **7.9** Documentation & Housekeeping | PR **#24** (merge `85ef083…`) | ✅ Founder-merged (docs-only; follows existing 7.9 record; no broader phase closure claim; `infrastructure/**/provision.ts` still deferred) |
+| Milestone                                                   | Evidence                      | Status                                                                                                                                      |
+| ----------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **7.3c** Dogfooding service tests + org-scope + `NOT_FOUND` | PRs **#16**, **#17**, **#18** | ✅ Founder-merged                                                                                                                           |
+| **7.5** Stripe webhook-secret SSOT + prod startup assert    | PR **#19** (merge `3906e25…`) | ✅ Founder-merged                                                                                                                           |
+| **7.6** Layout auth dedupe                                  | PR **#20** (merge `d26a9be…`) | ✅ Founder-merged                                                                                                                           |
+| **7.9** Documentation & Housekeeping                        | PR **#24** (merge `85ef083…`) | ✅ Founder-merged (docs-only; follows existing 7.9 record; no broader phase closure claim; `infrastructure/**/provision.ts` still deferred) |
 
 ---
 
 ## PRs #25–#28 — verified historical / merged facts (not Phase 8 product completion)
 
-| PR | Merge | Record |
-| --- | --- | --- |
-| **#25** | `f1daf6f…` | AMG draft ADR-027 + governance |
-| **#26** | `b17e625…` | ADR-027 **Accepted — not Activated** |
-| **#27** | `c685e95…` | AMG activation record **NOT ACTIVATED** |
+| PR      | Merge      | Record                                                                                                           |
+| ------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| **#25** | `f1daf6f…` | AMG draft ADR-027 + governance                                                                                   |
+| **#26** | `b17e625…` | ADR-027 **Accepted — not Activated**                                                                             |
+| **#27** | `c685e95…` | AMG activation record **NOT ACTIVATED**                                                                          |
 | **#28** | `4dad95f…` | Phase 8 hermetic validation evidence; hermetic journey+perf **PASS** at recorded revision; **NOT** live-provider |
 
 **AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled.
@@ -66,11 +66,11 @@ Also previously on tip `4dad95f…` (not Phase 7/8 product completion): **C1 Ver
 
 ## PRs #29–#33 — verified historical / merged facts (docs/governance only; not Phase 8 product completion)
 
-| PR | Merge | Record |
-| --- | --- | --- |
-| **#29** | `b11f03e…` | docs(sot): reconcile SoT tip after PRs #24–#28 |
-| **#30** | `81fe0f9…` | docs(governance): stale SoT PR triage disposition record |
-| **#32** | `aa9c106…` | Independent QA Gate #2 definition-only pack — Gate #2 **definition-only / not operational**; owner **TBD** |
+| PR      | Merge      | Record                                                                                                            |
+| ------- | ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| **#29** | `b11f03e…` | docs(sot): reconcile SoT tip after PRs #24–#28                                                                    |
+| **#30** | `81fe0f9…` | docs(governance): stale SoT PR triage disposition record                                                          |
+| **#32** | `aa9c106…` | Independent QA Gate #2 definition-only pack — Gate #2 **definition-only / not operational**; owner **TBD**        |
 | **#33** | `505e041…` | AMG operational-readiness checklist (definition only) — AMG remains **NOT ACTIVATED** / **parked**; owner **TBD** |
 
 Closed **without merge** (content did not land; #30 triage + Founder action; verified `gh pr view`): **#7, #9, #11, #14, #15**.
@@ -83,8 +83,8 @@ Master tip at that reconcile was **`505e041…`**. **AMG** still **parked / NOT 
 
 ## PR #34 — verified historical / merged fact (docs/SoT tip only; not Phase 8 product completion)
 
-| PR | Merge | Record |
-| --- | --- | --- |
+| PR      | Merge      | Record                                                                                                                |
+| ------- | ---------- | --------------------------------------------------------------------------------------------------------------------- |
 | **#34** | `a12a097…` | docs(sot): reconcile SoT tip after PRs #29–#33 — docs-only tip/history; closed SoT lag still recording tip `505e041…` |
 
 Master tip at that reconcile was **`a12a097…`**. **PR #31** remains **OPEN** — overlapping/stale vs tip `a12a097…` (predates #32/#33/#34); disposition **unchanged**. **AMG** still **parked / NOT ACTIVATED**. Gate #2 still definition-only / not operational; owner **TBD**. Temporary Foreman QA ≠ Independent QA. Phase 8 remained **next / not complete** (C1 Version A) at that reconcile. Live-provider validation outstanding (**Founder-executed**). **PR #1** remains **OPEN** untouched. **C2–C7** unresolved.
@@ -93,8 +93,8 @@ Master tip at that reconcile was **`a12a097…`**. **PR #31** remains **OPEN** �
 
 ## PR #35 — verified historical / merged fact (docs/SoT tip only; not Phase 8 product completion)
 
-| PR | Merge | Record |
-| --- | --- | --- |
+| PR      | Merge      | Record                                                                                         |
+| ------- | ---------- | ---------------------------------------------------------------------------------------------- |
 | **#35** | `67b9ba5…` | docs(sot): reconcile SoT tip after PR #34 — docs-only tip/history; closed SoT-tip-reconcile-34 |
 
 Verified `origin/master` tip at this slice start: **`67b9ba54f87eace313f03b9a53db2712dc9d384b`**.
@@ -113,17 +113,25 @@ live-provider requirement.
 
 ---
 
-## Phase 9 Academy Catalog Search Foundation (Hermetic) — IN PROGRESS / OPENED (docs/spec only)
+## PR #36 — verified historical / merged fact (docs/spec only; not Phase 9 product completion)
 
-Founder then approved this Phase 9 **docs** slice. Architect **7126fa69** named it: Academy
-Catalog Search Foundation (Hermetic) — simple keyword matching only; advanced filters/facets
-deferred. Architect **32681030** approved the 8-path docs allowlist (`authorized_scope: docs`).
+| PR      | Merge      | Record                                                                                                     |
+| ------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
+| **#36** | `40880f3…` | docs(academy): Academy Catalog Search Foundation (Hermetic) spec — spec-only; not a runtime implementation |
 
-Spec (new): `docs/academy/phase-9-catalog-search-foundation.md`.
+Verified `origin/master` tip at this slice start: **`40880f30174b6a30ca56d2a13b66cb6b806294cf`**.
 
-**Not complete.** Existing `app/(platform)/academy` catalog is **not** Phase 9 complete.
-Phase 9 is **not complete / not implemented / not released**. No runtime implementation in
-this slice.
+---
+
+## Phase 9 hermetic catalog search library — IN PR / OPENED (Architect aa38c63a)
+
+Implements the isolated hermetic catalog-search library specified by
+`docs/academy/phase-9-catalog-search-foundation.md`: `search.ts` + hermetic `search.test.ts`.
+No UI / page / route wiring. No catalog content edits. No providers.
+
+**Completed-in-PR only — not merged.** Phase 9 is **not complete**. Existing
+`app/(platform)/academy` catalog is **not** Phase 9 complete. Phase 8 remains **DEFERRED/HELD**;
+live-provider **unresolved / not closed**.
 
 **PR #31** remains **OPEN** — disposition **unchanged**. **AMG** still **parked / NOT
 ACTIVATED**. Gate #2 still definition-only / not operational; owner **TBD**. Temporary Foreman
@@ -176,12 +184,12 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 
 ## Launch Phases 8–9 — C1 Version A + Founder 2026-09-12 sequencing override (product outcomes not claimed complete here)
 
-| Source | Phase 8 | Phase 9 |
-| --- | --- | --- |
-| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed | **Next docs/spec slice** (Academy Catalog Search Foundation) — not complete / not implemented / not released |
-| `FOUNDATION_003`, Tracker, `status.json` current[10] | ✅ `phase-8-complete` (historical/parallel claim; **non-binding**) | ✅ `phase-9-complete` (historical/parallel claim; **non-binding**) |
+| Source                                                                                                | Phase 8                                                            | Phase 9                                                                                        |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed                      | **Next** — hermetic catalog search library in PR (Architect **aa38c63a**); not complete; no UI |
+| `FOUNDATION_003`, Tracker, `status.json` current[10]                                                  | ✅ `phase-8-complete` (historical/parallel claim; **non-binding**) | ✅ `phase-9-complete` (historical/parallel claim; **non-binding**)                             |
 
-**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next docs slice) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding**. Master tip `67b9ba5…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), and hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider) as validation evidence only — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
+**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding**. Master tip `40880f3…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider), and the Phase 9 search **spec** (**PR #36**) — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. This PR adds the hermetic search **library** only; **no UI**. Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
 
 ---
 
