@@ -116,13 +116,19 @@ describe('Phase 9 hermetic catalog coverage — Campaign Architect', () => {
       'getting-started',
       'business-brain',
       'deliverables-approvals',
+      BILLING_COURSE_ID,
     ])
+    expect(ONBOARDING_PATHS[2]?.courseIds.filter((id) => id === BILLING_COURSE_ID)).toHaveLength(1)
     expect(
       ONBOARDING_PATHS.filter((path) => path.id !== 'marketer').every(
         (path) => !path.courseIds.includes(COURSE_ID)
       )
     ).toBe(true)
-    expect(ONBOARDING_PATHS.every((path) => !path.courseIds.includes(BILLING_COURSE_ID))).toBe(true)
+    expect(
+      ONBOARDING_PATHS.filter((path) => path.id !== 'operator').every(
+        (path) => !path.courseIds.includes(BILLING_COURSE_ID)
+      )
+    ).toBe(true)
   })
 })
 

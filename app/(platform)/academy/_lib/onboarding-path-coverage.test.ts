@@ -1,6 +1,7 @@
 /**
- * Phase 9 hermetic onboarding-path coverage — marketer path includes
- * campaign-architect (Architect c3883718).
+ * Phase 9 hermetic onboarding-path coverage — operator path includes
+ * billing (Architect fcc4d433 / 2c00b26c). Marketer still includes
+ * campaign-architect exactly once; founder path is unchanged.
  *
  * In-process assertions over ONBOARDING_PATHS only. No network, providers,
  * UI, or catalog course/lesson edits.
@@ -9,6 +10,7 @@ import { describe, expect, it } from 'vitest'
 import { ONBOARDING_PATHS } from './catalog'
 
 const COURSE_ID = 'campaign-architect'
+const BILLING_COURSE_ID = 'billing'
 
 function pathById(id: string) {
   return ONBOARDING_PATHS.find((path) => path.id === id)
@@ -50,13 +52,27 @@ describe('Phase 9 hermetic onboarding-path coverage', () => {
     ])
   })
 
-  it('leaves operator course membership and order unchanged', () => {
+  it('includes billing in the operator path exactly once', () => {
     const operator = pathById('operator')
     expect(operator).toBeDefined()
+    expect(operator!.courseIds.filter((id) => id === BILLING_COURSE_ID)).toHaveLength(1)
     expect(operator!.courseIds).toEqual([
       'getting-started',
       'business-brain',
       'deliverables-approvals',
+      BILLING_COURSE_ID,
     ])
+  })
+
+  it('does not include billing in the founder path', () => {
+    const founder = pathById('founder')
+    expect(founder).toBeDefined()
+    expect(founder!.courseIds.includes(BILLING_COURSE_ID)).toBe(false)
+  })
+
+  it('does not include billing in the marketer path', () => {
+    const marketer = pathById('marketer')
+    expect(marketer).toBeDefined()
+    expect(marketer!.courseIds.includes(BILLING_COURSE_ID)).toBe(false)
   })
 })

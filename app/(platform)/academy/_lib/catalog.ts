@@ -718,7 +718,7 @@ export const ONBOARDING_PATHS: OnboardingPath[] = [
     customerType: 'Operator / Reviewer',
     title: 'Operator Path',
     description: 'Understand the Brain and own the review-and-approve workflow.',
-    courseIds: ['getting-started', 'business-brain', 'deliverables-approvals'],
+    courseIds: ['getting-started', 'business-brain', 'deliverables-approvals', 'billing'],
   },
 ]
 
