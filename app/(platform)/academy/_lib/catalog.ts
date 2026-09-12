@@ -704,7 +704,7 @@ export const ONBOARDING_PATHS: OnboardingPath[] = [
     title: 'Founder Fast-Start',
     description:
       'Get from zero to your first published deliverable quickly, then learn to keep the Brain healthy.',
-    courseIds: ['getting-started', 'ai-workforce', 'deliverables-approvals'],
+    courseIds: ['getting-started', 'ai-workforce', 'deliverables-approvals', 'billing'],
   },
   {
     id: 'marketer',
