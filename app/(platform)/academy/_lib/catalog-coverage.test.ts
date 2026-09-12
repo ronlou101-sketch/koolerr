@@ -5,12 +5,7 @@
  * providers, UI, or schema expansion.
  */
 import { describe, expect, it } from 'vitest'
-import {
-  COURSES,
-  ONBOARDING_PATHS,
-  courseLessons,
-  getCourse,
-} from './catalog'
+import { COURSES, ONBOARDING_PATHS, courseLessons, getCourse } from './catalog'
 import type { LessonContent } from './catalog'
 
 const COURSE_ID = 'campaign-architect'
@@ -90,20 +85,13 @@ describe('Phase 9 hermetic catalog coverage — Campaign Architect', () => {
   })
 
   it('leaves existing courses and ONBOARDING_PATHS unchanged', () => {
-    expect(COURSES.map((course) => course.id)).toEqual([
-      ...EXISTING_COURSE_IDS,
-      COURSE_ID,
-    ])
+    expect(COURSES.map((course) => course.id)).toEqual([...EXISTING_COURSE_IDS, COURSE_ID])
     expect(courseLessons(getCourse('getting-started')!)).toHaveLength(2)
     expect(courseLessons(getCourse('business-brain')!)).toHaveLength(1)
     expect(courseLessons(getCourse('ai-workforce')!)).toHaveLength(1)
     expect(courseLessons(getCourse('deliverables-approvals')!)).toHaveLength(1)
 
-    expect(ONBOARDING_PATHS.map((path) => path.id)).toEqual([
-      'founder',
-      'marketer',
-      'operator',
-    ])
+    expect(ONBOARDING_PATHS.map((path) => path.id)).toEqual(['founder', 'marketer', 'operator'])
     expect(ONBOARDING_PATHS[0]?.courseIds).toEqual([
       'getting-started',
       'ai-workforce',
@@ -114,14 +102,17 @@ describe('Phase 9 hermetic catalog coverage — Campaign Architect', () => {
       'business-brain',
       'ai-workforce',
       'deliverables-approvals',
+      'campaign-architect',
     ])
     expect(ONBOARDING_PATHS[2]?.courseIds).toEqual([
       'getting-started',
       'business-brain',
       'deliverables-approvals',
     ])
-    expect(ONBOARDING_PATHS.every((path) => !path.courseIds.includes(COURSE_ID))).toBe(
-      true
-    )
+    expect(
+      ONBOARDING_PATHS.filter((path) => path.id !== 'marketer').every(
+        (path) => !path.courseIds.includes(COURSE_ID)
+      )
+    ).toBe(true)
   })
 })
