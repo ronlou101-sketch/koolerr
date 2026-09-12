@@ -392,7 +392,8 @@ export const COURSES: Course[] = [
           {
             id: 'add-optional-focus',
             title: 'Add Optional Focus',
-            summary: 'Give extra context — audience, location, timing, or offer — before you create.',
+            summary:
+              'Give extra context — audience, location, timing, or offer — before you create.',
             estimatedMinutes: 5,
             content: {
               overview:
@@ -618,7 +619,8 @@ export const COURSES: Course[] = [
           {
             id: 'manage-billing',
             title: 'Manage Billing and Renewals',
-            summary: 'Update payment details and read when the plan renews — without changing the package.',
+            summary:
+              'Update payment details and read when the plan renews — without changing the package.',
             estimatedMinutes: 5,
             content: {
               overview:
@@ -650,7 +652,8 @@ export const COURSES: Course[] = [
           {
             id: 'cancel-subscription',
             title: 'Cancel a Subscription and Troubleshoot',
-            summary: 'End the plan at the period date, or recover when a billing action does not finish.',
+            summary:
+              'End the plan at the period date, or recover when a billing action does not finish.',
             estimatedMinutes: 6,
             content: {
               overview:
@@ -708,7 +711,8 @@ export const COURSES: Course[] = [
           {
             id: 'meet-publishing',
             title: 'Meet Publishing',
-            summary: 'What publishing means in Koolerr — packages and instructions, not an auto-post button.',
+            summary:
+              'What publishing means here — packages and instructions, not an auto-post button.',
             estimatedMinutes: 5,
             content: {
               overview:
@@ -740,7 +744,8 @@ export const COURSES: Course[] = [
           {
             id: 'choose-where-you-publish',
             title: 'Choose Where You Publish',
-            summary: 'Set preferred platforms in onboarding, including YouTube Shorts and social channels.',
+            summary:
+              'Set preferred platforms in onboarding, including YouTube Shorts and social channels.',
             estimatedMinutes: 6,
             content: {
               overview:
@@ -777,7 +782,8 @@ export const COURSES: Course[] = [
           {
             id: 'find-how-to-publish',
             title: 'Find How to Publish on the Campaign Report',
-            summary: 'Open the report in Deliverables and read packages, instructions, and schedule.',
+            summary:
+              'Open the report in Deliverables and read packages, instructions, and schedule.',
             estimatedMinutes: 6,
             content: {
               overview:
@@ -814,7 +820,8 @@ export const COURSES: Course[] = [
           {
             id: 'publish-to-youtube-or-social',
             title: 'Publish to YouTube or Social',
-            summary: 'Follow How to publish — upload the Short or post, then use the recommended time.',
+            summary:
+              'Follow How to publish — upload the Short or post, then use the recommended time.',
             estimatedMinutes: 8,
             content: {
               overview:
@@ -854,7 +861,8 @@ export const COURSES: Course[] = [
           {
             id: 'confirm-published-status',
             title: 'Confirm What Was Published',
-            summary: 'Read Published status on Deliverables and recover when a section or post is missing.',
+            summary:
+              'Read Published status on Deliverables and recover when a section or post is missing.',
             estimatedMinutes: 5,
             content: {
               overview:
@@ -913,7 +921,13 @@ export const ONBOARDING_PATHS: OnboardingPath[] = [
     customerType: 'Content Marketer',
     title: 'Content Marketer Path',
     description: 'Focus on producing on-brand content at volume and reviewing it efficiently.',
-    courseIds: ['getting-started', 'business-brain', 'ai-workforce', 'deliverables-approvals', 'campaign-architect'],
+    courseIds: [
+      'getting-started',
+      'business-brain',
+      'ai-workforce',
+      'deliverables-approvals',
+      'campaign-architect',
+    ],
   },
   {
     id: 'operator',

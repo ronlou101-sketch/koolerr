@@ -204,4 +204,4 @@ describe('Phase 9 hermetic catalog coverage — Publishing', () => {
       expect(lesson.videoUrl).toBeUndefined()
     }
   })
-}))
+})
