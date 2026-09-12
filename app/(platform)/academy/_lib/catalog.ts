@@ -515,7 +515,7 @@ export const ONBOARDING_PATHS: OnboardingPath[] = [
     customerType: 'Content Marketer',
     title: 'Content Marketer Path',
     description: 'Focus on producing on-brand content at volume and reviewing it efficiently.',
-    courseIds: ['getting-started', 'business-brain', 'ai-workforce', 'deliverables-approvals'],
+    courseIds: ['getting-started', 'business-brain', 'ai-workforce', 'deliverables-approvals', 'campaign-architect'],
   },
   {
     id: 'operator',
