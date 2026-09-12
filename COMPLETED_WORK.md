@@ -4,7 +4,7 @@
 
 | Field                                    | Value                                                                                                     |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Base for new implementation branches** | current **`master`** (tip `276dfd6b83ae8fb14812b7b8cd18af486f9d01c7`)                                     |
+| **Base for new implementation branches** | current **`master`** (tip `29bb21c3bafaa84362d6b39be389ad81f13c55ea`)                                     |
 | **Historical SoT locus**                 | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -162,12 +162,26 @@ Course + hermetic coverage tests. `ONBOARDING_PATHS` left unchanged in that PR. 
 
 ---
 
-## Phase 9 marketer onboarding path includes campaign-architect — IN PR / OPENED (Architect c3883718)
+## PR #40 — verified historical / merged fact (path append only; not Phase 9 product completion)
 
-Append existing course id `campaign-architect` to the marketer `ONBOARDING_PATHS` entry
-only (exactly once, append-only). Founder and operator path membership and order
-unchanged. Hermetic `onboarding-path-coverage.test.ts`. No course lesson content, course
-metadata, UI, search, progress, `videoUrl`, or provider edits.
+| PR      | Merge      | Record                                                                                                                    |
+| ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| **#40** | `29bb21c…` | feat(academy): include campaign-architect on marketer onboarding path — append-only; founder/operator unchanged |
+
+Verified `origin/master` tip at this slice start: **`29bb21c3bafaa84362d6b39be389ad81f13c55ea`**.
+
+Marketer-path append only. Phase 9 is **not complete**. Phase 8 remains
+**DEFERRED/HELD**; live-provider **unresolved / not closed**.
+
+---
+
+## Phase 9 hermetic Billing catalog course — IN PR / OPENED (Architect 3bf1443e)
+
+Exactly one new static Billing course (in-platform billing / plans / subscription)
+with five `LessonContent` lessons and no `videoUrl`, plus hermetic
+`catalog-coverage.test.ts` assertions for that course. Existing courses, lessons,
+and `ONBOARDING_PATHS` membership/order are unchanged except appending this course
+to `COURSES`.
 
 **Completed-in-PR only — not merged.** Phase 9 is **not complete**. Existing
 `app/(platform)/academy` catalog is **not** Phase 9 complete. Phase 8 remains
@@ -226,10 +240,10 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 
 | Source                                                                                                | Phase 8                                                            | Phase 9                                                                                     |
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed                      | **Next** — marketer onboarding path includes campaign-architect in PR (Architect **c3883718**); not complete |
+| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed                      | **Next** — hermetic Billing catalog course in PR (Architect **3bf1443e**); not complete; one Billing course only |
 | `FOUNDATION_003`, Tracker, `status.json` current[10]                                                  | ✅ `phase-8-complete` (historical/parallel claim; **non-binding**) | ✅ `phase-9-complete` (historical/parallel claim; **non-binding**)                          |
 
-**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding**. Master tip `276dfd6…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider), the Phase 9 search **spec** (**PR #36**), hermetic search **library** (**PR #37**), catalog-search **UI** (**PR #38**), and Campaign Architect **course** (**PR #39**) — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. This PR appends **campaign-architect** to the marketer onboarding path only. Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
+**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding**. Master tip `29bb21c…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider), the Phase 9 search **spec** (**PR #36**), hermetic search **library** (**PR #37**), catalog-search **UI** (**PR #38**), Campaign Architect **course** (**PR #39**), and marketer-path **append** (**PR #40**) — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. This PR adds **one Billing course** + hermetic coverage tests only. Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
 
 ---
 

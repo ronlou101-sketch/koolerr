@@ -497,6 +497,202 @@ export const COURSES: Course[] = [
       },
     ],
   },
+  {
+    id: 'billing',
+    title: 'Billing, Plans & Subscription',
+    description:
+      'Use in-platform Plans to see your current subscription, compare BUILD / GROW / SCALE, start or change a plan, and manage billing.',
+    audience: 'Anyone choosing or managing a plan',
+    icon: '💳',
+    modules: [
+      {
+        id: 'plans-and-subscription',
+        title: 'Plans & Subscription',
+        lessons: [
+          {
+            id: 'open-plans',
+            title: 'Open Plans and See Your Current Plan',
+            summary: 'Find Plans and read the plan you already have — before you change anything.',
+            estimatedMinutes: 5,
+            content: {
+              overview:
+                'Billing lives on the in-platform Plans page. That is where you see BUILD, GROW, and SCALE, plus — when you already have a paid plan — a Your Plan summary with status and renewal date. Open Plans to learn what you have today. Nothing changes until you start, switch, or cancel.',
+              walkthrough: [
+                'Open Billing from More — the page title is Plans.',
+                'Read the intro: every package is a hired AI marketing team, not another software license.',
+                'If you already have a paid plan, read the Your Plan card: plan name, status, and when it renews.',
+                'If you do not have a paid plan yet, skip ahead to the three package cards — you are choosing a first plan, not managing one.',
+              ],
+              bestPractices: [
+                'Start on Plans so you can see your current plan and the three packages on the same page.',
+                'Note your renewal date before you change or cancel — access follows that date.',
+              ],
+              commonMistakes: [
+                'Looking for a separate Billing app — Plans is the billing page.',
+                'Assuming the package cards will change your plan just by opening them — nothing starts until you confirm a button.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I cannot find Billing.',
+                  solution:
+                    'Open More in the primary navigation and choose Billing. The page heading is Plans.',
+                },
+                {
+                  problem: 'I do not see a Your Plan card.',
+                  solution:
+                    'That card appears only when you already have a paid plan. Without one, use the package cards to start.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Plans', href: '/billing' }],
+          },
+          {
+            id: 'compare-build-grow-scale',
+            title: 'Compare BUILD, GROW, and SCALE',
+            summary: 'Read the three packages and the comparison table before you pick.',
+            estimatedMinutes: 7,
+            content: {
+              overview:
+                'Plans shows three packages: BUILD ($99 / month) to start a small AI marketing team, GROW ($499 / month) as the recommended Best Value for most businesses, and SCALE ($1,499 / month) for larger operations. A Compare Plans table lines up employees, monthly assets, spokesperson videos, and support so you can choose by outcome — not by guessing.',
+              walkthrough: [
+                'Stay on Plans and scan the three package cards: BUILD, GROW, and SCALE.',
+                'Read each card’s “What you get” line and the feature groups under it.',
+                'Open Compare Plans and read the rows that matter for you — employees, monthly assets, spokesperson videos, and support.',
+                'Treat GROW as the default recommendation unless you know you need a smaller start (BUILD) or a larger operation (SCALE).',
+              ],
+              bestPractices: [
+                'Match the package to the work you want this month, not to a future maybe.',
+                'Use the comparison table when the cards feel similar — the rows make the limits explicit.',
+              ],
+              commonMistakes: [
+                'Choosing SCALE because it is the largest card without needing multiple organizations or a dedicated CTO Agent.',
+                'Ignoring the asset and spokesperson-video limits, then wondering why a month of work hits a cap.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I am not sure what an AI Marketing Asset is.',
+                  solution:
+                    'On Plans, the note under Compare Plans defines it: one piece of AI-produced content (a post, article, email, landing page, or ad). Spokesperson videos count separately.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Plans', href: '/billing' }],
+          },
+          {
+            id: 'start-or-change-plan',
+            title: 'Start or Change Your Plan',
+            summary: 'Start a first plan, or switch the plan you already have.',
+            estimatedMinutes: 6,
+            content: {
+              overview:
+                'If you do not have a paid plan yet, the package you want shows a start button (Start Hiring AI, Grow My AI Team, or Scale My AI Team). If you already have a subscription, those buttons become a plan change: upgrade copy on a higher package, or Switch to BUILD / GROW / SCALE on a lower one. Your current package shows Your Current Plan and will not start another checkout.',
+              walkthrough: [
+                'Confirm which package is marked Current — that is the plan you already have.',
+                'To start a first plan, choose the package button and finish the checkout steps that open.',
+                'To change an existing plan, choose the higher package’s start button or Switch to the package you want.',
+                'Wait for Plans to refresh. A successful change shows “Your plan is updated. Your marketing team is ready.”',
+              ],
+              bestPractices: [
+                'Change one plan at a time and wait for the confirmation before tapping again.',
+                'Prefer GROW when you are unsure — it is marked Best Value for most businesses.',
+              ],
+              commonMistakes: [
+                'Tapping a start button twice while checkout is still opening.',
+                'Expecting the Current card to start a new subscription — that card is a status, not an action.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'The package button says we could not change the plan.',
+                  solution:
+                    'Try once more in a moment. Stay on Plans so you can see whether Your Plan updated. If payments are not active yet, the cards will say so and no charge starts.',
+                },
+                {
+                  problem: 'I do not see a start or switch button.',
+                  solution:
+                    'If the card says Your Current Plan, you are already on that package. If it says payments are not active, you cannot start or change a plan from here yet.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Plans', href: '/billing' }],
+          },
+          {
+            id: 'manage-billing',
+            title: 'Manage Billing and Renewals',
+            summary: 'Update payment details and read when the plan renews — without changing the package.',
+            estimatedMinutes: 5,
+            content: {
+              overview:
+                'When you have a paid plan, the Your Plan card shows status and the renewal date. Manage Billing opens the billing portal for payment method and invoice details. Use it when you need to update a card or read a receipt. It does not pick a different package — that still happens on the Plans cards.',
+              walkthrough: [
+                'Open Plans and find the Your Plan card.',
+                'Read the status and the Renews date so you know the current period.',
+                'Choose Manage Billing if you need to update payment details or review invoices.',
+                'Return to Plans when you are done — your package is unchanged unless you also used a plan-change button.',
+              ],
+              bestPractices: [
+                'Keep payment details current before the renewal date so the plan continues without a gap.',
+                'Use Manage Billing for payment and invoices; use the package cards only when you intend to change the plan.',
+              ],
+              commonMistakes: [
+                'Opening Manage Billing when you meant to switch BUILD, GROW, or SCALE.',
+                'Ignoring a past-due status and trying to start more campaigns instead of updating payment details.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I do not see Manage Billing.',
+                  solution:
+                    'That control appears on the Your Plan card after you have a paid plan with billing details on file. Start a plan first if the card is missing.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Plans', href: '/billing' }],
+          },
+          {
+            id: 'cancel-subscription',
+            title: 'Cancel a Subscription and Troubleshoot',
+            summary: 'End the plan at the period date, or recover when a billing action does not finish.',
+            estimatedMinutes: 6,
+            content: {
+              overview:
+                'Cancel subscription sits on the Your Plan card when you have an active paid plan. Canceling is at period end: you keep access until the renewal date shown, then the plan stops. You will be asked to confirm (Yes, cancel) or keep the plan. Use this only when you intend to stop — switching packages is a plan change, not a cancel.',
+              walkthrough: [
+                'Open Plans and confirm the Your Plan renewal date — that is when access would end.',
+                'Choose Cancel subscription, then read the confirmation that access continues until that date.',
+                'Choose Yes, cancel to schedule the end, or Keep plan to leave everything as it is.',
+                'After a successful cancel, Plans tells you the subscription will end on that date and access continues until then.',
+              ],
+              bestPractices: [
+                'If you only need a smaller package, switch plans instead of canceling and starting over.',
+                'Read the period-end date before you confirm — cancel does not cut access the same day.',
+              ],
+              commonMistakes: [
+                'Canceling because you wanted GROW instead of BUILD — use Switch to / the upgrade button for that.',
+                'Confirming cancel twice, or leaving the page before the confirmation message appears.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'Cancel says we could not update your plan.',
+                  solution:
+                    'Try again in a moment. If it still fails, use Manage Billing to review the subscription, then return to Plans.',
+                },
+                {
+                  problem: 'I canceled and still have access.',
+                  solution:
+                    'That is expected until the renewal date on Your Plan. Access continues through the paid period, then the plan ends.',
+                },
+                {
+                  problem: 'I do not see Cancel subscription.',
+                  solution:
+                    'Cancel appears only for an active paid plan that is not already canceled. If you have not started a plan, there is nothing to cancel.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Plans', href: '/billing' }],
+          },
+        ],
+      },
+    ],
+  },
 ]
 
 // ── Onboarding paths (guided sequences by customer type) ──────────────────────
