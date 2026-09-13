@@ -1,12 +1,21 @@
 /**
- * Phase 9 hermetic catalog coverage — Campaign Architect + Billing courses.
+ * Phase 9 hermetic catalog coverage — Campaign Architect + Billing courses,
+ * plus catalog-wide O14 baseline verification (15 lessons / five blocks /
+ * 5+10 video / three paths).
  *
  * In-process assertions over the static catalog in `catalog.ts`. No network,
- * providers, UI, or schema expansion.
+ * providers, UI, fixtures, env, or schema expansion. Verification only —
+ * does not mark Phase 9 complete.
  */
 import { describe, expect, it } from 'vitest'
-import { COURSES, ONBOARDING_PATHS, courseLessons, getCourse } from './catalog'
-import type { LessonContent } from './catalog'
+import {
+  COURSES,
+  ONBOARDING_PATHS,
+  allLessonKeys,
+  courseLessons,
+  getCourse,
+} from './catalog'
+import type { Lesson, LessonContent } from './catalog'
 
 const COURSE_ID = 'campaign-architect'
 const BILLING_COURSE_ID = 'billing'
@@ -25,6 +34,14 @@ const REQUIRED_CONTENT_KEYS: (keyof LessonContent)[] = [
   'commonMistakes',
   'troubleshooting',
 ]
+
+function catalogLessons(): Lesson[] {
+  return COURSES.flatMap((course) => courseLessons(course))
+}
+
+function hasPopulatedVideoUrl(lesson: Lesson): boolean {
+  return typeof lesson.videoUrl === 'string' && lesson.videoUrl.length > 0
+}
 
 function expectLessonContentPopulated(content: LessonContent) {
   expect(Object.keys(content)).toEqual(expect.arrayContaining(REQUIRED_CONTENT_KEYS))
@@ -171,5 +188,67 @@ describe('Phase 9 hermetic catalog coverage — Billing', () => {
       expect(lesson).not.toHaveProperty('videoUrl')
       expect(lesson.videoUrl).toBeUndefined()
     }
+  })
+})
+
+describe('Phase 9 hermetic catalog coverage — O14 catalog-wide baseline', () => {
+  it('has exactly 15 lessons across the catalog', () => {
+    expect(catalogLessons()).toHaveLength(15)
+    expect(allLessonKeys()).toHaveLength(15)
+  })
+
+  it('every lesson has all five LessonContent teaching blocks populated', () => {
+    const lessons = catalogLessons()
+    expect(lessons).toHaveLength(15)
+
+    for (const lesson of lessons) {
+      expectLessonContentPopulated(lesson.content)
+    }
+  })
+
+  it('video inventory is exactly 5 lessons with videoUrl and 10 without', () => {
+    const lessons = catalogLessons()
+    expect(lessons).toHaveLength(15)
+
+    const withVideo = lessons.filter((lesson) => hasPopulatedVideoUrl(lesson))
+    const withoutVideo = lessons.filter((lesson) => !hasPopulatedVideoUrl(lesson))
+
+    expect(withVideo).toHaveLength(5)
+    expect(withoutVideo).toHaveLength(10)
+
+    for (const lesson of withVideo) {
+      expect(typeof lesson.videoUrl).toBe('string')
+      expect(lesson.videoUrl!.length).toBeGreaterThan(0)
+    }
+
+    for (const lesson of withoutVideo) {
+      expect(lesson).not.toHaveProperty('videoUrl')
+      expect(lesson.videoUrl).toBeUndefined()
+    }
+  })
+
+  it('keeps the three existing onboarding paths and their current courseIds unchanged', () => {
+    expect(ONBOARDING_PATHS).toHaveLength(3)
+    expect(ONBOARDING_PATHS.map((path) => path.id)).toEqual(['founder', 'marketer', 'operator'])
+    expect(ONBOARDING_PATHS[0]?.courseIds).toEqual([
+      'getting-started',
+      'ai-workforce',
+      'deliverables-approvals',
+      BILLING_COURSE_ID,
+      COURSE_ID,
+    ])
+    expect(ONBOARDING_PATHS[1]?.courseIds).toEqual([
+      'getting-started',
+      'business-brain',
+      'ai-workforce',
+      'deliverables-approvals',
+      'campaign-architect',
+    ])
+    expect(ONBOARDING_PATHS[2]?.courseIds).toEqual([
+      'getting-started',
+      'business-brain',
+      'deliverables-approvals',
+      BILLING_COURSE_ID,
+    ])
   })
 })
