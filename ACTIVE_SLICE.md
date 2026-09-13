@@ -4,59 +4,58 @@
 
 | Field                         | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Branch for this slice**     | `cursor/phase-9-founder-campaign-architect-path-69b9`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **Base commit (checked out)** | `ebe25818fac0fb1b252f0928e59ff276c1186646` (`ebe2581` — master tip; merge of PR #45). Verified against `origin/master`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **Branch cut from**           | current `master` (see `CURRENT_STATE.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **Architect requestId**       | `c2bb7a49` + `8636e349` (implementation allowlist). Confirming consult `5ef289f0`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33; SoT tip reconcile #29–#33 (PR #34); SoT tip reconcile #34 (PR #35); Academy Catalog Search Foundation docs/spec (PR #36); Phase 9 hermetic catalog search library (PR #37); Phase 9 Academy catalog-search UI (PR #38); Phase 9 hermetic catalog coverage — one Campaign Architect course (PR #39); Phase 9 marketer onboarding path includes campaign-architect (PR #40); Phase 9 hermetic Billing catalog course (PR #41); Lean Phase 9 Foreman ops (PR #43); Phase 9 operator onboarding path includes billing (PR #44); Phase 9 founder onboarding path includes billing (PR #45) |
+| **Branch for this slice**     | `cursor/phase-9-scope-lock-docs-10bc`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Base commit (checked out)** | `437658f59b1d2eb0942c08ca84625717ce8de1d6` (`437658f` — master tip; merge of PR #46). Verified against `origin/master`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Branch cut from**           | current `master` (see `CURRENT_STATE.md`). **Not** based on PR **#42**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Architect requestId**       | Founder-cited lock `6a6aaba6`. Confirming consult `f7d38a3f` (APPROVED; `authorized_scope: docs`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33; SoT tip reconcile #29–#33 (PR #34); SoT tip reconcile #34 (PR #35); Academy Catalog Search Foundation docs/spec (PR #36); Phase 9 hermetic catalog search library (PR #37); Phase 9 Academy catalog-search UI (PR #38); Phase 9 hermetic catalog coverage — one Campaign Architect course (PR #39); Phase 9 marketer onboarding path includes campaign-architect (PR #40); Phase 9 hermetic Billing catalog course (PR #41); Lean Phase 9 Foreman ops (PR #43); Phase 9 operator onboarding path includes billing (PR #44); Phase 9 founder onboarding path includes billing (PR #45); Phase 9 founder onboarding path includes campaign-architect (PR #46) |
 
 ---
 
 ## Active implementation slice
 
-**Name:** Phase 9 founder onboarding path includes campaign-architect (Architect **c2bb7a49** / **8636e349**).
+**Name:** Phase 9 scope-lock and gap/deferral record (docs only) — Architect lock
+**6a6aaba6** / confirming consult **f7d38a3f**. Recorded as **O14** (2026-09-13).
 
-**Status:** **active / completed-in-PR** — append the existing `campaign-architect`
-course id to the existing `founder` `ONBOARDING_PATHS` membership exactly once.
-**Not** Phase 8 complete. **Not** Phase 9 complete. Marketer and operator paths
-are unchanged. Founder still includes `billing`; marketer still includes
-`campaign-architect`. No course definition, lesson content, slug, or other
-path-membership change. No UI / page / route / provider work.
+**Status:** **active** — this **docs-only scope-lock** is the **one** active
+slice. Dated design-lock / matrix-review record. **Not** Phase 8 complete.
+**Not** Phase 9 complete. **No authorized product implementation.**
 
-**Allowlist ONLY (Architect c2bb7a49 / 8636e349):**
+**Allowlist ONLY (Architect f7d38a3f; `authorized_scope: docs`):**
 
-1. `app/(platform)/academy/_lib/catalog.ts`
-2. `app/(platform)/academy/_lib/catalog-coverage.test.ts`
-3. `app/(platform)/academy/_lib/onboarding-path-coverage.test.ts`
-4. `ACTIVE_SLICE.md`
-5. `CURRENT_STATE.md`
-6. `COMPLETED_WORK.md`
-7. `docs/status.json`
+1. `DECISIONS.md`
+2. `ACTIVE_SLICE.md`
+3. `CURRENT_STATE.md`
+4. `COMPLETED_WORK.md`
+5. `docs/status.json`
 
-**Out of scope / forbidden:** any file outside the 7-path allowlist; `videoUrl`;
-HeyGen; providers; secrets; auth/RLS/DB; production config; Phase 8 / Zone A /
-live-provider; AMG; Publishing catalog work; any change to PR **#1**;
-close/rebase/comment/merge/supersede disposition of PR **#31** or PR **#42**;
-silent resolve/alter of **C2–C7**; course/lesson/slug edits; marketer or operator
-path edits; merge to master.
+**Out of scope / forbidden:** any file outside the 5-path allowlist; product
+implementation; app / tests / config / search / lessons / paths; video
+generation / HeyGen; i18n / multilingual; Phase 8 / Zone A / live-provider;
+AMG; auth / RLS / schema / secrets / production; any change to PR **#1**;
+rebase / replay / replace / close / comment / merge of PR **#31** or PR
+**#42**; silent resolve/alter of **C2–C7**; merge to master.
 
 **Facts recorded:**
 
-- Master tip / base for new branches: **`ebe25818fac0fb1b252f0928e59ff276c1186646`** (PR **#45** merge)
-- **PR #39** landed the Campaign Architect catalog course on master; this slice
-  is path membership only (`founder` += `campaign-architect` once)
-- **PR #40** landed the marketer-path campaign-architect append on master
-- **PR #41** landed the Billing catalog course on master
-- **PR #43** landed Lean Phase 9 Foreman execution mode (docs-only)
-- **PR #44** landed the operator-path billing append on master
-- **PR #45** landed the founder-path billing append on master
-- **PR #42** remains **OPEN**, disposition **unchanged** — not based on, not
-  merged, not rebased, not commented
+- Master tip / base for new branches: **`437658f59b1d2eb0942c08ca84625717ce8de1d6`** (PR **#46** merge)
+- **Accepted major-feature baseline:** in-platform Academy search; 15 lessons
+  with five teaching blocks each; three learning paths (founder, marketer,
+  operator)
+- **Video inventory only:** 5 of 15 lessons currently have videos — **not** a
+  commitment to generate more
+- **Reserved:** additional HeyGen / video generation under Phase 8 **DEFERRED/HELD**
+- **Deferred:** multilingual support; continual-expansion-as-a-program (catalog
+  model remains append-only)
+- **PR #42 / Publishing:** **superseded** as a Phase 9 completion dependency;
+  not required to complete Phase 9; do **not** rebase / replay / replace it;
+  this slice is **not** based on it
+- Tracker / `README.md` / `FOUNDATION_003` Phase 9 complete claims remain
+  **non-authoritative**
+- This lock does **not** mark Phase 9 complete
 - Phase 8 remains **DEFERRED/HELD** (Founder 2026-09-12). Live-provider requirement remains
   **unresolved / not closed**. Hermetic evidence on master (PRs **#21**, **#22**, **#23**,
   **#28**) is **preserved**. Phase 8 is **NOT complete**.
-- Phase 9 is **NOT complete** — bounded catalog-path membership slice only; not
-  full Academy; not released
 - **AMG:** Accepted-not-Activated / **NOT ACTIVATED** / **parked** — not operationally enabled; owner
   designation **TBD** (Founder held TBD 2026-09-11)
 - Gate #2 **definition-only / not operational**; owner **TBD**
@@ -66,11 +65,10 @@ path edits; merge to master.
 - **C2–C7:** remain unresolved (verbatim in `DECISIONS.md`)
 
 **Done when:** allowlisted files reflect the facts above; `git diff --name-only` ⊆ allowlist;
-founder includes `campaign-architect` exactly once (after billing); marketer still
-includes `campaign-architect`; operator unchanged; founder and operator still
-include `billing`; marketer does not; `catalog-coverage.test.ts` and
-`onboarding-path-coverage.test.ts` pass hermetically; `docs/status.json` valid
-JSON; C2–C7 still present unresolved; commit + push + PR created (**not** merged).
+decision text includes the accepted baseline, reserved video, deferred
+multilingual / expansion, superseded PR **#42**, and no Phase 9 complete claim;
+`docs/status.json` valid JSON; C2–C7 still present unresolved; commit + push +
+PR created (**not** merged).
 
 ---
 
@@ -100,13 +98,14 @@ JSON; C2–C7 still present unresolved; commit + push + PR created (**not** merg
 - **Lean Phase 9 Foreman execution mode** — Founder-merged PR **#43** (`5697b24…`). Docs-only ops append; does not mark Phase 9 complete.
 - **Phase 9 operator onboarding path includes billing** — Founder-merged PR **#44** (`4d2e2fc…`). Operator-path append only; founder/marketer unchanged; Phase 9 still not complete.
 - **Phase 9 founder onboarding path includes billing** — Founder-merged PR **#45** (`ebe2581…`). Founder-path append only; marketer/operator unchanged; Phase 9 still not complete.
+- **Phase 9 founder onboarding path includes campaign-architect** — Founder-merged PR **#46** (`437658f…`). Founder-path append only; marketer/operator unchanged; Phase 9 still not complete.
 
 ---
 
 ## Explicitly NOT claimed complete
 
 - Launch Phase **8** product outcomes — **DEFERRED/HELD**; **not complete / not closed** (live-provider unresolved; hermetic evidence preserved).
-- Launch Phase **9** product outcomes — this slice is **founder-path campaign-architect membership** only; Phase 9 is **not complete**. Existing Academy catalog is **not** Phase 9 complete.
+- Launch Phase **9** product outcomes — this slice is a **docs-only scope-lock**; Phase 9 is **not complete**. Existing Academy catalog is **not** Phase 9 complete. This lock does **not** authorize product implementation.
 - Launch Phase **10** product outcomes as complete (Tracker/`status.json` parallel claims are non-binding for “what is next”).
 - Live-provider validation (**unresolved / not closed**; Founder stopped Phase 8 live-provider testing 2026-09-12).
 - **AMG** operational enablement / activation (Accepted-not-Activated / **parked** / **NOT ACTIVATED**).
@@ -117,4 +116,4 @@ JSON; C2–C7 still present unresolved; commit + push + PR created (**not** merg
 - Any resolution of **C2–C7**.
 - PR **#1** (remains **OPEN**, untouched — `DECISIONS.md` O5).
 - PR **#31** disposition (noted overlapping/stale only; no close/supersede/merge).
-- PR **#42** disposition (OPEN; untouched — no close/rebase/comment/merge/supersede).
+- PR **#42** / Publishing (OPEN; **superseded** as a Phase 9 completion dependency only — no rebase/replay/replace/close/comment/merge of the PR).
