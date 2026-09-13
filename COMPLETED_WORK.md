@@ -4,7 +4,7 @@
 
 | Field                                    | Value                                                                                                     |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Base for new implementation branches** | current **`master`** (tip `ebe25818fac0fb1b252f0928e59ff276c1186646`)                                     |
+| **Base for new implementation branches** | current **`master`** (tip `437658f59b1d2eb0942c08ca84625717ce8de1d6`)                                     |
 | **Historical SoT locus**                 | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -226,23 +226,44 @@ Founder-path billing append only. Phase 9 is **not complete**. Phase 8 remains
 
 ---
 
-## Phase 9 founder onboarding path includes campaign-architect — IN PR / OPENED (Architect c2bb7a49 / 8636e349)
+## PR #46 — verified historical / merged fact (path append only; not Phase 9 product completion)
 
-Append the existing `campaign-architect` course id to the existing `founder`
-`ONBOARDING_PATHS` membership exactly once, after current members (including
-`billing`). Marketer and operator paths unchanged. Founder and operator still
-include `billing`; marketer still includes `campaign-architect` and does not
-include `billing`. No course definition, lesson content, slug, or other
-path-membership change.
+| PR      | Merge      | Record                                                                                                                              |
+| ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **#46** | `437658f…` | feat(academy): include campaign-architect on founder onboarding path — append-only; marketer/operator unchanged |
 
-**Completed-in-PR only — not merged.** Phase 9 is **not complete**. Existing
-`app/(platform)/academy` catalog is **not** Phase 9 complete. Phase 8 remains
-**DEFERRED/HELD**; live-provider **unresolved / not closed**.
+Verified `origin/master` tip at this slice start: **`437658f59b1d2eb0942c08ca84625717ce8de1d6`**.
 
-**PR #31** remains **OPEN** — disposition **unchanged**. **PR #42** remains **OPEN** —
-disposition **unchanged**. **AMG** still **parked / NOT ACTIVATED**. Gate #2 still
-definition-only / not operational; owner **TBD**. Temporary Foreman QA ≠ Independent
-QA. **PR #1** remains **OPEN** untouched. **C2–C7** unresolved.
+Founder-path campaign-architect append only. Phase 9 is **not complete**. Phase 8
+remains **DEFERRED/HELD**; live-provider **unresolved / not closed**.
+
+---
+
+## Phase 9 scope-lock / matrix review (2026-09-13) — design-lock only (not product-feature delivery)
+
+Docs-only outcome of the Phase 9 major-feature matrix review (Architect lock
+**6a6aaba6**; confirming consult **f7d38a3f**; **O14**). This records a
+**design-lock / gap-deferral** classification. It is **not** product-feature
+delivery. It does **not** mark Phase 9 complete. It does **not** authorize
+product implementation.
+
+| Item | Classification |
+| ---- | -------------- |
+| In-platform Academy search | **Accepted** major-feature baseline |
+| 15 lessons with five teaching blocks each | **Accepted** major-feature baseline |
+| Three learning paths (founder, marketer, operator) | **Accepted** major-feature baseline |
+| 5 of 15 lessons currently have videos | **Inventory only** — not a commitment to generate more |
+| Additional HeyGen / video generation | **Reserved** under Phase 8 **DEFERRED/HELD** |
+| Multilingual support | **Explicitly deferred** |
+| Continual-expansion-as-a-program | **Explicitly deferred** (catalog model remains append-only) |
+| PR **#42** / Publishing | **Superseded** as a Phase 9 completion dependency; do **not** rebase / replay / replace |
+| Tracker / `README.md` / `FOUNDATION_003` Phase 9 complete claims | **Non-authoritative** |
+
+**PR #31** remains **OPEN** — disposition **unchanged**. **PR #42** remains **OPEN**
+(superseded as a completion dependency only; PR not operated on). **AMG** still
+**parked / NOT ACTIVATED**. Gate #2 still definition-only / not operational; owner
+**TBD**. Temporary Foreman QA ≠ Independent QA. **PR #1** remains **OPEN**
+untouched. **C2–C7** unresolved.
 
 ---
 
@@ -293,10 +314,10 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 
 | Source                                                                                                | Phase 8                                                            | Phase 9                                                                                     |
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed                      | **Next** — founder-path campaign-architect membership in PR (Architect **c2bb7a49** / **8636e349**); not complete; path append only |
-| `FOUNDATION_003`, Tracker, `status.json` current[10]                                                  | ✅ `phase-8-complete` (historical/parallel claim; **non-binding**) | ✅ `phase-9-complete` (historical/parallel claim; **non-binding**)                          |
+| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed                      | **Scope-locked** (O14, 2026-09-13) — docs-only design-lock; not complete; no authorized product implementation |
+| `FOUNDATION_003`, Tracker, `status.json` current[10]                                                  | ✅ `phase-8-complete` (historical/parallel claim; **non-binding**) | ✅ `phase-9-complete` (historical/parallel claim; **non-binding** / **non-authoritative**)                          |
 
-**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding**. Master tip `ebe2581…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider), the Phase 9 search **spec** (**PR #36**), hermetic search **library** (**PR #37**), catalog-search **UI** (**PR #38**), Campaign Architect **course** (**PR #39**), marketer-path **append** (**PR #40**), Billing **course** (**PR #41**), Lean Phase 9 Foreman **ops** (**PR #43**), operator-path **append** (**PR #44**), and founder-path billing **append** (**PR #45**) — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. This PR appends **campaign-architect** to the **founder** path only. Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
+**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding** / **non-authoritative**. Master tip `437658f…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider), the Phase 9 search **spec** (**PR #36**), hermetic search **library** (**PR #37**), catalog-search **UI** (**PR #38**), Campaign Architect **course** (**PR #39**), marketer-path **append** (**PR #40**), Billing **course** (**PR #41**), Lean Phase 9 Foreman **ops** (**PR #43**), operator-path **append** (**PR #44**), founder-path billing **append** (**PR #45**), and founder-path campaign-architect **append** (**PR #46**) — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. This slice is a **docs-only scope-lock** (O14). Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
 
 ---
 

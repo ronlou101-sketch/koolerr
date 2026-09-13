@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| **Base for new implementation branches** | current **`master`** (tip `67b9ba54f87eace313f03b9a53db2712dc9d384b`) |
+| **Base for new implementation branches** | current **`master`** (tip `437658f59b1d2eb0942c08ca84625717ce8de1d6`) |
 | **Historical SoT locus** | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -27,8 +27,9 @@ These are recorded operating facts. **O1–O6** were added at the **SoT operatio
 were added at the **post-PR-#4 reconcile**; **O9** at Phase **7.9** docs housekeeping; **O10** at the SoT tip
 reconcile after PRs **#24–#28**; **O11** at the SoT tip reconcile after PRs **#29–#33**; **O12** at the SoT tip
 micro-reconcile after PR **#34**; **O13** at the Founder Phase 8 **DEFERRED/HELD** + Phase 9 Academy
-Catalog Search Foundation docs slice. None of them is a resolution of **C2–C7** (still open). **C1** was
-Founder-resolved Version A separately (PR **#21**); O1–O13 must not be read as resolving C2–C7. C1
+Catalog Search Foundation docs slice; **O14** at the Phase 9 scope-lock / gap-deferral record
+(2026-09-13). None of them is a resolution of **C2–C7** (still open). **C1** was
+Founder-resolved Version A separately (PR **#21**); O1–O14 must not be read as resolving C2–C7. C1
 sequencing was Founder-amended on 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next docs slice) without
 resolving C2–C7.
 
@@ -179,6 +180,53 @@ remains **OPEN** untouched. **PR #31** remains **OPEN**, disposition **unchanged
 O13 records the Founder deferral and this docs slice. It does **not** resolve, narrow, or
 reinterpret **C2–C7**. It does **not** activate AMG, appoint an owner, or dispose PR **#31**.
 
+
+### O14 — Phase 9 scope-lock and gap/deferral record (2026-09-13)
+
+Founder-approved **docs-only** scope-lock (Founder-cited Architect lock **6a6aaba6**;
+confirming consult **f7d38a3f**). This is a dated **design-lock / gap-deferral
+record**. It does **not** mark Phase 9 complete. It does **not** authorize
+product implementation.
+
+Master tip / base for new branches at this lock:
+**`437658f59b1d2eb0942c08ca84625717ce8de1d6`** (PR **#46** merge). Verified
+against `origin/master` at slice start. This slice is **not** based on PR **#42**.
+
+**Accepted major-feature baseline** (what this lock treats as the Phase 9
+major-feature set — **not** a completion claim):
+
+- In-platform Academy search
+- 15 lessons with five teaching blocks each
+- Three learning paths: founder, marketer, operator
+
+**Video inventory (not a generation commitment):** 5 of 15 lessons currently
+have videos. That is **inventory only**. It is **not** a commitment to generate
+more videos.
+
+**Reserved:** Additional HeyGen / video generation is reserved under Phase 8
+**DEFERRED/HELD**. This lock does not authorize video generation.
+
+**Explicitly deferred:**
+
+- Multilingual support
+- Continual-expansion-as-a-program (the catalog model remains append-only)
+
+**PR #42 / Publishing:** **superseded** as a Phase 9 completion dependency. It
+is **not** required to complete Phase 9. Do **not** rebase, replay, or replace
+PR **#42**. This record does not close, comment on, merge, or edit that PR.
+
+**Non-authoritative claims:** Tracker / `README.md` / `FOUNDATION_003` Phase 9
+complete claims remain **non-authoritative** (same standing as C1 Version A).
+
+**AMG** remains **parked / NOT ACTIVATED**. Gate #2 **definition-only**; owner
+**TBD**. **PR #1** remains **OPEN** untouched. **PR #31** remains **OPEN**,
+disposition **unchanged**.
+
+O14 records the scope-lock only. It does **not** resolve, narrow, or
+reinterpret **C2–C7**. It does **not** activate AMG, appoint an owner, or
+operate on PR **#1**, PR **#31**, or PR **#42**. This lock does **not** mark
+Phase 9 complete.
+
 ---
 
 ## Founder-resolved conflicts
@@ -188,7 +236,7 @@ reinterpret **C2–C7**. It does **not** activate AMG, appoint an owner, or disp
 **Resolved by Founder** (evidence: PR **#21**, merge `c72181f…` — already reflected in `README.md` / `CLAUDE.md`).
 
 - **Binding (Version A):** `README.md` + `CLAUDE.md` → Phase 7 ✅; originally **Phase 8 — Final Product Validation** is next (not complete).
-- **Founder override (2026-09-12, sequencing only):** Phase 8 is **DEFERRED/HELD** (live-provider unresolved / not closed; hermetic evidence on master via PRs **#21**, **#22**, **#23**, **#28** is preserved; Phase 8 is **not complete**). The approved next slice is **Phase 9 Academy Catalog Search Foundation (Hermetic)** — docs/spec only (Architect **7126fa69** / **32681030**). Phase 9 is **not complete / not implemented / not released**. Existing `app/(platform)/academy` catalog is **not** Phase 9 complete.
+- **Founder override (2026-09-12, sequencing only):** Phase 8 is **DEFERRED/HELD** (live-provider unresolved / not closed; hermetic evidence on master via PRs **#21**, **#22**, **#23**, **#28** is preserved; Phase 8 is **not complete**). The approved next slice is **Phase 9 Academy Catalog Search Foundation (Hermetic)** — docs/spec only (Architect **7126fa69** / **32681030**). Phase 9 is **not complete / not implemented / not released**. Existing `app/(platform)/academy` catalog is **not** Phase 9 complete. **O14** (2026-09-13) records the Phase 9 scope-lock / accepted baseline and does **not** mark Phase 9 complete.
 - **Non-binding for “what is next”:** `FOUNDATION_003` + `docs/KOOLERR_MASTER_TRACKER.md` + `docs/status.json` Phase 8–10 complete/in-progress claims remain historical/parallel evidence; do not treat them as next-step authority under Version A. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding**.
 - Agents follow Version A plus this Founder sequencing override for forward roadmap narrative. This does **not** invent Phase 8/9 product-phase completion.
 
