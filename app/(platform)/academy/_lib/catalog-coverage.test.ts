@@ -105,8 +105,10 @@ describe('Phase 9 hermetic catalog coverage — Campaign Architect', () => {
       'ai-workforce',
       'deliverables-approvals',
       BILLING_COURSE_ID,
+      COURSE_ID,
     ])
     expect(ONBOARDING_PATHS[0]?.courseIds.filter((id) => id === BILLING_COURSE_ID)).toHaveLength(1)
+    expect(ONBOARDING_PATHS[0]?.courseIds.filter((id) => id === COURSE_ID)).toHaveLength(1)
     expect(ONBOARDING_PATHS[1]?.courseIds).toEqual([
       'getting-started',
       'business-brain',
@@ -114,6 +116,7 @@ describe('Phase 9 hermetic catalog coverage — Campaign Architect', () => {
       'deliverables-approvals',
       'campaign-architect',
     ])
+    expect(ONBOARDING_PATHS[1]?.courseIds.filter((id) => id === COURSE_ID)).toHaveLength(1)
     expect(ONBOARDING_PATHS[2]?.courseIds).toEqual([
       'getting-started',
       'business-brain',
@@ -122,7 +125,7 @@ describe('Phase 9 hermetic catalog coverage — Campaign Architect', () => {
     ])
     expect(ONBOARDING_PATHS[2]?.courseIds.filter((id) => id === BILLING_COURSE_ID)).toHaveLength(1)
     expect(
-      ONBOARDING_PATHS.filter((path) => path.id !== 'marketer').every(
+      ONBOARDING_PATHS.filter((path) => path.id !== 'founder' && path.id !== 'marketer').every(
         (path) => !path.courseIds.includes(COURSE_ID)
       )
     ).toBe(true)
