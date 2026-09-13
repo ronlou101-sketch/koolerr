@@ -1,8 +1,8 @@
 /**
  * Phase 9 hermetic onboarding-path coverage — founder path includes
- * billing (Architect 186a45af). Operator still includes billing
- * exactly once; marketer still includes campaign-architect exactly
- * once and does not include billing.
+ * campaign-architect (Architect c2bb7a49 / 8636e349). Marketer still
+ * includes campaign-architect exactly once; operator does not.
+ * Billing remains on founder and operator; marketer does not include it.
  *
  * In-process assertions over ONBOARDING_PATHS only. No network, providers,
  * UI, or catalog course/lesson edits.
@@ -31,10 +31,17 @@ describe('Phase 9 hermetic onboarding-path coverage', () => {
     ])
   })
 
-  it('does not include campaign-architect in the founder path', () => {
+  it('includes campaign-architect in the founder path exactly once', () => {
     const founder = pathById('founder')
     expect(founder).toBeDefined()
-    expect(founder!.courseIds.includes(COURSE_ID)).toBe(false)
+    expect(founder!.courseIds.filter((id) => id === COURSE_ID)).toHaveLength(1)
+    expect(founder!.courseIds).toEqual([
+      'getting-started',
+      'ai-workforce',
+      'deliverables-approvals',
+      BILLING_COURSE_ID,
+      COURSE_ID,
+    ])
   })
 
   it('does not include campaign-architect in the operator path', () => {
@@ -52,6 +59,7 @@ describe('Phase 9 hermetic onboarding-path coverage', () => {
       'ai-workforce',
       'deliverables-approvals',
       BILLING_COURSE_ID,
+      COURSE_ID,
     ])
   })
 

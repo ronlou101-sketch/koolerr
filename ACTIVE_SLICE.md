@@ -4,26 +4,26 @@
 
 | Field                         | Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Branch for this slice**     | `cursor/phase-9-founder-billing-path-b7d2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **Base commit (checked out)** | `4d2e2fc92c5b026f8ce922c0b45d9843430b28c1` (`4d2e2fc` — master tip; merge of PR #44). Verified against `origin/master`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Branch for this slice**     | `cursor/phase-9-founder-campaign-architect-path-69b9`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Base commit (checked out)** | `ebe25818fac0fb1b252f0928e59ff276c1186646` (`ebe2581` — master tip; merge of PR #45). Verified against `origin/master`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Branch cut from**           | current `master` (see `CURRENT_STATE.md`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **Architect requestId**       | `186a45af` (implementation allowlist). Confirming consult `9ea6e93c`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33; SoT tip reconcile #29–#33 (PR #34); SoT tip reconcile #34 (PR #35); Academy Catalog Search Foundation docs/spec (PR #36); Phase 9 hermetic catalog search library (PR #37); Phase 9 Academy catalog-search UI (PR #38); Phase 9 hermetic catalog coverage — one Campaign Architect course (PR #39); Phase 9 marketer onboarding path includes campaign-architect (PR #40); Phase 9 hermetic Billing catalog course (PR #41); Lean Phase 9 Foreman ops (PR #43); Phase 9 operator onboarding path includes billing (PR #44) |
+| **Architect requestId**       | `c2bb7a49` + `8636e349` (implementation allowlist). Confirming consult `5ef289f0`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Prior product/docs slices** | Phase 7.3c / 7.5 / 7.6 Founder-merged; C1 Version A docs (PR #21); Phase 8 hermetic E2E #22 + perf #23; Phase 7.9 docs housekeeping #24; AMG ADR-027 draft/Accepted-not-Activated/activation-record #25–#27; Phase 8 hermetic validation evidence #28; SoT tip reconcile #24–#28 (PR #29); stale SoT PR triage #30; Independent QA Gate #2 definition-only #32; AMG operational-readiness checklist definition only #33; SoT tip reconcile #29–#33 (PR #34); SoT tip reconcile #34 (PR #35); Academy Catalog Search Foundation docs/spec (PR #36); Phase 9 hermetic catalog search library (PR #37); Phase 9 Academy catalog-search UI (PR #38); Phase 9 hermetic catalog coverage — one Campaign Architect course (PR #39); Phase 9 marketer onboarding path includes campaign-architect (PR #40); Phase 9 hermetic Billing catalog course (PR #41); Lean Phase 9 Foreman ops (PR #43); Phase 9 operator onboarding path includes billing (PR #44); Phase 9 founder onboarding path includes billing (PR #45) |
 
 ---
 
 ## Active implementation slice
 
-**Name:** Phase 9 founder onboarding path includes billing (Architect **186a45af**).
+**Name:** Phase 9 founder onboarding path includes campaign-architect (Architect **c2bb7a49** / **8636e349**).
 
-**Status:** **active / completed-in-PR** — append the existing `billing` course id
-to the existing `founder` `ONBOARDING_PATHS` membership exactly once. **Not**
-Phase 8 complete. **Not** Phase 9 complete. Marketer and operator paths are
-unchanged. `campaign-architect` stays marketer-only. No course definition, lesson
-content, slug, or other path-membership change. No UI / page / route / provider
-work.
+**Status:** **active / completed-in-PR** — append the existing `campaign-architect`
+course id to the existing `founder` `ONBOARDING_PATHS` membership exactly once.
+**Not** Phase 8 complete. **Not** Phase 9 complete. Marketer and operator paths
+are unchanged. Founder still includes `billing`; marketer still includes
+`campaign-architect`. No course definition, lesson content, slug, or other
+path-membership change. No UI / page / route / provider work.
 
-**Allowlist ONLY (Architect 186a45af):**
+**Allowlist ONLY (Architect c2bb7a49 / 8636e349):**
 
 1. `app/(platform)/academy/_lib/catalog.ts`
 2. `app/(platform)/academy/_lib/catalog-coverage.test.ts`
@@ -42,11 +42,14 @@ path edits; merge to master.
 
 **Facts recorded:**
 
-- Master tip / base for new branches: **`4d2e2fc92c5b026f8ce922c0b45d9843430b28c1`** (PR **#44** merge)
-- **PR #41** landed the Billing catalog course on master; this slice is path
-  membership only (`founder` += `billing` once)
+- Master tip / base for new branches: **`ebe25818fac0fb1b252f0928e59ff276c1186646`** (PR **#45** merge)
+- **PR #39** landed the Campaign Architect catalog course on master; this slice
+  is path membership only (`founder` += `campaign-architect` once)
+- **PR #40** landed the marketer-path campaign-architect append on master
+- **PR #41** landed the Billing catalog course on master
 - **PR #43** landed Lean Phase 9 Foreman execution mode (docs-only)
 - **PR #44** landed the operator-path billing append on master
+- **PR #45** landed the founder-path billing append on master
 - **PR #42** remains **OPEN**, disposition **unchanged** — not based on, not
   merged, not rebased, not commented
 - Phase 8 remains **DEFERRED/HELD** (Founder 2026-09-12). Live-provider requirement remains
@@ -63,10 +66,11 @@ path edits; merge to master.
 - **C2–C7:** remain unresolved (verbatim in `DECISIONS.md`)
 
 **Done when:** allowlisted files reflect the facts above; `git diff --name-only` ⊆ allowlist;
-founder includes `billing` exactly once; marketer/operator unchanged;
-`catalog-coverage.test.ts` and `onboarding-path-coverage.test.ts` pass hermetically;
-`docs/status.json` valid JSON; C2–C7 still present unresolved; commit + push + PR
-created (**not** merged).
+founder includes `campaign-architect` exactly once (after billing); marketer still
+includes `campaign-architect`; operator unchanged; founder and operator still
+include `billing`; marketer does not; `catalog-coverage.test.ts` and
+`onboarding-path-coverage.test.ts` pass hermetically; `docs/status.json` valid
+JSON; C2–C7 still present unresolved; commit + push + PR created (**not** merged).
 
 ---
 
@@ -95,13 +99,14 @@ created (**not** merged).
 - **Phase 9 hermetic Billing catalog course** — Founder-merged PR **#41** (`61291eb…`). One static 5-lesson Billing course + coverage tests; `ONBOARDING_PATHS` left unchanged in that PR; Phase 9 still not complete.
 - **Lean Phase 9 Foreman execution mode** — Founder-merged PR **#43** (`5697b24…`). Docs-only ops append; does not mark Phase 9 complete.
 - **Phase 9 operator onboarding path includes billing** — Founder-merged PR **#44** (`4d2e2fc…`). Operator-path append only; founder/marketer unchanged; Phase 9 still not complete.
+- **Phase 9 founder onboarding path includes billing** — Founder-merged PR **#45** (`ebe2581…`). Founder-path append only; marketer/operator unchanged; Phase 9 still not complete.
 
 ---
 
 ## Explicitly NOT claimed complete
 
 - Launch Phase **8** product outcomes — **DEFERRED/HELD**; **not complete / not closed** (live-provider unresolved; hermetic evidence preserved).
-- Launch Phase **9** product outcomes — this slice is **founder-path billing membership** only; Phase 9 is **not complete**. Existing Academy catalog is **not** Phase 9 complete.
+- Launch Phase **9** product outcomes — this slice is **founder-path campaign-architect membership** only; Phase 9 is **not complete**. Existing Academy catalog is **not** Phase 9 complete.
 - Launch Phase **10** product outcomes as complete (Tracker/`status.json` parallel claims are non-binding for “what is next”).
 - Live-provider validation (**unresolved / not closed**; Founder stopped Phase 8 live-provider testing 2026-09-12).
 - **AMG** operational enablement / activation (Accepted-not-Activated / **parked** / **NOT ACTIVATED**).
