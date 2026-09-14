@@ -4,7 +4,7 @@
 
 | Field                                    | Value                                                                                                     |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Base for new implementation branches** | current **`master`** (tip `ad775a7d603938c948d79a24c3722266b06cf1ef`)                                     |
+| **Base for new implementation branches** | current **`master`** (tip `26caa47086407bda562d853c108a69fe4cc3105d`)                                     |
 | **Historical SoT locus**                 | `feat/phase-5-6-launch-integrity` (HEAD at SoT pack creation: `b5283625f7e6f78a9382a9a51d4340abdee0f2da`) |
 
 ---
@@ -280,20 +280,35 @@ Docs-only O14 scope-lock. Phase 9 is **not complete**. Phase 8 remains
 
 ---
 
-## Phase 9 hermetic catalog coverage for all 15 lessons — IN PR / OPENED (verification only; Architect d2aabb79 / 9966461b)
+## PR #48 — verified historical / merged fact (verification only; not Phase 9 product completion)
 
-Extend existing hermetic `catalog-coverage.test.ts` so it proves the O14
-baseline already on master: exactly 15 lessons; every lesson has all five
-`LessonContent` teaching blocks populated (same populated-block rules already
-in the file); video inventory is exactly 5 lessons with `videoUrl` and 10
-without; the three existing onboarding paths (founder, marketer, operator)
-and their current `courseIds` remain unchanged. Existing Campaign Architect
-+ Billing coverage describes remain intact.
+| PR      | Merge      | Record                                                                                                      |
+| ------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
+| **#48** | `26caa47…` | test(academy): hermetic catalog coverage for all 15 lessons — verification of the then-current O14 baseline |
 
-**Verification only — not merged. Not product implementation.** Phase 9 is
-**not complete**. Existing `app/(platform)/academy` catalog is **not** Phase 9
-complete. Phase 8 remains **DEFERRED/HELD**; live-provider **unresolved / not
-closed**. This slice is **not** based on PR **#42**.
+Verified `origin/master` tip at this slice start: **`26caa47086407bda562d853c108a69fe4cc3105d`**.
+
+Verification only. Phase 9 is **not complete**. Phase 8 remains
+**DEFERRED/HELD**; live-provider **unresolved / not closed**.
+
+---
+
+## Phase 9 distinct Day-1 Onboarding Academy lesson — IN PR / OPENED (Architect ec643580 / fe5f0ca1)
+
+Append exactly one onboarding-specific lesson under the existing
+`getting-started` / `foundations` module after the existing lessons. Teach
+the Day-1 `/onboarding` product flow (first-hour setup / Business Profile
+wizard as onboarding), not Brain memory theory. `build-your-brain` is
+**unchanged** and does **not** satisfy Onboarding. Five teaching blocks
+populated; **no** `videoUrl`; optional resource link to `/onboarding`.
+`ONBOARDING_PATHS` membership **unchanged**. Catalog counts: getting-started
+**3**; catalog-wide **16**; video inventory **5** with `videoUrl` / **11**
+without.
+
+**Not merged.** Phase 9 is **not complete**. Existing
+`app/(platform)/academy` catalog is **not** Phase 9 complete. Phase 8 remains
+**DEFERRED/HELD**; live-provider **unresolved / not closed**. This slice is
+**not** based on PR **#42**.
 
 **PR #31** remains **OPEN** — disposition **unchanged**. **PR #42** remains
 **OPEN**, superseded as a completion dependency — disposition **unchanged**.
@@ -350,10 +365,10 @@ or launch gate, and resolves **no** conflict in `DECISIONS.md` (**C1** Founder-r
 
 | Source                                                                                                | Phase 8                                                            | Phase 9                                                                                     |
 | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed                      | **Scope-locked** (O14, 2026-09-13) — hermetic 15-lesson coverage verification in PR (Architect **d2aabb79**); not complete; not product implementation |
+| `README.md`, `CLAUDE.md` (Founder-resolved **C1 Version A**, PR **#21**; Founder override 2026-09-12) | **DEFERRED/HELD** / not complete / not closed                      | **Scope-locked** (O14, 2026-09-13) — distinct Day-1 Onboarding lesson in PR (Architect **ec643580** / **fe5f0ca1**); not complete |
 | `FOUNDATION_003`, Tracker, `status.json` current[10]                                                  | ✅ `phase-8-complete` (historical/parallel claim; **non-binding**) | ✅ `phase-9-complete` (historical/parallel claim; **non-binding** / **non-authoritative**)                          |
 
-**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding** / **non-authoritative**. Master tip `ad775a7…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider), the Phase 9 search **spec** (**PR #36**), hermetic search **library** (**PR #37**), catalog-search **UI** (**PR #38**), Campaign Architect **course** (**PR #39**), marketer-path **append** (**PR #40**), Billing **course** (**PR #41**), Lean Phase 9 Foreman **ops** (**PR #43**), operator-path **append** (**PR #44**), founder-path billing **append** (**PR #45**), founder-path campaign-architect **append** (**PR #46**), and O14 scope-lock (**PR #47**) — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. This PR is **verification only** of the O14 15-lesson / five-block / 5+10 video / three-path baseline. Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
+**C1** is Founder-resolved **Version A**, sequencing amended 2026-09-12 (Phase 8 **DEFERRED/HELD**; Phase 9 next) — see `DECISIONS.md`. Do **not** invent Phase 8/9 product-phase completion. Tracker / `FOUNDATION_003` Phase 8–10 complete claims remain **non-binding** / **non-authoritative**. Master tip `26caa47…` includes Phase 8 hermetic E2E (**PR #22**), perf baseline (**PR #23**), hermetic validation evidence (**PR #28**, journey+perf PASS; **NOT** live-provider), the Phase 9 search **spec** (**PR #36**), hermetic search **library** (**PR #37**), catalog-search **UI** (**PR #38**), Campaign Architect **course** (**PR #39**), marketer-path **append** (**PR #40**), Billing **course** (**PR #41**), Lean Phase 9 Foreman **ops** (**PR #43**), operator-path **append** (**PR #44**), founder-path billing **append** (**PR #45**), founder-path campaign-architect **append** (**PR #46**), O14 scope-lock (**PR #47**), and 15-lesson coverage verification (**PR #48**) — hermetic evidence is **preserved** and ≠ Phase 8 final product validation complete. This PR adds one distinct Day-1 Onboarding lesson (catalog-wide 16). Live-provider validation **unresolved / not closed**. **AMG** parked / **NOT ACTIVATED** (PRs **#25–#27**, readiness checklist **#33** definition only). Gate #2 definition-only / not operational (PR **#32**); owner **TBD**.
 
 ---
 

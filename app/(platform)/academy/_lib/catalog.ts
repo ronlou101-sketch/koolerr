@@ -149,6 +149,52 @@ export const COURSES: Course[] = [
             },
             resources: [{ label: 'Start onboarding', href: '/onboarding' }],
           },
+          {
+            id: 'day-1-onboarding',
+            title: 'Day-1 Onboarding',
+            summary:
+              'Walk through Day-1 onboarding — the first-hour Business Profile wizard.',
+            estimatedMinutes: 8,
+            content: {
+              overview:
+                'Day-1 onboarding is the first-hour setup after you sign in. Opening /onboarding starts the Business Profile wizard: Business Info, Services, Audience, Brand Identity, Strategy, Online Presence, then Review & Launch. Finish this onboarding flow so your marketing team has a profile to work from. Learning how the Business Brain stores that profile is a related next step — it is not the goal of this lesson.',
+              walkthrough: [
+                'After signup, or when Home sends you there, open /onboarding — that is Day-1 onboarding, not a settings page.',
+                'Start with Business Info: enter your business name, category, industry, and location (all required), then add a website if you have one.',
+                'Continue through Services, Audience, Brand Identity, Strategy, and Online Presence. Fill what you know; required fields unlock Continue.',
+                'On Review & Launch, read the summary, then choose Launch Marketing Team to save the profile and finish first-hour onboarding.',
+                'When the wizard finishes, you leave /onboarding. Return later only if you need to redo the first-hour setup.',
+              ],
+              bestPractices: [
+                'Treat Day-1 onboarding as a first-hour setup: finish the wizard in one sitting so later campaigns can start.',
+                'Use real business details on each wizard step — the profile you launch is what the team uses first.',
+                'If Home or Campaigns tells you to finish your business profile, go back to /onboarding rather than starting a campaign.',
+              ],
+              commonMistakes: [
+                'Leaving /onboarding mid-wizard and expecting the first-hour setup to be complete.',
+                'Treating this flow as optional documentation — campaigns and the team wait on a finished onboarding profile.',
+                'Confusing this Day-1 onboarding wizard with later Brain memory work — finish /onboarding first, then enrich knowledge.',
+              ],
+              troubleshooting: [
+                {
+                  problem: 'I cannot find Day-1 onboarding.',
+                  solution:
+                    'Open /onboarding directly, or follow the prompt on Home that sends you there when your profile is missing. The Business Profile wizard is the onboarding flow.',
+                },
+                {
+                  problem: 'Continue is disabled on a wizard step.',
+                  solution:
+                    'Fill the required fields on that step — Business Info needs name, category, industry, and location; Services needs a primary service; Audience needs a target audience; Strategy needs business goals. Optional fields never block Continue.',
+                },
+                {
+                  problem: 'Launch says it could not save the profile.',
+                  solution:
+                    'Stay on Review & Launch and try again. If the error persists, check that required fields are still filled, then launch once more.',
+                },
+              ],
+            },
+            resources: [{ label: 'Open Day-1 onboarding', href: '/onboarding' }],
+          },
         ],
       },
     ],

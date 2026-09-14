@@ -42,6 +42,25 @@ describe('searchCatalog() matching result', () => {
     expect(results[0]).not.toHaveProperty('highlight')
   })
 
+  it('returns the Day-1 Onboarding lesson for an onboarding-intent query via title/summary', () => {
+    const results = searchCatalog('onboarding')
+    const lesson = results.find((r) => r.kind === 'lesson' && r.id === 'day-1-onboarding')
+
+    expect(lesson).toBeDefined()
+    expect(lesson).toMatchObject({
+      kind: 'lesson',
+      id: 'day-1-onboarding',
+      title: 'Day-1 Onboarding',
+      summary: 'Walk through Day-1 onboarding — the first-hour Business Profile wizard.',
+      estimatedMinutes: 8,
+      course: { id: 'getting-started', title: 'Getting Started with Koolerr' },
+      module: { id: 'foundations', title: 'Foundations' },
+    })
+    expect(lesson!.title.toLowerCase()).toContain('onboarding')
+    expect(lesson!.summary.toLowerCase()).toContain('onboarding')
+    expect(resultIds(results)).toContain('day-1-onboarding')
+  })
+
   it('is case-insensitive and matches a whole-string substring on lesson title/summary', () => {
     const results = searchCatalog('first ENGAGEMENT run')
     expect(results).toHaveLength(1)
