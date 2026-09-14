@@ -1,7 +1,8 @@
 /**
  * Phase 9 hermetic catalog coverage — Campaign Architect + Billing courses,
- * plus catalog-wide O14 baseline verification (15 lessons / five blocks /
- * 5+10 video / three paths).
+ * plus catalog-wide verification (16 lessons / five blocks /
+ * 5+11 video / three paths). Includes the Day-1 Onboarding lesson
+ * (Architect ec643580 / fe5f0ca1).
  *
  * In-process assertions over the static catalog in `catalog.ts`. No network,
  * providers, UI, fixtures, env, or schema expansion. Verification only —
@@ -111,7 +112,7 @@ describe('Phase 9 hermetic catalog coverage — Campaign Architect', () => {
       COURSE_ID,
       BILLING_COURSE_ID,
     ])
-    expect(courseLessons(getCourse('getting-started')!)).toHaveLength(2)
+    expect(courseLessons(getCourse('getting-started')!)).toHaveLength(3)
     expect(courseLessons(getCourse('business-brain')!)).toHaveLength(1)
     expect(courseLessons(getCourse('ai-workforce')!)).toHaveLength(1)
     expect(courseLessons(getCourse('deliverables-approvals')!)).toHaveLength(1)
@@ -191,30 +192,53 @@ describe('Phase 9 hermetic catalog coverage — Billing', () => {
   })
 })
 
+describe('Phase 9 hermetic catalog coverage — Day-1 Onboarding lesson', () => {
+  it('appends exactly one onboarding lesson under getting-started foundations', () => {
+    const course = getCourse('getting-started')
+    expect(course).toBeDefined()
+
+    const lessons = courseLessons(course!)
+    expect(lessons).toHaveLength(3)
+    expect(lessons.map((lesson) => lesson.id)).toEqual([
+      'what-is-koolerr',
+      'build-your-brain',
+      'day-1-onboarding',
+    ])
+
+    const lesson = lessons[2]!
+    expect(lesson.title).toBe('Day-1 Onboarding')
+    expect(lesson.title.toLowerCase()).toContain('onboarding')
+    expect(lesson.summary.toLowerCase()).toContain('onboarding')
+    expect(lesson).not.toHaveProperty('videoUrl')
+    expect(lesson.videoUrl).toBeUndefined()
+    expectLessonContentPopulated(lesson.content)
+  })
+})
+
 describe('Phase 9 hermetic catalog coverage — O14 catalog-wide baseline', () => {
-  it('has exactly 15 lessons across the catalog', () => {
-    expect(catalogLessons()).toHaveLength(15)
-    expect(allLessonKeys()).toHaveLength(15)
+  it('has exactly 16 lessons across the catalog', () => {
+    expect(catalogLessons()).toHaveLength(16)
+    expect(allLessonKeys()).toHaveLength(16)
   })
 
   it('every lesson has all five LessonContent teaching blocks populated', () => {
     const lessons = catalogLessons()
-    expect(lessons).toHaveLength(15)
+    expect(lessons).toHaveLength(16)
 
     for (const lesson of lessons) {
       expectLessonContentPopulated(lesson.content)
     }
   })
 
-  it('video inventory is exactly 5 lessons with videoUrl and 10 without', () => {
+  it('video inventory is exactly 5 lessons with videoUrl and 11 without', () => {
     const lessons = catalogLessons()
-    expect(lessons).toHaveLength(15)
+    expect(lessons).toHaveLength(16)
 
     const withVideo = lessons.filter((lesson) => hasPopulatedVideoUrl(lesson))
     const withoutVideo = lessons.filter((lesson) => !hasPopulatedVideoUrl(lesson))
 
     expect(withVideo).toHaveLength(5)
-    expect(withoutVideo).toHaveLength(10)
+    expect(withoutVideo).toHaveLength(11)
 
     for (const lesson of withVideo) {
       expect(typeof lesson.videoUrl).toBe('string')
