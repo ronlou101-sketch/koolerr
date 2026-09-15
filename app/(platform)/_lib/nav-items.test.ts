@@ -77,6 +77,7 @@ describe('platformNav()', () => {
       '/usage',
       '/audit',
       '/consent',
+      '/support',
       '/tower',
       '/tracker',
       '/mission-control',
@@ -94,5 +95,12 @@ describe('platformNav()', () => {
     expect(more).toContain('/creative')
     // Pipeline was removed from the nav in Slice C.
     expect(more).not.toContain('/pipeline')
+  })
+
+  it('Support is discoverable under More as /support', () => {
+    const support = MORE_NAV.find((i) => i.href === '/support')
+    expect(support).toBeDefined()
+    expect(support?.label).toBe('Support')
+    expect(PRIMARY_NAV.some((i) => i.href === '/support')).toBe(false)
   })
 })

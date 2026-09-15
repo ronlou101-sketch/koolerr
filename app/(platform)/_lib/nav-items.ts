@@ -57,6 +57,7 @@ export const MORE_NAV: NavItem[] = [
   { href: '/usage', label: 'Usage' },
   { href: '/audit', label: 'Audit' },
   { href: '/consent', label: 'Consent' },
+  { href: '/support', label: 'Support' },
 ]
 
 /** Founder-only tools — surfaced under the "⌘ Owner" dropdown; never shown to customers. */
