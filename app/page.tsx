@@ -15,8 +15,7 @@ export const metadata: Metadata = {
  * Public landing feature cards (Architect lock 94274eb9 / D8).
  *
  * Customer-journey capabilities only: workforce, Business Brain, and human
- * approvals. Operator surfaces (Mission Control, Full Audit Trail, CTO
- * Agent—Atlas) are intentionally omitted from this presentation.
+ * approvals. Owner and operator tools are not sold on this page.
  */
 const FEATURES = [
   {
@@ -139,7 +138,7 @@ export default async function Home() {
               {[
                 { label: 'Trained on your brand', sub: 'Not generic AI output' },
                 { label: 'Human approval on every deliverable', sub: 'You stay in control' },
-                { label: 'Full audit trail', sub: 'Every AI action logged' },
+                { label: 'A complete marketing team', sub: 'Strategist, copywriter, and editor' },
               ].map((item) => (
                 <div key={item.label} className="flex items-start gap-3">
                   <span className="mt-0.5 text-emerald-500">✓</span>
@@ -232,10 +231,6 @@ export default async function Home() {
                     { role: 'Content Strategist', desc: 'Research, planning, audience insights' },
                     { role: 'Copywriter', desc: 'Long-form, social, email, ad copy' },
                     { role: 'Editor', desc: 'Quality review, brand consistency, final polish' },
-                    {
-                      role: 'CTO Agent — Atlas',
-                      desc: 'Platform health, implementation plans, launch tracking',
-                    },
                   ].map((e) => (
                     <li key={e.role} className="flex items-start gap-3">
                       <span className="mt-0.5 flex-shrink-0 text-emerald-400">✓</span>
