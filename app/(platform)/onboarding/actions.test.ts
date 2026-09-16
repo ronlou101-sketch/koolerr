@@ -41,6 +41,7 @@ const VALID_PROFILE = {
 
 beforeEach(() => {
   vi.mocked(getRequestPlatformContext).mockResolvedValue(CTX)
+  vi.mocked(businessBrainService.storeMemory).mockReset()
   vi.mocked(businessBrainService.storeMemory).mockResolvedValue({ ok: true, value: {} as never })
 })
 
