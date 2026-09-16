@@ -5,24 +5,17 @@ import { useRouter } from 'next/navigation'
 import { saveBusinessProfile, triggerAIWorkforce, type CustomerProfile } from './actions'
 
 // ── Step definition ─────────────────────────────────────────────────────────
+// Architect lock 2ea2c816 — Day-1 required path only. Strategy and Online
+// Presence remain on CustomerProfile (optional) so the capability is not
+// deleted; they are not required wizard steps.
 
-type Step =
-  | 'business-info'
-  | 'services'
-  | 'audience'
-  | 'brand-identity'
-  | 'strategy'
-  | 'presence'
-  | 'review'
-  | 'launching'
+type Step = 'business-info' | 'services' | 'audience' | 'brand-identity' | 'review' | 'launching'
 
 const WIZARD_STEPS: Step[] = [
   'business-info',
   'services',
   'audience',
   'brand-identity',
-  'strategy',
-  'presence',
   'review',
   'launching',
 ]
@@ -32,8 +25,6 @@ const STEP_LABELS: Record<Step, string> = {
   services: 'Services',
   audience: 'Your Audience',
   'brand-identity': 'Brand Identity',
-  strategy: 'Strategy',
-  presence: 'Online Presence',
   review: 'Review & Launch',
   launching: 'Launching',
 }
@@ -60,25 +51,23 @@ const PERSONALITY_OPTIONS = [
   'Approachable',
 ]
 
-const PLATFORM_OPTIONS = [
-  { value: 'Facebook', label: 'Facebook' },
-  { value: 'Instagram', label: 'Instagram' },
-  { value: 'TikTok', label: 'TikTok' },
-  { value: 'YouTube Shorts', label: 'YouTube Shorts' },
-  { value: 'LinkedIn', label: 'LinkedIn' },
-  { value: 'Google Business Profile', label: 'Google Business' },
-]
+const cardCls = 'space-y-5 rounded-lg border border-border bg-card p-4 sm:p-6'
 
 // ── CSS class helpers ────────────────────────────────────────────────────────
 
 const inputCls =
-  'mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring'
+  'mt-1 block w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring'
 
 const textareaCls = inputCls
 
 const labelCls = 'block text-sm font-medium text-foreground'
 
 const optionalSpan = <span className="font-normal text-muted-foreground">(optional)</span>
+
+const continueBtnCls =
+  'rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50'
+
+const backBtnCls = 'text-sm text-muted-foreground hover:text-foreground'
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -108,23 +97,6 @@ export default function OnboardingPage() {
   const [brandVoice, setBrandVoice] = useState('professional')
   const [selectedPersonality, setSelectedPersonality] = useState<string[]>([])
 
-  // ── Strategy ───────────────────────────────────────────────────────────────
-  const [competitiveAdvantages, setCompetitiveAdvantages] = useState('')
-  const [businessGoals, setBusinessGoals] = useState('')
-
-  // ── Online Presence ────────────────────────────────────────────────────────
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([])
-  const [facebookUrl, setFacebookUrl] = useState('')
-  const [instagramUrl, setInstagramUrl] = useState('')
-  const [tiktokUrl, setTiktokUrl] = useState('')
-  const [youtubeUrl, setYoutubeUrl] = useState('')
-  const [linkedinUrl, setLinkedinUrl] = useState('')
-  const [googleBusinessUrl, setGoogleBusinessUrl] = useState('')
-  const [contactEmail, setContactEmail] = useState('')
-  const [contactPhone, setContactPhone] = useState('')
-  const [logoUrl, setLogoUrl] = useState('')
-  const [additionalNotes, setAdditionalNotes] = useState('')
-
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   const wizardStepIndex = WIZARD_STEPS.indexOf(step)
@@ -133,12 +105,6 @@ export default function OnboardingPage() {
   function togglePersonality(trait: string) {
     setSelectedPersonality((prev) =>
       prev.includes(trait) ? prev.filter((t) => t !== trait) : [...prev, trait]
-    )
-  }
-
-  function togglePlatform(platform: string) {
-    setSelectedPlatforms((prev) =>
-      prev.includes(platform) ? prev.filter((p) => p !== platform) : [...prev, platform]
     )
   }
 
@@ -156,19 +122,21 @@ export default function OnboardingPage() {
       idealCustomer: idealCustomer.trim() || undefined,
       brandVoice,
       brandPersonality: selectedPersonality.length > 0 ? selectedPersonality.join(', ') : undefined,
-      competitiveAdvantages: competitiveAdvantages.trim() || undefined,
-      businessGoals: businessGoals.trim(),
-      preferredPlatforms: selectedPlatforms,
-      facebookUrl: facebookUrl.trim() || undefined,
-      instagramUrl: instagramUrl.trim() || undefined,
-      tiktokUrl: tiktokUrl.trim() || undefined,
-      youtubeUrl: youtubeUrl.trim() || undefined,
-      linkedinUrl: linkedinUrl.trim() || undefined,
-      googleBusinessUrl: googleBusinessUrl.trim() || undefined,
-      contactEmail: contactEmail.trim() || undefined,
-      contactPhone: contactPhone.trim() || undefined,
-      logoUrl: logoUrl.trim() || undefined,
-      additionalNotes: additionalNotes.trim() || undefined,
+      // Strategy / presence remain on the profile contract (optional). Day-1
+      // does not collect them, so they persist as empty rather than required.
+      competitiveAdvantages: undefined,
+      businessGoals: undefined,
+      preferredPlatforms: [],
+      facebookUrl: undefined,
+      instagramUrl: undefined,
+      tiktokUrl: undefined,
+      youtubeUrl: undefined,
+      linkedinUrl: undefined,
+      googleBusinessUrl: undefined,
+      contactEmail: undefined,
+      contactPhone: undefined,
+      logoUrl: undefined,
+      additionalNotes: undefined,
     }
   }
 
@@ -220,20 +188,22 @@ export default function OnboardingPage() {
   function ProgressBar() {
     const activeIndex = Math.min(wizardStepIndex, wizardTotal - 1)
     return (
-      <div className="mb-6">
-        <div className="mb-2 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-foreground">Set up your Marketing Team</h1>
+      <div className="mb-6 min-w-0">
+        <div className="mb-2 flex min-w-0 items-center justify-between gap-3">
+          <h1 className="min-w-0 text-lg font-semibold text-foreground">
+            Set up your Marketing Team
+          </h1>
           {isWizardStep && step !== 'launching' && (
-            <span className="text-sm text-muted-foreground">
+            <span className="shrink-0 text-sm text-muted-foreground">
               Step {activeIndex + 1} of {wizardTotal}
             </span>
           )}
         </div>
-        <div className="flex gap-1">
+        <div className="flex min-w-0 gap-1">
           {Array.from({ length: wizardTotal }).map((_, i) => (
             <div
               key={i}
-              className={`h-1 flex-1 rounded-full transition-colors ${
+              className={`h-1 min-w-0 flex-1 rounded-full transition-colors ${
                 i <= activeIndex && step !== 'launching' ? 'bg-primary' : 'bg-muted'
               }`}
             />
@@ -249,7 +219,7 @@ export default function OnboardingPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="mx-auto min-w-0 max-w-xl space-y-6 overflow-x-hidden">
       <ProgressBar />
 
       {error && (
@@ -258,7 +228,7 @@ export default function OnboardingPage() {
 
       {/* ── Step: Business Info ─────────────────────────────────────────────── */}
       {step === 'business-info' && (
-        <div className="space-y-5 rounded-lg border border-border bg-card p-6">
+        <div className={cardCls}>
           <div>
             <h2 className="text-base font-medium text-foreground">Tell us about your business</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -340,7 +310,7 @@ export default function OnboardingPage() {
                 !industry.trim() ||
                 !location.trim()
               }
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className={continueBtnCls}
             >
               Continue
             </button>
@@ -350,7 +320,7 @@ export default function OnboardingPage() {
 
       {/* ── Step: Services ──────────────────────────────────────────────────── */}
       {step === 'services' && (
-        <div className="space-y-5 rounded-lg border border-border bg-card p-6">
+        <div className={cardCls}>
           <div>
             <h2 className="text-base font-medium text-foreground">What do you offer?</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -389,11 +359,7 @@ export default function OnboardingPage() {
             />
           </div>
           <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep('business-info')}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
+            <button type="button" onClick={() => setStep('business-info')} className={backBtnCls}>
               Back
             </button>
             <button
@@ -406,7 +372,7 @@ export default function OnboardingPage() {
                 setStep('audience')
               }}
               disabled={!primaryService.trim()}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className={continueBtnCls}
             >
               Continue
             </button>
@@ -416,7 +382,7 @@ export default function OnboardingPage() {
 
       {/* ── Step: Audience ──────────────────────────────────────────────────── */}
       {step === 'audience' && (
-        <div className="space-y-5 rounded-lg border border-border bg-card p-6">
+        <div className={cardCls}>
           <div>
             <h2 className="text-base font-medium text-foreground">Who do you serve?</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -445,11 +411,7 @@ export default function OnboardingPage() {
             />
           </div>
           <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep('services')}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
+            <button type="button" onClick={() => setStep('services')} className={backBtnCls}>
               Back
             </button>
             <button
@@ -462,7 +424,7 @@ export default function OnboardingPage() {
                 setStep('brand-identity')
               }}
               disabled={!targetAudience.trim()}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className={continueBtnCls}
             >
               Continue
             </button>
@@ -472,7 +434,7 @@ export default function OnboardingPage() {
 
       {/* ── Step: Brand Identity ────────────────────────────────────────────── */}
       {step === 'brand-identity' && (
-        <div className="space-y-5 rounded-lg border border-border bg-card p-6">
+        <div className={cardCls}>
           <div>
             <h2 className="text-base font-medium text-foreground">Define your brand</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -519,235 +481,7 @@ export default function OnboardingPage() {
             </div>
           </div>
           <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep('audience')}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Back
-            </button>
-            <button
-              onClick={() => {
-                setError(null)
-                setStep('strategy')
-              }}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Step: Strategy ──────────────────────────────────────────────────── */}
-      {step === 'strategy' && (
-        <div className="space-y-5 rounded-lg border border-border bg-card p-6">
-          <div>
-            <h2 className="text-base font-medium text-foreground">Your competitive strategy</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Your workforce will highlight what makes you the obvious choice.
-            </p>
-          </div>
-          <div>
-            <label className={labelCls}>Competitive advantages {optionalSpan}</label>
-            <textarea
-              rows={3}
-              value={competitiveAdvantages}
-              onChange={(e) => setCompetitiveAdvantages(e.target.value)}
-              className={textareaCls}
-              placeholder="Same-day service, upfront pricing, licensed & insured, 5-star Google rating, 20 years local"
-            />
-          </div>
-          <div>
-            <label className={labelCls}>Business goals for content</label>
-            <textarea
-              rows={3}
-              required
-              value={businessGoals}
-              onChange={(e) => setBusinessGoals(e.target.value)}
-              className={textareaCls}
-              placeholder="Generate more service calls from Facebook and Google. Build trust with homeowners before they need emergency service. Grow seasonal maintenance plan signups."
-            />
-          </div>
-          <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep('brand-identity')}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Back
-            </button>
-            <button
-              onClick={() => {
-                if (!businessGoals.trim()) {
-                  setError('Business goals are required')
-                  return
-                }
-                setError(null)
-                setStep('presence')
-              }}
-              disabled={!businessGoals.trim()}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Step: Online Presence ───────────────────────────────────────────── */}
-      {step === 'presence' && (
-        <div className="space-y-5 rounded-lg border border-border bg-card p-6">
-          <div>
-            <h2 className="text-base font-medium text-foreground">Your online presence</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Choose where you want your marketing team to publish content.
-            </p>
-          </div>
-          <div>
-            <label className={labelCls}>Preferred platforms</label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {PLATFORM_OPTIONS.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => togglePlatform(p.value)}
-                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                    selectedPlatforms.includes(p.value)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'border border-border bg-background text-foreground hover:bg-muted'
-                  }`}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {selectedPlatforms.includes('Facebook') && (
-              <div>
-                <label className={labelCls}>Facebook URL {optionalSpan}</label>
-                <input
-                  type="url"
-                  value={facebookUrl}
-                  onChange={(e) => setFacebookUrl(e.target.value)}
-                  className={inputCls}
-                  placeholder="facebook.com/yourpage"
-                />
-              </div>
-            )}
-            {selectedPlatforms.includes('Instagram') && (
-              <div>
-                <label className={labelCls}>Instagram URL {optionalSpan}</label>
-                <input
-                  type="url"
-                  value={instagramUrl}
-                  onChange={(e) => setInstagramUrl(e.target.value)}
-                  className={inputCls}
-                  placeholder="instagram.com/yourhandle"
-                />
-              </div>
-            )}
-            {selectedPlatforms.includes('TikTok') && (
-              <div>
-                <label className={labelCls}>TikTok URL {optionalSpan}</label>
-                <input
-                  type="url"
-                  value={tiktokUrl}
-                  onChange={(e) => setTiktokUrl(e.target.value)}
-                  className={inputCls}
-                  placeholder="tiktok.com/@yourhandle"
-                />
-              </div>
-            )}
-            {selectedPlatforms.includes('YouTube Shorts') && (
-              <div>
-                <label className={labelCls}>YouTube URL {optionalSpan}</label>
-                <input
-                  type="url"
-                  value={youtubeUrl}
-                  onChange={(e) => setYoutubeUrl(e.target.value)}
-                  className={inputCls}
-                  placeholder="youtube.com/@yourchannel"
-                />
-              </div>
-            )}
-            {selectedPlatforms.includes('LinkedIn') && (
-              <div>
-                <label className={labelCls}>LinkedIn URL {optionalSpan}</label>
-                <input
-                  type="url"
-                  value={linkedinUrl}
-                  onChange={(e) => setLinkedinUrl(e.target.value)}
-                  className={inputCls}
-                  placeholder="linkedin.com/company/yourcompany"
-                />
-              </div>
-            )}
-            {selectedPlatforms.includes('Google Business Profile') && (
-              <div>
-                <label className={labelCls}>Google Business URL {optionalSpan}</label>
-                <input
-                  type="url"
-                  value={googleBusinessUrl}
-                  onChange={(e) => setGoogleBusinessUrl(e.target.value)}
-                  className={inputCls}
-                  placeholder="g.page/yourpage"
-                />
-              </div>
-            )}
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className={labelCls}>Business email {optionalSpan}</label>
-              <input
-                type="email"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                className={inputCls}
-                placeholder="hello@yourbusiness.com"
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Business phone {optionalSpan}</label>
-              <input
-                type="tel"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-                className={inputCls}
-                placeholder="(602) 555-1234"
-              />
-            </div>
-          </div>
-          <div>
-            <label className={labelCls}>Logo URL {optionalSpan}</label>
-            <input
-              type="url"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              className={inputCls}
-              placeholder="https://yoursite.com/logo.png"
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              Direct link to your logo image (PNG or JPG)
-            </p>
-          </div>
-          <div>
-            <label className={labelCls}>Anything else for your AI team? {optionalSpan}</label>
-            <textarea
-              rows={2}
-              value={additionalNotes}
-              onChange={(e) => setAdditionalNotes(e.target.value)}
-              className={textareaCls}
-              placeholder="Avoid mentioning competitors. Always include our phone number. Seasonal promotions run March–May and September–November."
-            />
-          </div>
-          <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep('strategy')}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
+            <button type="button" onClick={() => setStep('audience')} className={backBtnCls}>
               Back
             </button>
             <button
@@ -755,9 +489,9 @@ export default function OnboardingPage() {
                 setError(null)
                 setStep('review')
               }}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className={continueBtnCls}
             >
-              Review & Launch
+              Continue
             </button>
           </div>
         </div>
@@ -765,7 +499,7 @@ export default function OnboardingPage() {
 
       {/* ── Step: Review & Launch ───────────────────────────────────────────── */}
       {step === 'review' && (
-        <div className="space-y-5 rounded-lg border border-border bg-card p-6">
+        <div className={cardCls}>
           <div>
             <h2 className="text-base font-medium text-foreground">Review your profile</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -773,7 +507,7 @@ export default function OnboardingPage() {
               your profile settings.
             </p>
           </div>
-          <dl className="divide-y divide-border text-sm">
+          <dl className="min-w-0 divide-y divide-border text-sm">
             <ReviewRow label="Business" value={`${businessName} — ${businessCategory}`} />
             <ReviewRow label="Industry" value={industry} />
             <ReviewRow label="Location" value={location} />
@@ -787,15 +521,6 @@ export default function OnboardingPage() {
             {selectedPersonality.length > 0 && (
               <ReviewRow label="Brand personality" value={selectedPersonality.join(', ')} />
             )}
-            {competitiveAdvantages && (
-              <ReviewRow label="Advantages" value={competitiveAdvantages} />
-            )}
-            <ReviewRow label="Content goals" value={businessGoals} />
-            {selectedPlatforms.length > 0 && (
-              <ReviewRow label="Platforms" value={selectedPlatforms.join(', ')} />
-            )}
-            {contactEmail && <ReviewRow label="Contact email" value={contactEmail} />}
-            {contactPhone && <ReviewRow label="Contact phone" value={contactPhone} />}
           </dl>
           <div className="rounded-md border border-primary/20 bg-primary/5 p-4">
             <p className="text-sm font-medium text-foreground">
@@ -806,12 +531,8 @@ export default function OnboardingPage() {
               behalf.
             </p>
           </div>
-          <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={() => setStep('presence')}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
+          <div className="flex justify-between gap-3">
+            <button type="button" onClick={() => setStep('brand-identity')} className={backBtnCls}>
               Back
             </button>
             <button
@@ -848,9 +569,9 @@ export default function OnboardingPage() {
 
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-4 py-2">
-      <dt className="w-32 shrink-0 text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="text-xs text-foreground">{value}</dd>
+    <div className="flex min-w-0 gap-4 py-2">
+      <dt className="w-28 shrink-0 text-xs font-medium text-muted-foreground sm:w-32">{label}</dt>
+      <dd className="min-w-0 break-words text-xs text-foreground">{value}</dd>
     </div>
   )
 }
