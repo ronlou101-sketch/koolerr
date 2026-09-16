@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { PRIMARY_NAV, MORE_NAV, WORK_NAV } from '../_lib/nav-items'
+import { PRIMARY_NAV, MORE_NAV, WORK_NAV, BUSINESS_NAV, navHrefs } from '../_lib/nav-items'
 import {
   bottomNavDestinationHrefs,
   bottomNavSlotLabels,
@@ -45,15 +45,20 @@ describe('bottomNavSlots()', () => {
     }
   })
 
-  it('does not promote Work children or More-menu tools onto the bar', () => {
+  it('does not promote Work children, Business nested destinations, or More-menu tools onto the bar', () => {
     const hrefs = bottomNavDestinationHrefs(PRIMARY_NAV)
     for (const href of WORK_NAV.map((item) => item.href)) {
+      expect(hrefs).not.toContain(href)
+    }
+    for (const href of navHrefs(BUSINESS_NAV)) {
+      if (href === '/brain') continue
       expect(hrefs).not.toContain(href)
     }
     for (const href of MORE_NAV.map((item) => item.href)) {
       expect(hrefs).not.toContain(href)
     }
     expect(hrefs).not.toContain('/academy')
+    expect(hrefs).toEqual(['/dashboard', '/work', '/brain'])
   })
 
   it('inserts Ask after the first two peers even if the primary list is shorter', () => {
@@ -85,11 +90,16 @@ describe('isDestinationActive()', () => {
     expect(isDestinationActive('/academy', work)).toBe(false)
   })
 
-  it('marks Business current on the temporary /brain href', () => {
+  it('marks Business current on /brain and on nested Business destinations', () => {
     expect(isDestinationActive('/brain', business)).toBe(true)
     expect(isDestinationActive('/brain/memories', business)).toBe(true)
-    expect(isDestinationActive('/billing', business)).toBe(false)
+    expect(isDestinationActive('/billing', business)).toBe(true)
+    expect(isDestinationActive('/usage', business)).toBe(true)
+    expect(isDestinationActive('/consent', business)).toBe(true)
+    expect(isDestinationActive('/audit', business)).toBe(true)
     expect(isDestinationActive('/dashboard', business)).toBe(false)
+    expect(isDestinationActive('/creative', business)).toBe(false)
+    expect(isDestinationActive('/academy', business)).toBe(false)
   })
 
   it('does not treat /pipeline as an active primary destination', () => {

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
-import { PRIMARY_NAV } from '../_lib/nav-items'
+import { PRIMARY_NAV, BUSINESS_NAV, isNavGroup, navHrefs } from '../_lib/nav-items'
 import { drawerPrimaryGroups } from './mobile-nav'
 import {
   FOCUSABLE_SELECTOR,
@@ -174,7 +174,7 @@ describe('drawerPrimaryGroups()', () => {
     expect(groups.map((g) => g.peer.href)).toEqual(['/dashboard', '/work', '/brain'])
     const work = groups.find((g) => g.peer.href === '/work')
     expect(work?.peer.badgeKey).toBe('review')
-    expect(work?.nested.map((i) => [i.label, i.href])).toEqual([
+    expect(work?.nested.map((i) => [i.label, 'href' in i ? i.href : undefined])).toEqual([
       ['Needs you', '/approvals'],
       ['In progress', '/runs'],
       ['Results', '/deliverables'],
@@ -182,12 +182,33 @@ describe('drawerPrimaryGroups()', () => {
     expect(groups.every((g) => g.peer.href !== '/approvals')).toBe(true)
   })
 
-  it('does not promote Learn or nested Work destinations to primary peers', () => {
+  it('nests the canonical Business tree under the Business peer, still targeting /brain', () => {
+    const groups = drawerPrimaryGroups(PRIMARY_NAV)
+    const business = groups.find((g) => g.peer.label === 'Business')
+    expect(business?.peer.href).toBe('/brain')
+    expect(business?.nested).toEqual(BUSINESS_NAV)
+    expect(navHrefs(business?.nested ?? [])).toEqual([
+      '/brain',
+      '/billing',
+      '/usage',
+      '/consent',
+      '/audit',
+    ])
+    const advanced = business?.nested.find((node) => isNavGroup(node))
+    expect(advanced && isNavGroup(advanced) ? advanced.collapsed : false).toBe(true)
+    expect(advanced && isNavGroup(advanced) ? 'href' in advanced : true).toBe(false)
+  })
+
+  it('does not promote Learn, Work, or Business nested destinations to primary peers', () => {
     const groups = drawerPrimaryGroups(PRIMARY_NAV)
     const peerHrefs = groups.map((g) => g.peer.href)
     expect(peerHrefs).not.toContain('/academy')
     expect(peerHrefs).not.toContain('/runs')
     expect(peerHrefs).not.toContain('/deliverables')
+    expect(peerHrefs).not.toContain('/billing')
+    expect(peerHrefs).not.toContain('/usage')
+    expect(peerHrefs).not.toContain('/consent')
+    expect(peerHrefs).not.toContain('/audit')
     expect(peerHrefs).toHaveLength(3)
   })
 })
@@ -200,9 +221,12 @@ describe('persistent bottom nav composition', () => {
     expect(mobileNavSource).toContain('moreOpen={open}')
   })
 
-  it('keeps Work children and More as drawer overflow, not new destinations', () => {
+  it('keeps Work/Business children and More as drawer overflow, not new destinations', () => {
     expect(mobileNavSource).toContain("sectionHeader('More')")
-    expect(mobileNavSource).toContain('nested.map(renderLink)')
+    expect(mobileNavSource).toContain('flattenVisibleNavMenu(nested, expandedLabels)')
+    expect(mobileNavSource).toContain('aria-expanded={node.expanded}')
+    expect(mobileNavSource).not.toMatch(/href=["']\/advanced["']/)
+    expect(mobileNavSource).not.toContain("sectionHeader('Business')")
   })
 })
 

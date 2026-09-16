@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import type { NavItem } from '../_lib/nav-items'
+import { flattenVisibleNavMenu, type NavItem, type NavNode } from '../_lib/nav-items'
 import {
   FOCUSABLE_SELECTOR,
   describeFocusCandidate,
@@ -12,13 +12,13 @@ import {
 import { BottomNav } from './bottom-nav'
 
 /**
- * Groups a primary item with its nested lifecycle destinations.
+ * Groups a primary item with its nested destinations.
  *
- * Peers stay peers (Home / Work / Business). Children (Needs you / In progress /
- * Results) nest under Work so they are not promoted to primary items. Desktop
- * uses the same SoT via NavDropdown; this helper is the drawer equivalent.
+ * Peers stay peers (Home / Work / Business). Children nest under Work and
+ * Business so they are not promoted to primary items. Desktop uses the same
+ * SoT via NavDropdown; this helper is the drawer equivalent.
  */
-export function drawerPrimaryGroups(primary: NavItem[]): { peer: NavItem; nested: NavItem[] }[] {
+export function drawerPrimaryGroups(primary: NavItem[]): { peer: NavItem; nested: NavNode[] }[] {
   return primary.map((peer) => ({ peer, nested: peer.children ?? [] }))
 }
 
@@ -27,8 +27,9 @@ export function drawerPrimaryGroups(primary: NavItem[]): { peer: NavItem; nested
  *
  * Rendered only below the `sm` breakpoint (the desktop bar handles larger screens).
  * A hamburger opens a right-side drawer that mirrors the desktop groups: the
- * primary peers first (with Work children nested), then a "More" section, then a
- * founder-only "Owner" section. Tapping a link or the backdrop closes it.
+ * primary peers first (with Work / Business children nested), then a "More"
+ * section, then a founder-only "Owner" section. Tapping a link or the backdrop
+ * closes it. Advanced under Business starts collapsed until expanded.
  *
  * The persistent bottom bar (Home / Work / Ask+ / Business / More) is composed
  * here so More and the hamburger share one drawer. Ask(+) is an action, not a
@@ -50,6 +51,7 @@ export function MobileNav({
   owner: NavItem[]
 }) {
   const [open, setOpen] = useState(false)
+  const [expandedLabels, setExpandedLabels] = useState<Set<string>>(() => new Set())
   const triggerRef = useRef<HTMLButtonElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -94,6 +96,19 @@ export function MobileNav({
       triggerRef.current?.focus()
     }
   }, [open])
+
+  useEffect(() => {
+    if (!open) setExpandedLabels(new Set())
+  }, [open])
+
+  const toggleGroup = (groupLabel: string) => {
+    setExpandedLabels((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupLabel)) next.delete(groupLabel)
+      else next.add(groupLabel)
+      return next
+    })
+  }
 
   const renderLink = (item: NavItem) => (
     <Link
@@ -190,7 +205,51 @@ export function MobileNav({
               <div key={peer.href}>
                 {renderLink(peer)}
                 {nested.length > 0 ? (
-                  <div className="ml-2 border-l border-border pl-1">{nested.map(renderLink)}</div>
+                  <div className="ml-2 border-l border-border pl-1">
+                    {flattenVisibleNavMenu(nested, expandedLabels).map((node) => {
+                      if (node.kind === 'group') {
+                        return (
+                          <button
+                            key={node.label}
+                            type="button"
+                            aria-expanded={node.expanded}
+                            onClick={() => toggleGroup(node.label)}
+                            className={`flex w-full items-center justify-between gap-2 rounded-md py-2 text-left text-sm text-foreground hover:bg-muted ${
+                              node.depth > 0 ? 'pl-5 pr-3' : 'px-3'
+                            }`}
+                          >
+                            <span>{node.label}</span>
+                            <svg
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                              className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
+                                node.expanded ? 'rotate-180' : ''
+                              }`}
+                              aria-hidden="true"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        )
+                      }
+                      return (
+                        <Link
+                          key={node.href}
+                          href={node.href}
+                          onClick={() => setOpen(false)}
+                          className={`flex items-center justify-between gap-2 rounded-md py-2 text-sm text-foreground hover:bg-muted ${
+                            node.depth > 0 ? 'pl-5 pr-3' : 'px-3'
+                          }`}
+                        >
+                          <span>{node.label}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
                 ) : null}
               </div>
             ))}

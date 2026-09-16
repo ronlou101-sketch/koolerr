@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
 import {
   MENU_ITEM_SELECTOR,
@@ -183,6 +186,30 @@ describe('focusMenuItem()', () => {
 
   it('reports no move when the menu is not rendered', () => {
     expect(focusMenuItem(null, 'ArrowDown', -1)).toBe(false)
+  })
+})
+
+const dropdownSource = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), 'nav-dropdown.tsx'),
+  'utf8'
+)
+const layoutSource = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '../layout.tsx'),
+  'utf8'
+)
+
+describe('desktop nested children (lock 526a07ad)', () => {
+  it('renders nested destinations and collapsed groups without inventing an Advanced route', () => {
+    expect(dropdownSource).toContain('flattenVisibleNavMenu(items, expandedLabels)')
+    expect(dropdownSource).toContain('aria-expanded={node.expanded}')
+    expect(dropdownSource).toContain("node.kind === 'group'")
+    expect(dropdownSource).toContain('toggleGroup(node.label)')
+    expect(dropdownSource).not.toMatch(/href=["']\/advanced["']/)
+  })
+
+  it('is the desktop renderer for primary peers that have children (Work and Business)', () => {
+    expect(layoutSource).toContain('const children = item.children ?? []')
+    expect(layoutSource).toContain('<NavDropdown label={item.label} items={children}')
   })
 })
 
