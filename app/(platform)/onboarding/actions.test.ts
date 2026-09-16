@@ -37,8 +37,6 @@ const VALID_PROFILE = {
   primaryService: 'Cloud software',
   targetAudience: 'SMBs',
   brandVoice: 'Professional',
-  businessGoals: 'Growth',
-  preferredPlatforms: ['linkedin'],
 }
 
 beforeEach(() => {
@@ -77,6 +75,53 @@ describe('saveBusinessProfile', () => {
     const result = await saveBusinessProfile(VALID_PROFILE)
     expect(result).toEqual({ success: true })
     expect(businessBrainService.storeMemory).toHaveBeenCalledOnce()
+  })
+
+  it('does not require businessGoals or preferredPlatforms to complete Day-1', async () => {
+    const result = await saveBusinessProfile(VALID_PROFILE)
+    expect(result).toEqual({ success: true })
+    expect(businessBrainService.storeMemory).toHaveBeenCalledOnce()
+  })
+
+  it('does not widen server required fields beyond businessName and businessCategory', async () => {
+    const result = await saveBusinessProfile({
+      businessName: 'Acme Corp',
+      businessCategory: 'Technology',
+      industry: '',
+      location: '',
+      primaryService: '',
+      targetAudience: '',
+      brandVoice: '',
+    })
+    expect(result).toEqual({ success: true })
+  })
+
+  it('still persists company_identity with brand voice for kept Day-1 fields', async () => {
+    await saveBusinessProfile(VALID_PROFILE)
+    expect(businessBrainService.storeMemory).toHaveBeenCalledWith(
+      expect.objectContaining({
+        memory: expect.objectContaining({
+          type: 'company_identity',
+          source: 'ai-workforce-wizard',
+          content: expect.objectContaining({
+            businessName: 'Acme Corp',
+            brandVoice: 'Professional',
+            primaryService: 'Cloud software',
+            targetAudience: 'SMBs',
+          }),
+        }),
+      })
+    )
+  })
+
+  it('accepts optional strategy and presence fields without requiring them', async () => {
+    const result = await saveBusinessProfile({
+      ...VALID_PROFILE,
+      businessGoals: 'Growth',
+      preferredPlatforms: ['linkedin'],
+      competitiveAdvantages: 'Speed',
+    })
+    expect(result).toEqual({ success: true })
   })
 
   it('returns an error when storeMemory fails', async () => {

@@ -12,7 +12,9 @@ import { isRunLimitReached } from './_lib/run-rate-limit'
 /**
  * Business Brain onboarding server actions.
  *
- * saveBusinessProfile — comprehensive AI Workforce wizard (single call, all sections).
+ * saveBusinessProfile — Day-1 AI Workforce wizard (single call). Strategy and
+ * presence fields remain on CustomerProfile as optional capability; they are
+ * not required to complete Day-1 (Architect lock 2ea2c816).
  * triggerAIWorkforce  — creates an engagement run and starts the 7-department pipeline.
  */
 
@@ -34,8 +36,8 @@ export interface CustomerProfile {
   brandVoice: string
   brandPersonality?: string
   competitiveAdvantages?: string
-  businessGoals: string
-  preferredPlatforms: string[]
+  businessGoals?: string
+  preferredPlatforms?: string[]
   facebookUrl?: string
   instagramUrl?: string
   tiktokUrl?: string

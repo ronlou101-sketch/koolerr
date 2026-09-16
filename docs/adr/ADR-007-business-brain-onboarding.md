@@ -63,3 +63,18 @@ Additionally, the dashboard showed raw UUIDs (Organization ID, Tenant ID, Actor,
 - **Single memory per type per onboarding:** The onboarding wizard stores one `company_identity`, one `brand`, and one `product` memory. Adding additional products, updating brand voice, or editing identity are Phase 2 operations.
 - **No org name editing:** The Organization was created with the name from signup (or "My Organization" for the email-confirmation path). Renaming is Phase 2.
 - **Brain memory count is the onboarding gate:** If all memories are deleted (currently impossible through the UI), the dashboard would redirect to onboarding again. This is acceptable behavior — the Brain should always have context.
+
+---
+
+## Amendment — Shortened Day-1 required path (Architect lock 2ea2c816)
+
+**Date:** 2026-09-16  
+**Status:** Accepted as a narrowing of the Day-1 _required_ wizard path. Does **not** delete Strategy or Online Presence capability, and does **not** introduce Business nesting or a Brain edit UI.
+
+**Decision:** The required Day-1 `/onboarding` sequence is:
+
+`business-info` → `services` → `audience` → `brand-identity` → `review` → `launching`
+
+Strategy and Online Presence are **not** required Day-1 steps. They remain optional fields on the existing `CustomerProfile` contract so the capability can be collected later. Completing review + launch still writes the existing `company_identity` memory (`source: 'ai-workforce-wizard'`) for kept-step fields — including brand voice — and lands on the existing `/dashboard`. Empty-brain → `/onboarding` and fresh-signup → `/onboarding` are unchanged.
+
+**Not in this amendment:** new memory types, a new post-onboarding screen, new routes/IA, or a Brain management UI.
