@@ -133,7 +133,7 @@ export function NavDropdown({
         aria-label={ariaLabel ?? label}
         onClick={() => setOpen((v) => !v)}
         onKeyDown={onTriggerKeyDown}
-        className={`inline-flex items-center gap-1 whitespace-nowrap text-sm hover:text-foreground ${
+        className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm hover:text-foreground ${
           groupActive ? 'font-medium text-foreground' : 'text-muted-foreground'
         }`}
       >
