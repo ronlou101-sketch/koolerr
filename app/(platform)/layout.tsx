@@ -50,7 +50,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
   // if context or subscription cannot be resolved — prevents blocking legitimate users.
   let accessLevel: AccessLevel = 'full'
   let bannerMessage: string | null = null
-  // Live count for the primary-nav "Review" badge (Experience Phase 13 Slice B).
+  // Live count for the primary-nav Work badge (pending review).
   let pendingReviewCount = 0
 
   // Auth/context (+ email) resolve once via React cache() in resolve.ts;
@@ -102,6 +102,18 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           </Link>
           <nav className="hidden min-w-0 items-center gap-6 sm:flex">
             {primaryNav.map((item) => {
+              const children = item.children ?? []
+              if (children.length > 0) {
+                // Work (and any future grouped peer): lifecycle chrome via the
+                // existing NavDropdown. Badge stays on the peer so pending
+                // review is discoverable without opening the menu.
+                return (
+                  <span key={item.href} className="inline-flex shrink-0 items-center gap-1.5">
+                    <NavDropdown label={item.label} items={children} ariaLabel={item.label} />
+                    <ReviewBadge count={item.badge} />
+                  </span>
+                )
+              }
               const active = pathname === item.href || pathname.startsWith(item.href + '/')
               return (
                 <Link
@@ -112,14 +124,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
                   }`}
                 >
                   {item.label}
-                  {item.badge ? (
-                    <span
-                      aria-label={`${item.badge} awaiting review`}
-                      className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-yellow-500 px-1.5 text-xs font-semibold leading-5 text-white"
-                    >
-                      {item.badge}
-                    </span>
-                  ) : null}
+                  <ReviewBadge count={item.badge} />
                 </Link>
               )
             })}
@@ -175,5 +180,18 @@ export default async function PlatformLayout({ children }: { children: React.Rea
       )}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">{children}</main>
     </div>
+  )
+}
+
+/** Pending-review count pill. Hidden at 0 so the header stays quiet when caught up. */
+function ReviewBadge({ count }: { count?: number }) {
+  if (!count) return null
+  return (
+    <span
+      aria-label={`${count} awaiting review`}
+      className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-yellow-500 px-1.5 text-xs font-semibold leading-5 text-white"
+    >
+      {count}
+    </span>
   )
 }

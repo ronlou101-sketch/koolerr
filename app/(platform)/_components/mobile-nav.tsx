@@ -11,12 +11,23 @@ import {
 } from './mobile-nav-focus'
 
 /**
- * Mobile navigation drawer for the platform header (Phase 11 grouped IA).
+ * Groups a primary item with its nested lifecycle destinations.
+ *
+ * Peers stay peers (Home / Work / Business). Children (Needs you / In progress /
+ * Results) nest under Work so they are not promoted to primary items. Desktop
+ * uses the same SoT via NavDropdown; this helper is the drawer equivalent.
+ */
+export function drawerPrimaryGroups(primary: NavItem[]): { peer: NavItem; nested: NavItem[] }[] {
+  return primary.map((peer) => ({ peer, nested: peer.children ?? [] }))
+}
+
+/**
+ * Mobile navigation drawer for the platform header.
  *
  * Rendered only below the `sm` breakpoint (the desktop bar handles larger screens).
  * A hamburger opens a right-side drawer that mirrors the desktop groups: the
- * primary items first, then a "More" section, then a founder-only "Owner" section.
- * Tapping a link or the backdrop closes it.
+ * primary peers first (with Work children nested), then a "More" section, then a
+ * founder-only "Owner" section. Tapping a link or the backdrop closes it.
  *
  * Accessibility: the panel is a labelled modal dialog. On open, focus moves to the
  * Close button; Escape closes it; on close, focus returns to the trigger. While it
@@ -170,7 +181,16 @@ export function MobileNav({
               </button>
             </div>
 
-            {primary.map(renderLink)}
+            {drawerPrimaryGroups(primary).map(({ peer, nested }) => (
+              <div key={peer.href}>
+                {renderLink(peer)}
+                {nested.length > 0 ? (
+                  <div className="ml-2 border-l border-border pl-1">
+                    {nested.map(renderLink)}
+                  </div>
+                ) : null}
+              </div>
+            ))}
 
             {more.length > 0 && (
               <>
