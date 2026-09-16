@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, it, expect } from 'vitest'
 import { PRIMARY_NAV } from '../_lib/nav-items'
 import { drawerPrimaryGroups } from './mobile-nav'
@@ -159,6 +162,11 @@ describe('focusTrapTarget()', () => {
   })
 })
 
+const mobileNavSource = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), 'mobile-nav.tsx'),
+  'utf8'
+)
+
 describe('drawerPrimaryGroups()', () => {
   it('keeps primary peers as Home, Work, Business and nests Work children', () => {
     const groups = drawerPrimaryGroups(PRIMARY_NAV)
@@ -181,6 +189,20 @@ describe('drawerPrimaryGroups()', () => {
     expect(peerHrefs).not.toContain('/runs')
     expect(peerHrefs).not.toContain('/deliverables')
     expect(peerHrefs).toHaveLength(3)
+  })
+})
+
+describe('persistent bottom nav composition', () => {
+  it('renders BottomNav inside the mobile-only chrome so More shares the drawer', () => {
+    expect(mobileNavSource).toContain('sm:hidden')
+    expect(mobileNavSource).toContain('<BottomNav')
+    expect(mobileNavSource).toContain('onMoreClick={() => setOpen(true)}')
+    expect(mobileNavSource).toContain('moreOpen={open}')
+  })
+
+  it('keeps Work children and More as drawer overflow, not new destinations', () => {
+    expect(mobileNavSource).toContain("sectionHeader('More')")
+    expect(mobileNavSource).toContain('nested.map(renderLink)')
   })
 })
 

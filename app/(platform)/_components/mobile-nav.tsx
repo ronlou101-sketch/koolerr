@@ -9,6 +9,7 @@ import {
   focusTrapTarget,
   isFocusCandidate,
 } from './mobile-nav-focus'
+import { BottomNav } from './bottom-nav'
 
 /**
  * Groups a primary item with its nested lifecycle destinations.
@@ -22,12 +23,16 @@ export function drawerPrimaryGroups(primary: NavItem[]): { peer: NavItem; nested
 }
 
 /**
- * Mobile navigation drawer for the platform header.
+ * Mobile navigation for the platform chrome.
  *
  * Rendered only below the `sm` breakpoint (the desktop bar handles larger screens).
  * A hamburger opens a right-side drawer that mirrors the desktop groups: the
  * primary peers first (with Work children nested), then a "More" section, then a
  * founder-only "Owner" section. Tapping a link or the backdrop closes it.
+ *
+ * The persistent bottom bar (Home / Work / Ask+ / Business / More) is composed
+ * here so More and the hamburger share one drawer. Ask(+) is an action, not a
+ * route — it reuses CampaignCreator inside BottomNav.
  *
  * Accessibility: the panel is a labelled modal dialog. On open, focus moves to the
  * Close button; Escape closes it; on close, focus returns to the trigger. While it
@@ -185,9 +190,7 @@ export function MobileNav({
               <div key={peer.href}>
                 {renderLink(peer)}
                 {nested.length > 0 ? (
-                  <div className="ml-2 border-l border-border pl-1">
-                    {nested.map(renderLink)}
-                  </div>
+                  <div className="ml-2 border-l border-border pl-1">{nested.map(renderLink)}</div>
                 ) : null}
               </div>
             ))}
@@ -208,6 +211,8 @@ export function MobileNav({
           </nav>
         </div>
       )}
+
+      <BottomNav primary={primary} moreOpen={open} onMoreClick={() => setOpen(true)} />
     </div>
   )
 }

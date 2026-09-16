@@ -149,7 +149,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
     return (
       <div className="min-h-screen bg-background">
         {nav}
-        <main className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+        <main className="mx-auto max-w-7xl px-4 py-16 pb-24 sm:px-6 sm:pb-16">
           <div className="mx-auto max-w-md text-center">
             <h1 className="text-xl font-semibold text-foreground">Subscription expired</h1>
             <p className="mt-3 text-sm text-muted-foreground">
@@ -178,7 +178,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           </Link>
         </div>
       )}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-8 pb-24 sm:px-6 sm:pb-8">{children}</main>
     </div>
   )
 }
