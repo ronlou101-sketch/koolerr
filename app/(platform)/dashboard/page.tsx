@@ -81,6 +81,7 @@ export default async function DashboardPage() {
   const contentCount = allDeliverables.length
   const attentionCount = pendingApprovals.length + pendingDeliverables.length
 
+  // Create is Ask(+) / outcome tiles above — never /pipeline as the destination.
   const nextStep =
     attentionCount > 0
       ? {
@@ -103,12 +104,7 @@ export default async function DashboardPage() {
               href: '/brain',
               cta: 'Finish profile',
             }
-          : {
-              title: 'Start your next campaign',
-              desc: 'Tell us what you’d like more of, and we’ll take it from there.',
-              href: '/pipeline',
-              cta: 'Start a campaign',
-            }
+          : null
 
   return (
     <div className="space-y-8">
@@ -129,7 +125,7 @@ export default async function DashboardPage() {
             {activeCount > 0
               ? `We're actively working on your ${activeCount === 1 ? 'campaign' : `${activeCount} campaigns`} right now.`
               : teamReady
-                ? "Your team is ready and waiting. Start a campaign whenever you'd like more."
+                ? "Your team is ready and waiting. Ask them above whenever you'd like more."
                 : "We're just getting set up. Finish your profile and we'll get to work."}
           </p>
         </div>
@@ -211,13 +207,9 @@ export default async function DashboardPage() {
 
         {recentRuns.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-6 text-center">
-            <p className="text-sm text-muted-foreground">Nothing here yet.</p>
-            <Link
-              href="/pipeline"
-              className="mt-3 inline-block rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Start your first campaign
-            </Link>
+            <p className="text-sm text-muted-foreground">
+              Nothing here yet. Ask your marketing team above to get started.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-border rounded-lg border border-border bg-card">
@@ -250,21 +242,23 @@ export default async function DashboardPage() {
       </section>
 
       {/* ── Recommended Next Step ─────────────────────────────────────────── */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Recommended next step</h2>
-        <div className="flex items-start justify-between gap-4 rounded-lg border border-primary/30 bg-primary/5 p-5">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">{nextStep.title}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{nextStep.desc}</p>
+      {nextStep && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Recommended next step</h2>
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-primary/30 bg-primary/5 p-5">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">{nextStep.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{nextStep.desc}</p>
+            </div>
+            <Link
+              href={nextStep.href}
+              className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              {nextStep.cta}
+            </Link>
           </div>
-          <Link
-            href={nextStep.href}
-            className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            {nextStep.cta}
-          </Link>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Learn (gentle footer nudge) ───────────────────────────────────── */}
       <LearnCta />
