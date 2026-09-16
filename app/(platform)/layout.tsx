@@ -15,6 +15,32 @@ import { getPendingReviewCount } from './_lib/review-queue'
 
 export const runtime = 'nodejs'
 
+/**
+ * Viewports where ⌘ Owner and the notification bell must stay independently
+ * reachable when Owner is shown (Architect lock 6fbbe92b).
+ */
+export const HEADER_OWNER_BELL_BREAKPOINTS_PX = [1280, 768, 390] as const
+
+/**
+ * Header row wraps instead of clipping or introducing H-scroll when Owner and
+ * the bell compete for width (lock 6fbbe92b).
+ */
+export const HEADER_BAR_CLASS =
+  'mx-auto flex min-h-14 max-w-7xl flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 sm:px-6'
+
+/**
+ * Right-side chrome: compact wrapping actions so Owner + bell stay available
+ * without overlapping Account or the mobile trigger.
+ */
+export const HEADER_ACTIONS_CLASS =
+  'ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1 sm:gap-x-5'
+
+/**
+ * Dedicated Owner × notification cluster. Gap + wrap keep separate hit targets;
+ * Owner is not hidden to resolve overlap.
+ */
+export const HEADER_OWNER_BELL_CLUSTER_CLASS = 'flex flex-wrap items-center gap-3'
+
 type AccessLevel = 'full' | 'soft' | 'billing_only'
 
 interface SubInfo {
@@ -88,8 +114,8 @@ export default async function PlatformLayout({ children }: { children: React.Rea
 
   const nav = (
     <header className="border-b border-border bg-card">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div className="flex min-w-0 items-center gap-8">
+      <div className={HEADER_BAR_CLASS}>
+        <div className="flex shrink-0 items-center gap-8">
           <Link href="/dashboard" className="ml-1 inline-flex shrink-0 items-center">
             <Image
               src="/Koolerr_Logo_Trimmed.png"
@@ -129,13 +155,15 @@ export default async function PlatformLayout({ children }: { children: React.Rea
               )
             })}
             <NavDropdown label="More" items={more} />
+          </nav>
+        </div>
+        <div className={HEADER_ACTIONS_CLASS}>
+          <div className={HEADER_OWNER_BELL_CLUSTER_CLASS}>
             {owner.length > 0 && (
               <NavDropdown label="⌘ Owner" items={owner} ariaLabel="Owner tools" />
             )}
-          </nav>
-        </div>
-        <div className="flex shrink-0 items-center gap-5">
-          {ctx && <NotificationBell organizationId={ctx.organizationId} />}
+            {ctx && <NotificationBell organizationId={ctx.organizationId} />}
+          </div>
           <AccountMenu signOutAction={signOut} email={authEmail} />
           <MobileNav primary={primaryNav} more={more} owner={owner} />
         </div>

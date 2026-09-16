@@ -31,12 +31,12 @@ export async function NotificationBell({ organizationId }: { organizationId: Org
   const badge = formatUnreadBadge(unread)
 
   return (
-    <form action={markRunsSeenAndOpen}>
+    <form action={markRunsSeenAndOpen} className="relative shrink-0">
       <button
         type="submit"
         aria-label={unread > 0 ? `${unread} finished runs to review` : 'Run notifications'}
         title={unread > 0 ? `${unread} finished runs to review` : 'Run notifications'}
-        className="relative inline-flex items-center text-muted-foreground hover:text-foreground"
+        className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
