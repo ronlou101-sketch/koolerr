@@ -7,6 +7,13 @@ import { RUN_STATUS_LABELS, RUN_STATUS_BADGE_COLORS } from '@/shared/lib/run-sta
 import { EmptyState } from '../_components/empty-state'
 import { NewCampaignModal } from './_components/new-campaign-modal'
 
+/**
+ * In-progress Work destination (Architect lock f764eda3).
+ *
+ * Presentation only: this page stays at `/runs` and keeps the existing list
+ * plus New campaign create modal. The primary heading is Work so the page
+ * reads as a Work destination rather than a separate Campaigns hub.
+ */
 export default async function RunsPage() {
   const ctx = await getRequestPlatformContext()
   if (!ctx) redirect('/login')
@@ -19,11 +26,11 @@ export default async function RunsPage() {
   const activeCount = runs.filter((r) => r.status === 'pending' || r.status === 'running').length
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Campaigns</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+    <div className="min-w-0 overflow-x-hidden space-y-8">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-semibold text-foreground">Work</h1>
+          <p className="mt-1 break-words text-sm text-muted-foreground">
             {runs.length === 0
               ? 'No campaigns yet. Start your first one whenever you’re ready.'
               : `${runs.length} ${runs.length === 1 ? 'campaign' : 'campaigns'} total · ${completedCount} completed${activeCount > 0 ? ` · ${activeCount} active` : ''}`}
