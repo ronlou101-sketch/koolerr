@@ -106,44 +106,43 @@ export default async function DashboardPage() {
             }
           : null
 
+  const workingLine =
+    activeCount > 0
+      ? `We're actively working on your ${activeCount === 1 ? 'campaign' : `${activeCount} campaigns`} right now.`
+      : teamReady
+        ? "Your team is ready and waiting. Ask them above whenever you'd like more."
+        : "We're just getting set up. Finish your profile and we'll get to work."
+
   return (
-    <div className="space-y-8">
-      {/* ── Good morning greeting ─────────────────────────────────────────── */}
-      <Greeting
-        subtitle={
-          orgName
-            ? `Here's today's marketing update for ${orgName}.`
-            : "Here's today's marketing update."
-        }
-      />
+    <div className="space-y-12 pb-4">
+      {/* ── First viewport: greeting, outcome tiles, Ask(+) ───────────────── */}
+      <Greeting subtitle="What would you like Koolerr to do for your business today?" />
 
-      {/* ── Marketing Team Status ─────────────────────────────────────────── */}
-      <section className="space-y-4">
-        <div className="rounded-lg border border-border bg-card p-5">
-          <h2 className="text-sm font-semibold text-foreground">Your marketing team</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {activeCount > 0
-              ? `We're actively working on your ${activeCount === 1 ? 'campaign' : `${activeCount} campaigns`} right now.`
-              : teamReady
-                ? "Your team is ready and waiting. Ask them above whenever you'd like more."
-                : "We're just getting set up. Finish your profile and we'll get to work."}
-          </p>
-        </div>
-        <LiveRunsPanel runs={activeRuns.map((r) => ({ id: r.id, objective: r.objective }))} />
-      </section>
-
-      {/* ── Ready for You ─────────────────────────────────────────────────── */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Ready for you</h2>
-        {attentionCount === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              You&apos;re all caught up. We&apos;ll let you know the moment we need you.
+      {/* ── Koolerr is working for you (existing live + ready + recent) ──── */}
+      <section className="space-y-5">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-foreground sm:text-xl">
+              Koolerr is working for you
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {orgName ? `${workingLine} Here's how things look for ${orgName}.` : workingLine}
             </p>
           </div>
+          {recentRuns.length > 0 && (
+            <Link href="/runs" className="shrink-0 text-sm text-primary hover:underline">
+              View all →
+            </Link>
+          )}
+        </div>
+
+        {attentionCount === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            You&apos;re all caught up. We&apos;ll let you know the moment we need you.
+          </p>
         ) : (
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-            <div>
+          <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
+            <div className="min-w-0">
               <p className="text-sm font-medium text-yellow-800">
                 {attentionCount} {attentionCount === 1 ? 'thing is' : 'things are'} ready for your
                 review
@@ -154,29 +153,66 @@ export default async function DashboardPage() {
             </div>
             <Link
               href="/approvals"
-              className="shrink-0 rounded-md bg-yellow-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-yellow-700"
+              className="inline-flex min-h-10 shrink-0 items-center rounded-full bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-yellow-700"
             >
               Review now
             </Link>
           </div>
         )}
+
+        <LiveRunsPanel runs={activeRuns.map((r) => ({ id: r.id, objective: r.objective }))} />
+
+        {recentRuns.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Nothing here yet. Ask your marketing team above to get started.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {recentRuns.map((run) => (
+              <Link
+                key={run.id}
+                href={`/runs/${run.id}`}
+                className="flex min-h-[7.5rem] flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:border-foreground/20 hover:bg-muted/30"
+              >
+                <div className="min-w-0">
+                  <p className="line-clamp-2 text-sm font-medium text-foreground">
+                    {run.objective}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {timeAgo(run.createdAt)}
+                    {run.deliverableIds.length > 0 && (
+                      <>
+                        {' '}
+                        · {run.deliverableIds.length} piece
+                        {run.deliverableIds.length === 1 ? '' : 's'} of content
+                      </>
+                    )}
+                  </p>
+                </div>
+                <span className={`mt-3 text-xs ${STATUS_COLORS[run.status]}`}>
+                  {STATUS_LABELS[run.status]}
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* ── Campaign Health ───────────────────────────────────────────────── */}
+      {/* ── Campaign health (quiet secondary) ─────────────────────────────── */}
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">Campaign health</h2>
+        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Campaign health</h2>
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border border-border bg-card px-4 py-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-xs text-muted-foreground">Active campaigns</p>
-            <p className="mt-0.5 text-2xl font-semibold text-foreground">{activeCount}</p>
+            <p className="mt-0.5 text-xl font-semibold text-foreground">{activeCount}</p>
           </div>
-          <div className="rounded-lg border border-border bg-card px-4 py-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-xs text-muted-foreground">Completed</p>
-            <p className="mt-0.5 text-2xl font-semibold text-foreground">{completedCount}</p>
+            <p className="mt-0.5 text-xl font-semibold text-foreground">{completedCount}</p>
           </div>
-          <div className="rounded-lg border border-border bg-card px-4 py-3">
+          <div className="rounded-2xl border border-border bg-card px-4 py-3">
             <p className="text-xs text-muted-foreground">Content created</p>
-            <p className="mt-0.5 text-2xl font-semibold text-foreground">{contentCount}</p>
+            <p className="mt-0.5 text-xl font-semibold text-foreground">{contentCount}</p>
           </div>
         </div>
         {mediaStats.total > 0 && (
@@ -196,63 +232,18 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* ── Recent Activity ───────────────────────────────────────────────── */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Recent activity</h2>
-          <Link href="/runs" className="text-xs text-primary hover:underline">
-            View all →
-          </Link>
-        </div>
-
-        {recentRuns.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border p-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Nothing here yet. Ask your marketing team above to get started.
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border rounded-lg border border-border bg-card">
-            {recentRuns.map((run) => (
-              <Link
-                key={run.id}
-                href={`/runs/${run.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-muted/30"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-foreground">{run.objective}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {timeAgo(run.createdAt)}
-                    {run.deliverableIds.length > 0 && (
-                      <>
-                        {' '}
-                        · {run.deliverableIds.length} piece
-                        {run.deliverableIds.length === 1 ? '' : 's'} of content
-                      </>
-                    )}
-                  </p>
-                </div>
-                <span className={`ml-4 shrink-0 text-xs ${STATUS_COLORS[run.status]}`}>
-                  {STATUS_LABELS[run.status]}
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ── Recommended Next Step ─────────────────────────────────────────── */}
+      {/* ── Recommended next step (quiet secondary) ───────────────────────── */}
       {nextStep && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold text-foreground">Recommended next step</h2>
-          <div className="flex items-start justify-between gap-4 rounded-lg border border-primary/30 bg-primary/5 p-5">
+          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Recommended next step</h2>
+          <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-border bg-muted/30 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">{nextStep.title}</p>
               <p className="mt-1 text-xs text-muted-foreground">{nextStep.desc}</p>
             </div>
             <Link
               href={nextStep.href}
-              className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              className="inline-flex min-h-10 shrink-0 items-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               {nextStep.cta}
             </Link>

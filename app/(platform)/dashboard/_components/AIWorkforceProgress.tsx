@@ -118,7 +118,7 @@ export function AIWorkforceProgress({ runId, onComplete }: Props) {
 
   if (error) {
     return (
-      <section className="rounded-lg border border-border bg-card p-4">
+      <section className="rounded-2xl border border-border bg-card p-4">
         <p className="text-sm text-destructive">{error}</p>
       </section>
     )
@@ -126,7 +126,7 @@ export function AIWorkforceProgress({ runId, onComplete }: Props) {
 
   if (!status) {
     return (
-      <section className="rounded-lg border border-border bg-card p-4">
+      <section className="rounded-2xl border border-border bg-card p-4">
         <p className="text-sm text-muted-foreground">Loading your marketing team&apos;s status…</p>
       </section>
     )
@@ -135,27 +135,22 @@ export function AIWorkforceProgress({ runId, onComplete }: Props) {
   const progressPct = Math.round((status.completedCount / status.totalSteps) * 100)
 
   return (
-    <section className="space-y-4 rounded-lg border border-border bg-card p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">Your marketing team is working</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {status.isComplete
-              ? 'All done — your content is ready.'
-              : status.isFailed
-                ? 'Your team ran into a problem on this one.'
-                : status.currentStep
-                  ? `${STEP_LABELS[status.currentStep] ?? status.currentStep}…`
-                  : 'Getting started…'}
-          </p>
-        </div>
-        <span className="text-xs font-medium text-muted-foreground">
-          {status.completedCount}/{status.totalSteps}
-        </span>
+    <section className="space-y-3 rounded-2xl border border-border bg-card p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-foreground">
+          {status.isComplete
+            ? 'All done — your content is ready.'
+            : status.isFailed
+              ? 'Your team ran into a problem on this one.'
+              : status.currentStep
+                ? `${STEP_LABELS[status.currentStep] ?? status.currentStep}…`
+                : 'Getting started…'}
+        </p>
+        <span className="shrink-0 text-xs font-medium text-muted-foreground">{progressPct}%</span>
       </div>
 
       {/* Progress bar */}
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
         <div
           className={`h-full rounded-full transition-all duration-700 ${
             status.isFailed ? 'bg-destructive' : status.isComplete ? 'bg-green-500' : 'bg-primary'
@@ -165,7 +160,7 @@ export function AIWorkforceProgress({ runId, onComplete }: Props) {
       </div>
 
       {/* Step list */}
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {status.steps.map((s) => (
           <li key={s.step} className="flex items-center gap-2.5">
             <StatusDot status={s.status} />
@@ -188,7 +183,7 @@ export function AIWorkforceProgress({ runId, onComplete }: Props) {
       </ul>
 
       {status.isComplete && (
-        <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
+        <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
           Your content is ready. Check <strong>Deliverables Awaiting Review</strong> above.
         </div>
       )}
