@@ -24,9 +24,11 @@ describe('Home visual north-star (Architect 8e01c1ed)', () => {
     expect(HOME_OUTCOME_TILES).toHaveLength(3)
   })
 
-  it('does not add a Phase 8 / Make a Video tile', () => {
+  it('does not add a Phase 8 video outcome tile', () => {
+    expect(HOME_OUTCOME_TILES).toHaveLength(3)
+    expect(HOME_OUTCOME_TILES.map((tile) => tile.id)).toEqual(['content', 'customers', 'review'])
     expect(HOME_OUTCOME_TILES.some((tile) => /video/i.test(tile.label))).toBe(false)
-    expect(greetingSource).not.toMatch(/Make a Video/i)
+    expect(HOME_OUTCOME_TILES.some((tile) => /video/i.test(tile.id))).toBe(false)
   })
 
   it('places outcome tiles before Ask(+) in the first-viewport hierarchy', () => {

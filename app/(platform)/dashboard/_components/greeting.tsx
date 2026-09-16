@@ -11,7 +11,7 @@ import { CampaignCreator } from '../../_components/campaign-creator'
  * Create tiles open the existing CampaignCreator (same flow as Campaigns →
  * New campaign). They do not navigate to /pipeline. Review uses the existing
  * /approvals destination. Visual-only restyle: larger, colored first-viewport
- * cards. No fourth tile and no Phase 8 / Make a Video tile.
+ * cards. No fourth tile and no Phase 8 video capability.
  */
 export const HOME_OUTCOME_TILES = [
   {
