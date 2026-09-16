@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import type { NavItem } from '../_lib/nav-items'
+import { isNavItemActive, type NavItem } from '../_lib/nav-items'
 import { CampaignCreator } from './campaign-creator'
 
 /**
@@ -60,14 +60,12 @@ export function bottomNavDestinationHrefs(primary: NavItem[]): string[] {
  * Whether a primary peer should show as the current location.
  *
  * Matches the desktop convention: the peer href itself, nested paths under
- * that href, or any composed child (so Work is current on /approvals, /runs,
- * and /deliverables without promoting those children to peers).
+ * that href, or any composed descendant (so Work is current on /approvals
+ * and Business is current on /billing, /usage, /consent, and /audit without
+ * promoting those children to peers).
  */
 export function isDestinationActive(pathname: string, item: NavItem): boolean {
-  if (pathname === item.href || pathname.startsWith(`${item.href}/`)) return true
-  return (item.children ?? []).some(
-    (child) => pathname === child.href || pathname.startsWith(`${child.href}/`)
-  )
+  return isNavItemActive(pathname, item)
 }
 
 /** Escape dismisses the Ask dialog, matching Home Ask(+) / New campaign. */

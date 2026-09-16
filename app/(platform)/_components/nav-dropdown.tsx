@@ -3,15 +3,22 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import type { NavItem } from '../_lib/nav-items'
+import { flattenVisibleNavMenu, isNavItemActive, type NavNode } from '../_lib/nav-items'
 import { activeMenuIndex, focusMenuItem, isMenuNavigationKey } from './nav-dropdown-focus'
 
 function isActivePath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + '/')
 }
 
+function depthPad(depth: number): string {
+  if (depth <= 0) return 'px-3'
+  if (depth === 1) return 'pl-6 pr-3'
+  return 'pl-9 pr-3'
+}
+
 /**
- * Desktop header dropdown for a labelled nav group ("More" and "⌘ Owner").
+ * Desktop header dropdown for a labelled nav group ("More", "⌘ Owner", and
+ * primary peers with children — Work and Business).
  *
  * Presentation only — it renders links to existing routes. Closes on outside
  * click, Escape, or navigation; highlights the trigger when the current route
@@ -32,10 +39,12 @@ export function NavDropdown({
   ariaLabel,
 }: {
   label: string
-  items: NavItem[]
+  items: NavNode[]
   ariaLabel?: string
 }) {
   const [open, setOpen] = useState(false)
+  // Advanced (and any future collapsed group) starts closed each time the menu opens.
+  const [expandedLabels, setExpandedLabels] = useState<Set<string>>(() => new Set())
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -44,7 +53,8 @@ export function NavDropdown({
   const openIntentRef = useRef<'first' | 'last'>('first')
   const menuId = useId()
   const pathname = usePathname()
-  const groupActive = items.some((i) => isActivePath(pathname, i.href))
+  const groupActive = items.some((i) => isNavItemActive(pathname, i))
+  const visibleNodes = flattenVisibleNavMenu(items, expandedLabels)
 
   useEffect(() => {
     if (!open) return
@@ -75,6 +85,19 @@ export function NavDropdown({
   useEffect(() => {
     setOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    if (!open) setExpandedLabels(new Set())
+  }, [open])
+
+  const toggleGroup = (groupLabel: string) => {
+    setExpandedLabels((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupLabel)) next.delete(groupLabel)
+      else next.add(groupLabel)
+      return next
+    })
+  }
 
   /** ArrowDown/ArrowUp on the trigger open the menu at that end and enter it. */
   const onTriggerKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>) => {
@@ -138,18 +161,46 @@ export function NavDropdown({
           onKeyDown={onMenuKeyDown}
           className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-md border border-border bg-card py-1 shadow-xl"
         >
-          {items.map((item) => {
-            const active = isActivePath(pathname, item.href)
+          {visibleNodes.map((node) => {
+            if (node.kind === 'group') {
+              return (
+                <button
+                  key={node.label}
+                  type="button"
+                  role="menuitem"
+                  aria-expanded={node.expanded}
+                  onClick={() => toggleGroup(node.label)}
+                  className={`flex w-full items-center justify-between gap-2 py-2 text-left text-sm hover:bg-muted hover:text-foreground ${depthPad(
+                    node.depth
+                  )} text-muted-foreground`}
+                >
+                  <span>{node.label}</span>
+                  <svg
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className={`h-4 w-4 shrink-0 transition-transform ${node.expanded ? 'rotate-180' : ''}`}
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              )
+            }
+            const active = isActivePath(pathname, node.href)
             return (
               <Link
-                key={item.href}
-                href={item.href}
+                key={node.href}
+                href={node.href}
                 role="menuitem"
-                className={`block px-3 py-2 text-sm hover:bg-muted hover:text-foreground ${
-                  active ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground'
-                }`}
+                className={`block py-2 text-sm hover:bg-muted hover:text-foreground ${depthPad(
+                  node.depth
+                )} ${active ? 'bg-muted font-medium text-foreground' : 'text-muted-foreground'}`}
               >
-                {item.label}
+                {node.label}
               </Link>
             )
           })}
