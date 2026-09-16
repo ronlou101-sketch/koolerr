@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest'
+import { PRIMARY_NAV } from '../_lib/nav-items'
+import { drawerPrimaryGroups } from './mobile-nav'
 import {
   FOCUSABLE_SELECTOR,
   describeFocusCandidate,
@@ -154,6 +156,31 @@ describe('focusTrapTarget()', () => {
       current = forced ?? items[items.indexOf(current as never) - 1]
     }
     expect(current).toBe(last)
+  })
+})
+
+describe('drawerPrimaryGroups()', () => {
+  it('keeps primary peers as Home, Work, Business and nests Work children', () => {
+    const groups = drawerPrimaryGroups(PRIMARY_NAV)
+    expect(groups.map((g) => g.peer.label)).toEqual(['Home', 'Work', 'Business'])
+    expect(groups.map((g) => g.peer.href)).toEqual(['/dashboard', '/work', '/brain'])
+    const work = groups.find((g) => g.peer.href === '/work')
+    expect(work?.peer.badgeKey).toBe('review')
+    expect(work?.nested.map((i) => [i.label, i.href])).toEqual([
+      ['Needs you', '/approvals'],
+      ['In progress', '/runs'],
+      ['Results', '/deliverables'],
+    ])
+    expect(groups.every((g) => g.peer.href !== '/approvals')).toBe(true)
+  })
+
+  it('does not promote Learn or nested Work destinations to primary peers', () => {
+    const groups = drawerPrimaryGroups(PRIMARY_NAV)
+    const peerHrefs = groups.map((g) => g.peer.href)
+    expect(peerHrefs).not.toContain('/academy')
+    expect(peerHrefs).not.toContain('/runs')
+    expect(peerHrefs).not.toContain('/deliverables')
+    expect(peerHrefs).toHaveLength(3)
   })
 })
 
