@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  * approvals. Operator surfaces (Mission Control, Full Audit Trail, CTO
  * Agent—Atlas) are intentionally omitted from this presentation.
  */
-export const FEATURES = [
+const FEATURES = [
   {
     icon: '👥',
     title: 'AI Marketing Workforce',

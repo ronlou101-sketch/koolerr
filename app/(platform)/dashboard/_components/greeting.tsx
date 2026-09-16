@@ -76,9 +76,10 @@ export function Greeting({ subtitle }: { subtitle: string }) {
     }
     document.addEventListener('keydown', onKeyDown)
     closeButtonRef.current?.focus()
+    const trigger = triggerRef.current
     return () => {
       document.removeEventListener('keydown', onKeyDown)
-      triggerRef.current?.focus()
+      trigger?.focus()
     }
   }, [open, close])
 
