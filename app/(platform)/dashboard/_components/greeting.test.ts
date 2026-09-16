@@ -14,13 +14,26 @@ const dashboardPageSource = readFileSync(
   'utf8'
 )
 
-describe('Home outcome tiles (Architect 94274eb9)', () => {
+describe('Home visual north-star (Architect 8e01c1ed)', () => {
   it('uses outcome language for the three Home tiles', () => {
     expect(HOME_OUTCOME_TILES.map((tile) => tile.label)).toEqual([
-      'Get more customers',
       'Create content',
+      'Get more customers',
       'Review your work',
     ])
+    expect(HOME_OUTCOME_TILES).toHaveLength(3)
+  })
+
+  it('does not add a Phase 8 / Make a Video tile', () => {
+    expect(HOME_OUTCOME_TILES.some((tile) => /video/i.test(tile.label))).toBe(false)
+    expect(greetingSource).not.toMatch(/Make a Video/i)
+  })
+
+  it('places outcome tiles before Ask(+) in the first-viewport hierarchy', () => {
+    const tilesIdx = greetingSource.indexOf('HOME_OUTCOME_TILES.map')
+    const askIdx = greetingSource.indexOf('id="home-ask"')
+    expect(tilesIdx).toBeGreaterThan(-1)
+    expect(askIdx).toBeGreaterThan(tilesIdx)
   })
 
   it('does not send create tiles to /pipeline', () => {
