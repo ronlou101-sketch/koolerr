@@ -131,7 +131,9 @@ describe('Ask(+) wiring and chrome contracts', () => {
   it('is mobile-only so desktop header chrome stays the existing bar', () => {
     expect(bottomNavSource).toContain('sm:hidden')
     expect(bottomNavSource).toContain('fixed inset-x-0 bottom-0')
-    expect(bottomNavSource).toContain('overflow-x-hidden')
+    expect(bottomNavSource).toContain('flex-1')
+    expect(bottomNavSource).toContain('min-w-0')
+    expect(bottomNavSource).toContain('overflow-visible')
     expect(mobileNavSource).toContain('sm:hidden')
     expect(layoutSource).toContain('hidden min-w-0 items-center gap-6 sm:flex')
     expect(layoutSource).toContain('<MobileNav')

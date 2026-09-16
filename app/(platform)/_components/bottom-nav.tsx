@@ -126,9 +126,9 @@ export function BottomNav({
     <>
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 overflow-x-hidden border-t border-border bg-card pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:hidden"
       >
-        <ul className="mx-auto flex max-w-7xl items-end">
+        <ul className="mx-auto flex w-full max-w-7xl items-end overflow-visible">
           {bottomNavSlots(primary).map((slot) => {
             if (slot.kind === 'ask') {
               return (
