@@ -202,7 +202,7 @@ export function BottomNav({
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6"
           role="dialog"
           aria-modal="true"
-          aria-label="New campaign"
+          aria-label="Ask Koolerr"
         >
           <button
             type="button"
@@ -212,13 +212,7 @@ export function BottomNav({
           />
           <div className="relative mt-8 w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-xl">
             <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">New campaign</h2>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  Tell me what you&apos;d like your marketing to accomplish, and I&apos;ll take it
-                  from there.
-                </p>
-              </div>
+              <h2 className="text-lg font-semibold text-foreground">Ask Koolerr</h2>
               <button
                 ref={closeButtonRef}
                 type="button"
@@ -241,7 +235,11 @@ export function BottomNav({
               </button>
             </div>
 
-            <CampaignCreator onStarted={() => setStarted(true)} />
+            <CampaignCreator
+              onStarted={() => setStarted(true)}
+              question="What do you need?"
+              submitLabel="Start"
+            />
           </div>
         </div>
       )}
