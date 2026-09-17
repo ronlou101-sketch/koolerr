@@ -119,15 +119,35 @@ describe('isAskDialogDismissKey()', () => {
 })
 
 describe('Ask(+) wiring and chrome contracts', () => {
-  it('hosts CampaignCreator in a labelled dialog and never links to /pipeline', () => {
+  it('hosts CampaignCreator in a labelled Ask Koolerr dialog and never links to /pipeline', () => {
     expect(bottomNavSource).toContain('CampaignCreator')
-    expect(bottomNavSource).toContain('aria-label="Ask+"')
+    expect(bottomNavSource).toContain('aria-label="Ask Koolerr"')
+    expect(bottomNavSource).toContain('title="Ask Koolerr"')
     expect(bottomNavSource).toContain('role="dialog"')
     expect(bottomNavSource).toContain('aria-modal="true"')
-    expect(bottomNavSource).toContain('aria-label="New campaign"')
+    expect(bottomNavSource).toContain(
+      '<h2 className="text-lg font-semibold text-foreground">Ask Koolerr</h2>'
+    )
+    expect(bottomNavSource).toContain('question="What do you need?"')
+    expect(bottomNavSource).toContain('submitLabel="Start"')
+    expect(bottomNavSource).toContain('onStarted={() => setStarted(true)}')
+    expect(bottomNavSource).not.toContain('aria-label="New campaign"')
+    expect(bottomNavSource).not.toContain('>New campaign</h2>')
+    expect(bottomNavSource).not.toContain('Create campaign')
+    expect(bottomNavSource).not.toContain('initialGoal')
     expect(bottomNavSource).toContain('type="button"')
     expect(bottomNavSource).not.toMatch(/href=["']\/pipeline["']/)
     expect(bottomNavSource).not.toMatch(/href=\{['"]\/pipeline['"]\}/)
+  })
+
+  it('keeps five-tab structure, visible Ask +, and blank Ask with no outcome prefill', () => {
+    expect(bottomNavSlotLabels(PRIMARY_NAV)).toEqual(['Home', 'Work', 'Ask+', 'Business', 'More'])
+    expect(bottomNavSource).toContain('aria-label="Ask Koolerr"')
+    expect(bottomNavSource).toMatch(/<span aria-hidden="true"[^>]*>\s*\+\s*<\/span>/)
+    expect(bottomNavSource).not.toContain('initialGoal')
+    expect(bottomNavSource).not.toContain('initialCustomTopic')
+    expect(bottomNavSource).not.toContain('initialFocus')
+    expect(bottomNavSource).not.toContain('HOME_ASK_GOALS')
   })
 
   it('marks the current destination with aria-current and keeps Ask as an action', () => {

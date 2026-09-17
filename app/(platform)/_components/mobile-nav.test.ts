@@ -228,6 +228,13 @@ describe('persistent bottom nav composition', () => {
     expect(mobileNavSource).not.toMatch(/href=["']\/advanced["']/)
     expect(mobileNavSource).not.toContain("sectionHeader('Business')")
   })
+
+  it('does not foreground Owner-only tools in customer More', () => {
+    expect(mobileNavSource).not.toContain("sectionHeader('Owner')")
+    expect(mobileNavSource).not.toContain('Command Center')
+    expect(mobileNavSource).not.toContain('Mission Control')
+    expect(mobileNavSource).not.toContain('owner.map')
+  })
 })
 
 /**

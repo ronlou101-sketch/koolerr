@@ -33,7 +33,8 @@ export function drawerPrimaryGroups(primary: NavItem[]): { peer: NavItem; nested
  *
  * The persistent bottom bar (Home / Work / Ask+ / Business / More) is composed
  * here so More and the hamburger share one drawer. Ask(+) is an action, not a
- * route — it reuses CampaignCreator inside BottomNav.
+ * route — it reuses CampaignCreator inside BottomNav. Owner-only tools are not
+ * listed in this More drawer; they stay on ⌘ Owner (Architect lock c40f0ece).
  *
  * Accessibility: the panel is a labelled modal dialog. On open, focus moves to the
  * Close button; Escape closes it; on close, focus returns to the trigger. While it
@@ -44,12 +45,14 @@ export function drawerPrimaryGroups(primary: NavItem[]): { peer: NavItem; nested
 export function MobileNav({
   primary,
   more,
-  owner,
+  owner: _owner,
 }: {
   primary: NavItem[]
   more: NavItem[]
+  /** Founder Owner tools — kept on ⌘ Owner chrome; not rendered in customer More. */
   owner: NavItem[]
 }) {
+  void _owner
   const [open, setOpen] = useState(false)
   const [expandedLabels, setExpandedLabels] = useState<Set<string>>(() => new Set())
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -258,13 +261,6 @@ export function MobileNav({
               <>
                 {sectionHeader('More')}
                 {more.map(renderLink)}
-              </>
-            )}
-
-            {owner.length > 0 && (
-              <>
-                {sectionHeader('Owner')}
-                {owner.map(renderLink)}
               </>
             )}
           </nav>
