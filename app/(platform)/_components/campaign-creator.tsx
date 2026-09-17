@@ -6,13 +6,19 @@ import { AIWorkforceProgress } from '../dashboard/_components/AIWorkforceProgres
 
 type FlowState = 'idle' | 'loading' | 'running' | 'done' | 'error'
 
+/** One selectable outcome in the Ask / campaign-create form. */
+export interface GoalOption {
+  key: string
+  label: string
+}
+
 /**
  * Common business goals the customer can hand to their AI team with one tap,
  * instead of inventing a goal in a blank field. Each label IS the topic string
  * sent to the unchanged engine (the old field was already free-form natural
  * language). "other" is the only option that reveals a free-text input.
  */
-const GOALS = [
+export const GOALS: readonly GoalOption[] = [
   { key: 'leads', label: 'Get me more leads' },
   { key: 'calls', label: 'Get me more phone calls' },
   { key: 'appointments', label: 'Book more appointments' },
@@ -20,7 +26,13 @@ const GOALS = [
   { key: 'awareness', label: 'Build brand awareness' },
   { key: 'repeat', label: 'Increase repeat customers' },
   { key: 'other', label: 'Something else…' },
-] as const
+]
+
+/** Default Ask/start question — Work New campaign keeps this wording. */
+export const CAMPAIGN_CREATOR_QUESTION = 'What do you want your AI marketing team to do?'
+
+/** Default submit label — Work New campaign keeps this wording. */
+export const CAMPAIGN_CREATOR_SUBMIT_LABEL = 'Create campaign'
 
 /**
  * The campaign-creation flow (Experience Phase 13).
@@ -34,13 +46,33 @@ const GOALS = [
  * It renders only the flow chrome (form → progress → done); the surrounding
  * title/box is supplied by the caller (page heading or modal header).
  *
+ * Optional Home H2 props (Architect lock c40f0ece) pre-select an outcome and
+ * swap customer-visible Ask wording. Defaults preserve the Work New campaign
+ * dialog. POST `/api/pipeline/run` body remains `{ topic, brief }`.
+ *
  * @param onStarted fired once when a run begins, so a caller (e.g. the modal)
  *   can refresh a server-rendered list to reveal the new campaign.
  */
-export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
-  const [goal, setGoal] = useState('')
-  const [customTopic, setCustomTopic] = useState('')
-  const [focus, setFocus] = useState('')
+export function CampaignCreator({
+  onStarted,
+  goals = GOALS,
+  initialGoal = '',
+  initialCustomTopic = '',
+  initialFocus = '',
+  question = CAMPAIGN_CREATOR_QUESTION,
+  submitLabel = CAMPAIGN_CREATOR_SUBMIT_LABEL,
+}: {
+  onStarted?: () => void
+  goals?: readonly GoalOption[]
+  initialGoal?: string
+  initialCustomTopic?: string
+  initialFocus?: string
+  question?: string
+  submitLabel?: string
+}) {
+  const [goal, setGoal] = useState(initialGoal)
+  const [customTopic, setCustomTopic] = useState(initialCustomTopic)
+  const [focus, setFocus] = useState(initialFocus)
   const [state, setState] = useState<FlowState>('idle')
   const [runId, setRunId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -49,7 +81,7 @@ export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
   // The exact topic string the engine receives — a preset goal's label, or the
   // customer's own words when "Something else…" is chosen. Unchanged contract.
   const topic =
-    goal === 'other' ? customTopic.trim() : (GOALS.find((g) => g.key === goal)?.label ?? '')
+    goal === 'other' ? customTopic.trim() : (goals.find((g) => g.key === goal)?.label ?? '')
   const canSubmit = topic.length > 0
 
   async function handleSubmit(e: React.FormEvent) {
@@ -98,11 +130,9 @@ export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
       {(state === 'idle' || state === 'error') && (
         <form onSubmit={handleSubmit} className="space-y-6">
           <fieldset>
-            <legend className="text-sm font-medium text-foreground">
-              What do you want your AI marketing team to do?
-            </legend>
+            <legend className="text-sm font-medium text-foreground">{question}</legend>
             <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {GOALS.map((g) => (
+              {goals.map((g) => (
                 <label
                   key={g.key}
                   className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground hover:border-foreground/40 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:font-medium has-[:checked]:text-foreground has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
@@ -176,7 +206,7 @@ export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
             disabled={!canSubmit}
             className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Create campaign
+            {submitLabel}
           </button>
         </form>
       )}
@@ -230,9 +260,9 @@ export function CampaignCreator({ onStarted }: { onStarted?: () => void }) {
               type="button"
               onClick={() => {
                 setState('idle')
-                setGoal('')
-                setCustomTopic('')
-                setFocus('')
+                setGoal(initialGoal)
+                setCustomTopic(initialCustomTopic)
+                setFocus(initialFocus)
                 setRunId(null)
               }}
               className="rounded-md border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"

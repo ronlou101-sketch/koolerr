@@ -134,8 +134,8 @@ export function BottomNav({
                   <button
                     ref={askTriggerRef}
                     type="button"
-                    aria-label="Ask+"
-                    title="Ask+"
+                    aria-label="Ask Koolerr"
+                    title="Ask Koolerr"
                     aria-haspopup="dialog"
                     aria-expanded={askOpen}
                     onClick={() => setAskOpen(true)}

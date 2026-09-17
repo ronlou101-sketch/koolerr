@@ -121,7 +121,7 @@ describe('isAskDialogDismissKey()', () => {
 describe('Ask(+) wiring and chrome contracts', () => {
   it('hosts CampaignCreator in a labelled dialog and never links to /pipeline', () => {
     expect(bottomNavSource).toContain('CampaignCreator')
-    expect(bottomNavSource).toContain('aria-label="Ask+"')
+    expect(bottomNavSource).toContain('aria-label="Ask Koolerr"')
     expect(bottomNavSource).toContain('role="dialog"')
     expect(bottomNavSource).toContain('aria-modal="true"')
     expect(bottomNavSource).toContain('aria-label="New campaign"')
