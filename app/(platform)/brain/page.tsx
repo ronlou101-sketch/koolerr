@@ -11,6 +11,9 @@ import type { BusinessMemoryType } from '@/shared/types'
  * Intelligence summary (patterns, gaps, cross-cutting themes) derived
  * from synthesizeInsights() — Phase 2 Milestone 3.
  *
+ * Canonical customer-visible total is intelligence.trends.totalMemories only.
+ * queryMemory is capped and must not be presented as the org total.
+ *
  * See FOUNDATION_001_ARCHITECTURE.md §2.3, §2.4, §2.5 — Business Brain.
  * See docs/adr/ADR-015-business-brain-intelligence.md.
  */
@@ -46,6 +49,32 @@ const TYPE_ORDER: BusinessMemoryType[] = [
   'asset',
 ]
 
+/** UUID-shaped values lead the default Brain list with engineering residue. */
+const UUID_VALUE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Dogfooding source strings are operator residue; the default view uses a plain label. */
+function displayMemorySource(source: string): string {
+  if (source.startsWith('dogfooding')) return 'Internal check'
+  return source
+}
+
+/**
+ * Soften default-view memory fields: hide UUID leads, relabel dogfooding
+ * domains, and show ISO timestamps as dates instead of raw strings.
+ */
+function displayContentValue(value: unknown): string | null {
+  const raw = String(value)
+  if (UUID_VALUE.test(raw)) return null
+  if (raw.startsWith('dogfooding')) return 'Internal check'
+  if (/^\d{4}-\d{2}-\d{2}T/.test(raw)) {
+    const parsed = new Date(raw)
+    return Number.isNaN(parsed.getTime()) ? raw : parsed.toLocaleDateString()
+  }
+  if (raw === 'running') return 'In progress'
+  if (raw === 'completed') return 'Finished'
+  return raw
+}
+
 export default async function BrainPage() {
   const ctx = await getRequestPlatformContext()
   if (!ctx) redirect('/login')
@@ -59,6 +88,10 @@ export default async function BrainPage() {
   ])
 
   const intelligence = intelligenceResult.ok ? intelligenceResult.value : null
+  const canonicalTotal =
+    intelligence && typeof intelligence.trends.totalMemories === 'number'
+      ? intelligence.trends.totalMemories
+      : null
 
   if (!result.ok) {
     return (
@@ -69,11 +102,17 @@ export default async function BrainPage() {
     )
   }
 
-  const { memories, totalCount } = result.value
+  const { memories } = result.value
 
-  // Brain health metrics (computed from fetched memories — limit 200)
-  const documentedTypeCount = new Set(memories.map((m) => m.type)).size
-  const coveragePct = Math.round((documentedTypeCount / 12) * 100)
+  // Type coverage comes from intelligence when the canonical total exists.
+  // The capped queryMemory list is labeled as this view only.
+  const documentedTypeCount = intelligence
+    ? Object.keys(intelligence.trends.countsByType).length
+    : new Set(memories.map((m) => m.type)).size
+  const catalogSize = intelligence
+    ? documentedTypeCount + intelligence.trends.undocumentedTypes.length
+    : TYPE_ORDER.length
+  const coveragePct = catalogSize === 0 ? 0 : Math.round((documentedTypeCount / catalogSize) * 100)
   const lastUpdatedAt =
     memories.length > 0
       ? memories.reduce(
@@ -101,19 +140,27 @@ export default async function BrainPage() {
   }
 
   const presentTypes = TYPE_ORDER.filter((t) => grouped.has(t))
+  const isEmptyBrain = canonicalTotal === 0
 
   return (
     <div className="space-y-8">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Business Brain</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {totalCount === 0
-              ? 'No memories stored yet.'
-              : `${totalCount} ${totalCount === 1 ? 'memory' : 'memories'} — what your workforce knows about your business.`}
-          </p>
+          {canonicalTotal === null ? (
+            <p className="mt-1 text-sm text-destructive">
+              Could not load the full Business Brain total. This page will not estimate a total from
+              a partial list.
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {canonicalTotal === 0
+                ? 'No memories stored yet.'
+                : `${canonicalTotal} ${canonicalTotal === 1 ? 'memory' : 'memories'} — what your workforce knows about your business.`}
+            </p>
+          )}
         </div>
-        {totalCount === 0 && (
+        {isEmptyBrain && (
           <Link
             href="/onboarding"
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
@@ -123,7 +170,7 @@ export default async function BrainPage() {
         )}
       </div>
 
-      {totalCount === 0 ? (
+      {isEmptyBrain ? (
         <div className="rounded-lg border border-dashed border-border p-8 text-center">
           <p className="text-sm text-muted-foreground">
             Your Business Brain is empty. Complete onboarding to give your workforce context.
@@ -141,10 +188,12 @@ export default async function BrainPage() {
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
             <span className="text-sm font-semibold text-foreground">
               {coveragePct}% type coverage
+              {!intelligence && ' in this view'}
             </span>
             <span className="text-xs text-muted-foreground">·</span>
             <span className="text-xs text-muted-foreground">
-              {documentedTypeCount} of 12 knowledge types documented
+              {documentedTypeCount} of {catalogSize} knowledge types documented
+              {!intelligence && ' in this view'}
             </span>
             {lastUpdatedAt && (
               <>
@@ -161,7 +210,6 @@ export default async function BrainPage() {
             <section className="rounded-lg border border-border bg-muted/30 p-5">
               <h2 className="mb-3 text-sm font-semibold text-foreground">Brain Intelligence</h2>
               <div className="mb-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                <span>{intelligence.trends.totalMemories} memories total</span>
                 {intelligence.trends.mostDocumented && (
                   <span>
                     Strongest area:{' '}
@@ -190,6 +238,12 @@ export default async function BrainPage() {
                       }`}
                     >
                       <span className="font-medium">{insight.title}:</span> {insight.finding}
+                      {insight.type === 'pattern' && (
+                        <p className="mt-1 opacity-80">
+                          This is a subset for this knowledge type — not a second Business Brain
+                          total.
+                        </p>
+                      )}
                     </div>
                   ))}
                 {intelligence.insights.filter((i) => i.type === 'gap').length > 0 && (
@@ -244,6 +298,11 @@ export default async function BrainPage() {
 
           {/* Memory list by type */}
           <div className="space-y-6">
+            {canonicalTotal !== null && memories.length > 0 && memories.length < canonicalTotal && (
+              <p className="text-xs text-muted-foreground">
+                Showing {memories.length} memories in this view — not a second total.
+              </p>
+            )}
             {presentTypes.map((type) => {
               const typeMemories = grouped.get(type)!
               return (
@@ -252,29 +311,41 @@ export default async function BrainPage() {
                     {TYPE_LABELS[type]}
                   </h2>
                   <div className="space-y-3">
-                    {typeMemories.map((memory) => (
-                      <div key={memory.id} className="rounded-lg border border-border bg-card p-4">
-                        <div className="space-y-2">
-                          {Object.entries(memory.content).map(([key, value]) => (
-                            <div key={key}>
-                              <span className="text-xs font-medium capitalize text-muted-foreground">
-                                {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
-                              </span>
-                              <p className="mt-0.5 text-sm text-foreground">{String(value)}</p>
-                            </div>
-                          ))}
+                    {typeMemories.map((memory) => {
+                      const visibleEntries = Object.entries(memory.content)
+                        .map(([key, value]) => [key, displayContentValue(value)] as const)
+                        .filter((entry): entry is readonly [string, string] => entry[1] !== null)
+                      return (
+                        <div
+                          key={memory.id}
+                          className="rounded-lg border border-border bg-card p-4"
+                        >
+                          <div className="space-y-2">
+                            {visibleEntries.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">Stored system record.</p>
+                            ) : (
+                              visibleEntries.map(([key, value]) => (
+                                <div key={key}>
+                                  <span className="text-xs font-medium capitalize text-muted-foreground">
+                                    {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                                  </span>
+                                  <p className="mt-0.5 text-sm text-foreground">{value}</p>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                          <div className="mt-3 flex items-center gap-3 border-t border-border pt-2">
+                            <span className="text-xs text-muted-foreground">
+                              Source: {displayMemorySource(memory.source)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">v{memory.version}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {memory.updatedAt.toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
-                        <div className="mt-3 flex items-center gap-3 border-t border-border pt-2">
-                          <span className="text-xs text-muted-foreground">
-                            Source: {memory.source}
-                          </span>
-                          <span className="text-xs text-muted-foreground">v{memory.version}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {memory.updatedAt.toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </section>
               )
