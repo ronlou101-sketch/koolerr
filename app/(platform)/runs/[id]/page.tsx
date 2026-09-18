@@ -7,6 +7,7 @@ import { businessBrainService } from '@/domains/business-brain'
 import type { DeliverableFilter } from '@/domains/deliverables/types'
 import type { EngagementRunId } from '@/shared/types'
 import { RUN_STATUS_LABELS, RUN_STATUS_BADGE_COLORS } from '@/shared/lib/run-status'
+import { isEngineeringResidue } from '../_lib/is-engineering-residue'
 import { findRunFailure } from './_lib/run-failure'
 
 interface Props {
@@ -47,8 +48,9 @@ export default async function RunDetailPage({ params }: Props) {
     ? allDeliverablesResult.value.filter((d) => run.deliverableIds.includes(d.id))
     : []
 
+  const residue = isEngineeringResidue(run.objective)
   const failure =
-    run.status === 'failed' && progressResult.ok
+    run.status === 'failed' && !residue && progressResult.ok
       ? findRunFailure(progressResult.value.memories)
       : null
 
@@ -74,6 +76,30 @@ export default async function RunDetailPage({ params }: Props) {
         </span>
       </div>
 
+      {/* Residue — plain system/render-check copy; do not use findRunFailure */}
+      {residue && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4">
+          <h2 className="mb-1 text-sm font-semibold text-foreground">System render check</h2>
+          <p className="text-sm text-muted-foreground">
+            This item is an older internal video or image check, not one of your campaigns. It is
+            kept in history so your Work totals stay honest.
+          </p>
+          {run.status === 'failed' && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              It didn&apos;t finish because it was a system check, not customer work.{' '}
+              <Link href="/runs" className="underline hover:text-foreground">
+                Start a new campaign from Work
+              </Link>
+              {', or '}
+              <Link href="/support" className="underline hover:text-foreground">
+                contact support
+              </Link>{' '}
+              if you expected this to be your work.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Failure detail — which department stopped the run, and why */}
       {failure && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
@@ -82,7 +108,36 @@ export default async function RunDetailPage({ params }: Props) {
           </h2>
           <p className="text-sm text-muted-foreground">{failure.reason}</p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Your team completed the earlier work. Start the campaign again to finish.
+            Your team completed the earlier work.{' '}
+            <Link href="/runs" className="underline hover:text-foreground">
+              Start the campaign again from Work
+            </Link>{' '}
+            to finish, or{' '}
+            <Link href="/support" className="underline hover:text-foreground">
+              contact support
+            </Link>
+            .
+          </p>
+        </div>
+      )}
+
+      {!residue && run.status === 'failed' && !failure && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <h2 className="mb-1 text-sm font-semibold text-destructive">
+            This campaign didn&apos;t finish
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            We don&apos;t have a recorded reason for this one yet.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            <Link href="/runs" className="underline hover:text-foreground">
+              Start the campaign again from Work
+            </Link>
+            {', or '}
+            <Link href="/support" className="underline hover:text-foreground">
+              contact support
+            </Link>{' '}
+            if you need help.
           </p>
         </div>
       )}
