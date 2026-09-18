@@ -214,11 +214,19 @@ describe('drawerPrimaryGroups()', () => {
 })
 
 describe('persistent bottom nav composition', () => {
-  it('renders BottomNav inside the mobile-only chrome so More shares the drawer', () => {
+  it('renders BottomNav outside the hamburger sm:hidden wrapper so landscape More stays reachable', () => {
     expect(mobileNavSource).toContain('sm:hidden')
     expect(mobileNavSource).toContain('<BottomNav')
     expect(mobileNavSource).toContain('onMoreClick={() => setOpen(true)}')
     expect(mobileNavSource).toContain('moreOpen={open}')
+    const hamburgerWrap = mobileNavSource.indexOf('className="sm:hidden"')
+    const hamburgerWrapClose = mobileNavSource.indexOf('</div>', hamburgerWrap)
+    const bottomNav = mobileNavSource.indexOf('<BottomNav')
+    const moreDrawer = mobileNavSource.indexOf('aria-label="Navigation menu"')
+    expect(hamburgerWrap).toBeGreaterThan(-1)
+    expect(bottomNav).toBeGreaterThan(hamburgerWrapClose)
+    expect(moreDrawer).toBeGreaterThan(hamburgerWrapClose)
+    expect(moreDrawer).toBeLessThan(bottomNav)
   })
 
   it('keeps Work/Business children and More as drawer overflow, not new destinations', () => {
