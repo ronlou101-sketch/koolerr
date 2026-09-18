@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { isEngineeringResidue } from './_lib/is-engineering-residue'
 
-const pageSource = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'page.tsx'), 'utf8')
-const workPageSource = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '../work/page.tsx'),
-  'utf8'
-)
+const dir = dirname(fileURLToPath(import.meta.url))
+const pageSource = readFileSync(join(dir, 'page.tsx'), 'utf8')
+const detailSource = readFileSync(join(dir, '[id]/page.tsx'), 'utf8')
+const workPageSource = readFileSync(join(dir, '../work/page.tsx'), 'utf8')
 
 describe('Work hub depth on /runs (Architect lock f764eda3)', () => {
   it('presents Work — not Campaigns — as the primary heading identity', () => {
@@ -46,3 +46,48 @@ describe('Work hub depth on /runs (Architect lock f764eda3)', () => {
     expect(pageSource).toContain('flex-wrap')
   })
 })
+
+describe('Work residue demotion (Architect lock bef9971b / ac421b6f Domain 1)', () => {
+  it('classifies residue with the shared helper and keeps customer HVAC work in the primary scan', () => {
+    expect(pageSource).toContain("from './_lib/is-engineering-residue'")
+    expect(pageSource).toContain('isEngineeringResidue(run.objective)')
+    expect(pageSource).toContain('primaryRuns')
+    expect(pageSource).toContain('residueRuns')
+    expect(isEngineeringResidue('Create a video testimonial for my HVAC business')).toBe(false)
+    expect(isEngineeringResidue('HeyGen video generation for script: stage6-e2e-final')).toBe(true)
+  })
+
+  it('places residue in a collapsed secondary section instead of deleting it', () => {
+    expect(pageSource).toContain('<details')
+    expect(pageSource).toContain('Older system checks')
+    expect(pageSource).toContain('residueRuns.map')
+    expect(pageSource).toContain('href={`/runs/${run.id}`}')
+    expect(pageSource).not.toContain('residueRuns.filter')
+  })
+
+  it('keeps headline aggregates honest across all engagement runs', () => {
+    expect(pageSource).toContain('runs.length')
+    expect(pageSource).toContain("r.status === 'completed'")
+    expect(pageSource).toContain("r.status === 'pending' || r.status === 'running'")
+    expect(pageSource).toContain('listed')
+    expect(pageSource).toContain('separately below')
+    expect(pageSource).toContain('Totals include every campaign.')
+  })
+
+  it('does not rewrite status labels or infer residue from failed+empty alone', () => {
+    expect(pageSource).toContain('RUN_STATUS_LABELS[run.status]')
+    expect(pageSource).not.toMatch(/status === ['"]failed['"].*deliverableIds\.length === 0/)
+    expect(pageSource).not.toContain("RUN_STATUS_LABELS.failed =")
+    expect(detailSource).not.toContain("RUN_STATUS_LABELS.failed =")
+  })
+
+  it('keeps findRunFailure for real failures and explains residue as a system render check', () => {
+    expect(detailSource).toContain('findRunFailure')
+    expect(detailSource).toContain('isEngineeringResidue')
+    expect(detailSource).toContain('System render check')
+    expect(detailSource).toContain('Start a new campaign from Work')
+    expect(detailSource).toContain('href="/support"')
+    expect(detailSource).toContain('run.status === \'failed\' && !residue')
+  })
+})
+
