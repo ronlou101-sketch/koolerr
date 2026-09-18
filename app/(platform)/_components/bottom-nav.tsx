@@ -74,13 +74,54 @@ export function isAskDialogDismissKey(key: string): boolean {
 }
 
 /**
+ * CSS media query that hides the five-tab bar on tablet/desktop while keeping
+ * it on phone landscape (~844×390). Width-only `sm:hidden` dropped the bar at
+ * 844px even though that viewport is still a phone.
+ *
+ * Hidden only when BOTH: width ≥768px (tablet/desktop) AND height ≥32.5rem
+ * (520px — taller than landscape phones, which sit ~375–430px).
+ */
+export const BOTTOM_NAV_HIDE_MQ = '(min-width:768px) and (min-height:32.5rem)'
+
+/** Tailwind class applying {@link BOTTOM_NAV_HIDE_MQ}. */
+export const BOTTOM_NAV_VISIBILITY_CLASS =
+  '[@media(min-width:768px)_and_(min-height:32.5rem)]:hidden'
+
+/**
+ * Whether a viewport should hide the five-tab bar (header chrome instead).
+ *
+ * 32.5rem is 520px at the default 16px root — keep this number in lockstep
+ * with {@link BOTTOM_NAV_HIDE_MQ}.
+ */
+export function hidesPhoneBottomNav(widthPx: number, heightPx: number): boolean {
+  return widthPx >= 768 && heightPx >= 520
+}
+
+/**
+ * Visible selected treatment for a bottom-nav destination (or More while its
+ * sheet is open). Shade/color — not type-weight alone. Uses existing tokens.
+ */
+export const NAV_TAB_SELECTED_CLASS = 'rounded-md bg-primary/10 font-medium text-foreground'
+
+/** Unselected bottom-nav destination / More treatment. */
+export const NAV_TAB_IDLE_CLASS = 'text-muted-foreground hover:text-foreground'
+
+/**
+ * Ask dialog panel: contained to the viewport so phone-landscape (~390px tall)
+ * can scroll to Start instead of clipping it off-screen. No submit change.
+ */
+export const ASK_DIALOG_PANEL_CLASS =
+  'relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xl'
+
+/**
  * Persistent mobile bottom navigation.
  *
- * Rendered only below the `sm` breakpoint (the desktop header bar handles
- * larger screens). Home / Work / Business are the existing primary peers;
- * the center Ask(+) control opens the existing CampaignCreator flow in a
- * local dialog — same path as Home Ask(+), not a /pipeline destination.
- * More is an overflow action that opens the existing hamburger drawer.
+ * Visible on phone portrait and phone landscape; hidden on tablet/desktop
+ * where the header bar is the primary chrome ({@link BOTTOM_NAV_HIDE_MQ}).
+ * Home / Work / Business are the existing primary peers; the center Ask(+)
+ * control opens the existing CampaignCreator flow in a local dialog — same
+ * path as Home Ask(+), not a /pipeline destination. More is an overflow
+ * action that opens the existing hamburger drawer.
  */
 export function BottomNav({
   primary,
@@ -124,7 +165,7 @@ export function BottomNav({
     <>
       <nav
         aria-label="Primary"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:hidden"
+        className={`fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card pb-[max(0.5rem,env(safe-area-inset-bottom))] ${BOTTOM_NAV_VISIBILITY_CLASS}`}
       >
         <ul className="mx-auto flex w-full max-w-7xl items-end overflow-visible">
           {bottomNavSlots(primary).map((slot) => {
@@ -158,7 +199,9 @@ export function BottomNav({
                     aria-haspopup="dialog"
                     aria-expanded={moreOpen}
                     onClick={onMoreClick}
-                    className="inline-flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 px-1 py-2 text-muted-foreground hover:text-foreground"
+                    className={`inline-flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 px-2 py-1.5 ${
+                      moreOpen ? NAV_TAB_SELECTED_CLASS : NAV_TAB_IDLE_CLASS
+                    }`}
                   >
                     <MoreIcon />
                     <span className="text-[11px] font-medium leading-none">More</span>
@@ -174,10 +217,8 @@ export function BottomNav({
                 <Link
                   href={item.href}
                   aria-current={active ? 'page' : undefined}
-                  className={`relative inline-flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 px-1 py-2 ${
-                    active
-                      ? 'font-medium text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                  className={`relative inline-flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 px-2 py-1.5 ${
+                    active ? NAV_TAB_SELECTED_CLASS : NAV_TAB_IDLE_CLASS
                   }`}
                 >
                   <PeerIcon label={item.label} />
@@ -199,7 +240,7 @@ export function BottomNav({
 
       {askOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-label="Ask Koolerr"
@@ -210,8 +251,8 @@ export function BottomNav({
             onClick={closeAsk}
             className="absolute inset-0 bg-black/40"
           />
-          <div className="relative mt-8 w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-xl">
-            <div className="mb-4 flex items-start justify-between gap-4">
+          <div className={ASK_DIALOG_PANEL_CLASS}>
+            <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-2 pt-4">
               <h2 className="text-lg font-semibold text-foreground">Ask Koolerr</h2>
               <button
                 ref={closeButtonRef}
@@ -235,11 +276,13 @@ export function BottomNav({
               </button>
             </div>
 
-            <CampaignCreator
-              onStarted={() => setStarted(true)}
-              question="What do you need?"
-              submitLabel="Start"
-            />
+            <div className="min-h-0 overflow-y-auto px-6 pb-6">
+              <CampaignCreator
+                onStarted={() => setStarted(true)}
+                question="What do you need?"
+                submitLabel="Start"
+              />
+            </div>
           </div>
         </div>
       )}
