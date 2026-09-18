@@ -18,10 +18,11 @@ import {
  * See FOUNDATION_001_ARCHITECTURE.md §2.14 — Billing.
  */
 
-function UsageBar({ used, limit }: { used: number; limit: number }) {
+function UsageBar({ used, limit, unit }: { used: number; limit: number; unit?: string }) {
   const pct = limit === Infinity ? 0 : Math.min(100, Math.round((used / limit) * 100))
   const isWarning = pct >= 80
   const isFull = pct >= 100
+  const unitSuffix = unit ? ` ${unit}` : ''
 
   return (
     <div className="mt-2 space-y-1">
@@ -35,8 +36,8 @@ function UsageBar({ used, limit }: { used: number; limit: number }) {
       </div>
       <p className="text-xs text-muted-foreground">
         {limit === Infinity
-          ? `${used.toLocaleString()} used (unlimited)`
-          : `${used.toLocaleString()} / ${limit.toLocaleString()} used`}
+          ? `${used.toLocaleString()}${unitSuffix} used (unlimited)`
+          : `${used.toLocaleString()} / ${limit.toLocaleString()}${unitSuffix} used`}
       </p>
     </div>
   )
@@ -78,6 +79,17 @@ export default async function UsagePage() {
   const planLabel = subscription
     ? (PLAN_LABELS[subscription.planId as keyof typeof PLAN_LABELS] ?? subscription.planId)
     : 'Not subscribed'
+
+  const capacityOverage =
+    tokenEntitlement &&
+    tokenEntitlement.limit !== Infinity &&
+    tokenEntitlement.used > tokenEntitlement.limit
+      ? tokenEntitlement.used - tokenEntitlement.limit
+      : 0
+
+  const capacityPeriod = subscription
+    ? `${formatDate(subscription.currentPeriodStart)} — ${formatDate(subscription.currentPeriodEnd)}`
+    : 'this billing period'
 
   return (
     <div className="space-y-8">
@@ -126,7 +138,14 @@ export default async function UsagePage() {
           <div className="rounded-lg border border-border bg-card p-5">
             <p className="text-sm font-medium text-foreground">Engagement Runs</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Complete content workflows produced by your workforce.
+              Completed workflows that count against your plan&apos;s run allowance this billing
+              period. This is not a count of{' '}
+              <Link href="/runs" className="text-primary hover:underline">
+                Work
+              </Link>{' '}
+              campaigns. Work shows every campaign your team started (history). Engagement Runs only
+              count completed workflows that use this allowance — so this meter can be 0 even when
+              Work lists many campaigns.
             </p>
             {runEntitlement ? (
               <UsageBar used={runEntitlement.used} limit={runEntitlement.limit} />
@@ -146,12 +165,32 @@ export default async function UsagePage() {
           <div className="rounded-lg border border-border bg-card p-5">
             <p className="text-sm font-medium text-foreground">Work Capacity</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              How much of your marketing team&apos;s capacity you&apos;ve used this period.
+              How much of your marketing team&apos;s capacity you&apos;ve used this period, measured
+              in tokens.
             </p>
             {tokenEntitlement ? (
-              <UsageBar used={tokenEntitlement.used} limit={tokenEntitlement.limit} />
+              <UsageBar used={tokenEntitlement.used} limit={tokenEntitlement.limit} unit="tokens" />
             ) : (
               <p className="mt-2 text-xs text-muted-foreground">No token usage recorded yet.</p>
+            )}
+            {capacityOverage > 0 && tokenEntitlement && (
+              <div className="mt-2 space-y-1">
+                <p className="text-xs font-medium text-destructive">
+                  {capacityOverage.toLocaleString()} tokens over the{' '}
+                  {tokenEntitlement.limit.toLocaleString()} token allowance for {capacityPeriod}.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Next:{' '}
+                  <Link href="/billing" className="text-primary hover:underline">
+                    review your plan on Billing
+                  </Link>
+                  , or{' '}
+                  <Link href="/support" className="text-primary hover:underline">
+                    contact Support
+                  </Link>{' '}
+                  for help reading this meter.
+                </p>
+              </div>
             )}
           </div>
 
