@@ -4,9 +4,15 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { PRIMARY_NAV, MORE_NAV, WORK_NAV, BUSINESS_NAV, navHrefs } from '../_lib/nav-items'
 import {
+  ASK_DIALOG_PANEL_CLASS,
+  BOTTOM_NAV_HIDE_MQ,
+  BOTTOM_NAV_VISIBILITY_CLASS,
+  NAV_TAB_IDLE_CLASS,
+  NAV_TAB_SELECTED_CLASS,
   bottomNavDestinationHrefs,
   bottomNavSlotLabels,
   bottomNavSlots,
+  hidesPhoneBottomNav,
   isAskDialogDismissKey,
   isDestinationActive,
 } from './bottom-nav'
@@ -109,6 +115,51 @@ describe('isDestinationActive()', () => {
   })
 })
 
+describe('selected-state treatment (lock b8febeaa Slice 1)', () => {
+  it('uses a visible shade/color token, not type-weight alone', () => {
+    expect(NAV_TAB_SELECTED_CLASS).toContain('bg-primary/10')
+    expect(NAV_TAB_SELECTED_CLASS).toContain('rounded-md')
+    expect(NAV_TAB_SELECTED_CLASS).toContain('font-medium')
+    expect(NAV_TAB_SELECTED_CLASS).not.toMatch(/^(font-medium text-foreground)$/)
+    expect(NAV_TAB_IDLE_CLASS).not.toContain('bg-primary/10')
+    expect(NAV_TAB_IDLE_CLASS).toContain('text-muted-foreground')
+  })
+
+  it('applies the shaded class to active destinations and to More when its sheet is open', () => {
+    expect(bottomNavSource).toContain('active ? NAV_TAB_SELECTED_CLASS : NAV_TAB_IDLE_CLASS')
+    expect(bottomNavSource).toContain('moreOpen ? NAV_TAB_SELECTED_CLASS : NAV_TAB_IDLE_CLASS')
+    expect(bottomNavSource).toMatch(/aria-current=\{active \? ['"]page['"] : undefined\}/)
+    expect(bottomNavSource).toContain('aria-expanded={moreOpen}')
+  })
+
+  it('keeps the center Ask + as an always-filled FAB without changing Ask wiring', () => {
+    expect(bottomNavSource).toContain(
+      'rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
+    )
+    expect(bottomNavSource).toMatch(/<span aria-hidden="true"[^>]*>\s*\+\s*<\/span>/)
+    expect(bottomNavSource).not.toContain('askOpen ? NAV_TAB_SELECTED_CLASS')
+  })
+})
+
+describe('phone-landscape five-tab visibility', () => {
+  it('hides the bar only when the viewport is tablet/desktop-wide AND tall', () => {
+    expect(hidesPhoneBottomNav(390, 844)).toBe(false)
+    expect(hidesPhoneBottomNav(844, 390)).toBe(false)
+    expect(hidesPhoneBottomNav(767, 1024)).toBe(false)
+    expect(hidesPhoneBottomNav(768, 519)).toBe(false)
+    expect(hidesPhoneBottomNav(768, 1024)).toBe(true)
+    expect(hidesPhoneBottomNav(1280, 800)).toBe(true)
+    expect(hidesPhoneBottomNav(1024, 768)).toBe(true)
+  })
+
+  it('does not use width-only sm:hidden on the bar, matching the hide media query', () => {
+    expect(BOTTOM_NAV_HIDE_MQ).toBe('(min-width:768px) and (min-height:32.5rem)')
+    expect(BOTTOM_NAV_VISIBILITY_CLASS).toContain(BOTTOM_NAV_HIDE_MQ.replace(/ /g, '_'))
+    expect(bottomNavSource).toContain('BOTTOM_NAV_VISIBILITY_CLASS')
+    expect(bottomNavSource).not.toMatch(/className="fixed inset-x-0 bottom-0[^"]*sm:hidden/)
+  })
+})
+
 describe('isAskDialogDismissKey()', () => {
   it('dismisses on Escape and ignores other keys', () => {
     expect(isAskDialogDismissKey('Escape')).toBe(true)
@@ -158,21 +209,37 @@ describe('Ask(+) wiring and chrome contracts', () => {
     expect(bottomNavSource).toContain('min-w-11')
   })
 
-  it('is mobile-only so desktop header chrome stays the existing bar', () => {
-    expect(bottomNavSource).toContain('sm:hidden')
+  it('contains the Ask dialog to the viewport so Start stays reachable in landscape', () => {
+    expect(ASK_DIALOG_PANEL_CLASS).toContain('max-h-[calc(100dvh-1.5rem)]')
+    expect(ASK_DIALOG_PANEL_CLASS).toContain('overflow-hidden')
+    expect(ASK_DIALOG_PANEL_CLASS).toContain('flex-col')
+    expect(bottomNavSource).toContain('ASK_DIALOG_PANEL_CLASS')
+    expect(bottomNavSource).toContain('min-h-0 overflow-y-auto')
+    expect(bottomNavSource).toContain('items-center justify-center')
+    expect(bottomNavSource).not.toContain('items-start justify-center overflow-y-auto')
+    expect(bottomNavSource).not.toContain('relative mt-8 w-full max-w-lg')
+    expect(bottomNavSource).toContain('submitLabel="Start"')
+    expect(bottomNavSource).toContain('onStarted={() => setStarted(true)}')
+    expect(bottomNavSource).toContain('question="What do you need?"')
+  })
+
+  it('hides the five-tab bar on tablet/desktop without using width-only sm:hidden', () => {
+    expect(bottomNavSource).toContain('BOTTOM_NAV_VISIBILITY_CLASS')
     expect(bottomNavSource).toContain('fixed inset-x-0 bottom-0')
     expect(bottomNavSource).toContain('flex-1')
     expect(bottomNavSource).toContain('min-w-0')
     expect(bottomNavSource).toContain('overflow-visible')
     expect(mobileNavSource).toContain('sm:hidden')
-    expect(layoutSource).toContain('hidden min-w-0 items-center gap-6 sm:flex')
+    expect(layoutSource).toContain('HEADER_PRIMARY_NAV_CLASS')
     expect(layoutSource).toContain('<MobileNav')
     expect(layoutSource).not.toContain('BottomNav')
   })
 
   it('reserves mobile main padding so the fixed bar does not cover page actions', () => {
     expect(layoutSource).toContain('pb-24')
-    expect(layoutSource).toContain('sm:pb-8')
-    expect(layoutSource).toContain('sm:pb-16')
+    expect(layoutSource).toContain('MAIN_WITH_BOTTOM_NAV_PAD_CLASS')
+    expect(layoutSource).toContain('MAIN_BILLING_ONLY_PAD_CLASS')
+    expect(layoutSource).toContain('[@media(min-width:768px)_and_(min-height:32.5rem)]:pb-8')
+    expect(layoutSource).toContain('[@media(min-width:768px)_and_(min-height:32.5rem)]:pb-16')
   })
 })

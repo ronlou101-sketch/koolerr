@@ -25,11 +25,16 @@ export function drawerPrimaryGroups(primary: NavItem[]): { peer: NavItem; nested
 /**
  * Mobile navigation for the platform chrome.
  *
- * Rendered only below the `sm` breakpoint (the desktop bar handles larger screens).
+ * Hamburger trigger stays below the `sm` breakpoint (header links handle
+ * tablet/desktop). The More drawer and BottomNav are NOT wrapped in that
+ * `sm:hidden` — phone landscape (~844×390) must keep the five-tab bar and
+ * be able to open More. BottomNav applies its own width+height hide rule
+ * so tablet/desktop keep header chrome.
+ *
  * A hamburger opens a right-side drawer that mirrors the desktop groups: the
  * primary peers first (with Work / Business children nested), then a "More"
- * section, then a founder-only "Owner" section. Tapping a link or the backdrop
- * closes it. Advanced under Business starts collapsed until expanded.
+ * section. Tapping a link or the backdrop closes it. Advanced under Business
+ * starts collapsed until expanded.
  *
  * The persistent bottom bar (Home / Work / Ask+ / Business / More) is composed
  * here so More and the hamburger share one drawer. Ask(+) is an action, not a
@@ -139,28 +144,30 @@ export function MobileNav({
   )
 
   return (
-    <div className="sm:hidden">
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label="Open navigation menu"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center text-muted-foreground hover:text-foreground"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          className="h-6 w-6"
-          aria-hidden="true"
+    <>
+      <div className="sm:hidden">
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label="Open navigation menu"
+          aria-expanded={open}
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center text-muted-foreground hover:text-foreground"
         >
-          <path d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            className="h-6 w-6"
+            aria-hidden="true"
+          >
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
 
       {open && (
         <div
@@ -268,6 +275,6 @@ export function MobileNav({
       )}
 
       <BottomNav primary={primary} moreOpen={open} onMoreClick={() => setOpen(true)} />
-    </div>
+    </>
   )
 }
