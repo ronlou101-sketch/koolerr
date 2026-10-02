@@ -39,7 +39,17 @@ export interface IBrandAmbassadorService {
 }
 
 export class BrandAmbassadorService implements IBrandAmbassadorService {
-  constructor(private readonly brain: IBusinessBrainService) {}
+  /**
+   * @param injectedBrain - Optional explicit Business Brain service (tests). When
+   *   omitted, the live `businessBrainService` export is resolved at call time so
+   *   the service follows bootstrapPlatform()'s repository reconfiguration instead
+   *   of retaining the pre-bootstrap (in-memory) instance captured at module load.
+   */
+  constructor(private readonly injectedBrain?: IBusinessBrainService) {}
+
+  private get brain(): IBusinessBrainService {
+    return this.injectedBrain ?? businessBrainService
+  }
 
   async resolveBrandAmbassador(
     organizationId: OrganizationId
@@ -114,7 +124,8 @@ function buildDefaultIdentity(
   }
 }
 
-/** Singleton wired to the Business Brain domain. */
-export const brandAmbassadorService: IBrandAmbassadorService = new BrandAmbassadorService(
-  businessBrainService
-)
+/**
+ * Singleton wired to the Business Brain domain. Constructed without an injected
+ * service so it always uses the live (bootstrapped) Business Brain service.
+ */
+export const brandAmbassadorService: IBrandAmbassadorService = new BrandAmbassadorService()
