@@ -88,7 +88,7 @@ const VIDEO_BRIEF = { id: 'vb_1', scripts: [], shotList: [] }
 const PUBLISHING_JOB = {
   id: 'pj_1',
   status: 'completed',
-  packages: [],
+  packages: [{ platform: 'facebook' }, { platform: 'instagram' }],
   videoProductionBrief: VIDEO_BRIEF,
   attempts: 1,
   employeeId: 'e1',
@@ -96,7 +96,13 @@ const PUBLISHING_JOB = {
   createdAt: new Date(),
   updatedAt: new Date(),
 }
-const APPROVAL_DECISION = { id: 'ad_1', approved: true, feedback: 'Approved' }
+const APPROVAL_DECISION = {
+  id: 'ad_1',
+  overallDecision: 'APPROVED',
+  approvedPackages: ['facebook', 'instagram'],
+  rejectedPackages: [],
+  feedback: 'Approved',
+}
 const DELIVERY_PACKAGE = { id: 'dp_1', finalPackages: [], summary: 'All done' }
 
 // ---------------------------------------------------------------------------
@@ -530,6 +536,107 @@ describe('runAIWorkforcePipeline()', () => {
     const { runAIWorkforcePipeline } = await import('./pipeline')
     await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
 
+    expect(updateStatusMock).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+  })
+
+  // -------------------------------------------------------------------------
+  // Approval → Delivery handoff guard (run_2728a588 regression)
+  // Delivery must never be invoked with zero resolved approved packages.
+  // -------------------------------------------------------------------------
+
+  function failedProgress() {
+    return storeMemoryMock.mock.calls
+      .map(
+        (c) =>
+          c[0].memory.content as {
+            status: string
+            failedAtDepartment?: string
+            failureReason?: string
+          }
+      )
+      .find((c) => c.status === 'failed')
+  }
+
+  it.each(['REVISE', 'REJECT'])(
+    'does not invoke Delivery when QA returns %s with zero approved packages',
+    async (overallDecision) => {
+      setupHappyPath()
+      approvalMock.mockResolvedValue({
+        ok: true,
+        value: {
+          approvalDecision: {
+            ...APPROVAL_DECISION,
+            overallDecision,
+            approvedPackages: [],
+            rejectedPackages: ['facebook', 'instagram'],
+          },
+        },
+      })
+      const { runAIWorkforcePipeline } = await import('./pipeline')
+      await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+      expect(approvalMock).toHaveBeenCalledOnce()
+      expect(deliveryMock).not.toHaveBeenCalled()
+      expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+      expect(failedProgress()?.failedAtDepartment).toBe('approval')
+      expect(failedProgress()?.failureReason).toContain(overallDecision)
+      expect(storeDeliverableMock).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'report' })
+      )
+    }
+  )
+
+  it('surfaces a handoff error and does not invoke Delivery when APPROVED ids match no package', async () => {
+    setupHappyPath()
+    approvalMock.mockResolvedValue({
+      ok: true,
+      value: {
+        approvalDecision: {
+          ...APPROVAL_DECISION,
+          overallDecision: 'APPROVED',
+          approvedPackages: ['tiktok'],
+        },
+      },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(deliveryMock).not.toHaveBeenCalled()
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+    const failed = failedProgress()
+    expect(failed?.failedAtDepartment).toBe('approval')
+    expect(failed?.failureReason).toContain('handoff')
+    expect(failed?.failureReason).toContain('tiktok')
+    expect(failed?.failureReason).toContain('facebook')
+  })
+
+  it('surfaces a handoff error and does not invoke Delivery when APPROVED has an empty list', async () => {
+    setupHappyPath()
+    approvalMock.mockResolvedValue({
+      ok: true,
+      value: { approvalDecision: { ...APPROVAL_DECISION, approvedPackages: [] } },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(deliveryMock).not.toHaveBeenCalled()
+    expect(failedProgress()?.failedAtDepartment).toBe('approval')
+    expect(failedProgress()?.failureReason).toContain('handoff')
+  })
+
+  it('invokes Delivery normally when at least one approved id matches a package', async () => {
+    setupHappyPath()
+    approvalMock.mockResolvedValue({
+      ok: true,
+      value: {
+        approvalDecision: { ...APPROVAL_DECISION, approvedPackages: ['facebook', 'linkedin'] },
+      },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(deliveryMock).toHaveBeenCalledOnce()
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
     expect(updateStatusMock).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
   })
 })
