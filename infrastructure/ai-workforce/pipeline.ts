@@ -141,6 +141,37 @@ async function failPipeline(
 }
 
 /**
+ * Returns a human-readable reason when the approval decision cannot be handed to
+ * Delivery (zero approved packages resolve to a publishing package), or null when
+ * at least one approved package resolves and Delivery may proceed.
+ */
+function validateDeliveryHandoff(
+  decision: { overallDecision?: string; approvedPackages?: readonly string[] },
+  publishingJob: { packages?: ReadonlyArray<{ platform: string }> }
+): string | null {
+  const requested = decision.approvedPackages ?? []
+  const available = (publishingJob.packages ?? []).map((p) => p.platform)
+  const resolved = available.filter((platform) => requested.includes(platform))
+  if (resolved.length > 0) return null
+
+  const outcome = decision.overallDecision ?? 'UNKNOWN'
+  const detail =
+    `approvedPackages=${JSON.stringify(requested)}; ` +
+    `publishing package platforms=${JSON.stringify(available)}`
+
+  if (outcome === 'APPROVED') {
+    return (
+      `Approval→Delivery handoff error: decision APPROVED but no approved package ` +
+      `matches a publishing package (${detail}). Delivery not invoked.`
+    )
+  }
+  return (
+    `Approval decision ${outcome} approved no publishing packages (${detail}). ` +
+    `Delivery not invoked.`
+  )
+}
+
+/**
  * Sequences all 7 AI Workforce departments for a single engagement run.
  *
  * Each department step is executed with bounded retry (see attemptStep) so a single
@@ -434,8 +465,20 @@ export async function runAIWorkforcePipeline(
     await failPipeline(ctx, 'approval', approval.message)
     return
   }
-  await recordProgress(ctx, 'approval', 'completed')
   const approvalDecision = approval.value
+
+  // ── Approval → Delivery handoff guard ───────────────────────────────────────
+  // Delivery requires at least one approved package that resolves to a real
+  // publishing package (it asks the model for one deliverable per resolved
+  // package and rejects an empty list). Never invoke it with zero resolved
+  // packages: REVISE/REJECT with nothing approved ends the run at approval, and
+  // APPROVED with nothing resolvable is a handoff validation failure.
+  const handoffError = validateDeliveryHandoff(approvalDecision, publishingJob)
+  if (handoffError) {
+    await failPipeline(ctx, 'approval', handoffError)
+    return
+  }
+  await recordProgress(ctx, 'approval', 'completed')
 
   // ── Step 7: Delivery ────────────────────────────────────────────────────────
   await recordProgress(ctx, 'delivery', 'running')
