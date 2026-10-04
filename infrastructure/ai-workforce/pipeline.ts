@@ -125,6 +125,12 @@ async function recordProgress(
   })
 }
 
+/** Bounds a failure message for progress records and logs (single line, max 300 chars). */
+function sanitizeFailureReason(message: string | undefined): string {
+  const oneLine = (message ?? 'unknown error').replace(/\s+/g, ' ').trim()
+  return oneLine.length > 300 ? `${oneLine.slice(0, 297)}...` : oneLine
+}
+
 async function failPipeline(
   ctx: AIWorkforcePipelineContext,
   step: PipelineStep,
@@ -347,9 +353,20 @@ export async function runAIWorkforcePipeline(
       videoScriptDeliverableId = scriptStore.value.id
       videoScriptText = scriptResult.value.script
     } else {
+      // Make the persistence failure visible instead of continuing silently: add
+      // the reason to the existing video step progress record (same terminal
+      // status — no new status, run not failed) so the run status API surfaces it.
+      const reason = sanitizeFailureReason(scriptStore.error.message)
       logger.warn('AI Workforce pipeline failed to store video script deliverable', {
         runId: engagementRunId,
+        reason,
       })
+      await recordProgress(
+        ctx,
+        'video',
+        video.ok ? 'completed' : 'skipped',
+        `video_script deliverable not persisted: ${reason}; no video render job queued`
+      )
     }
   } else {
     logger.info('AI Workforce pipeline skipped video script', {
