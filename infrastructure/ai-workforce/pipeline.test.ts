@@ -305,6 +305,91 @@ describe('runAIWorkforcePipeline()', () => {
     expect(kinds).toEqual(['image', 'image'])
   })
 
+  // ── video_script persistence failure is visible (Founder t213u, Architect f7ebf2dc) ──
+
+  const CHECK_VIOLATION =
+    '[DLVR_REPO] saveDeliverable failed: new row for relation "deliverables" violates check constraint "deliverables_type_check"'
+
+  function videoProgressRecords() {
+    return storeMemoryMock.mock.calls
+      .map((c) => c[0].memory.content as Record<string, unknown>)
+      .filter((c) => c.step === 'video')
+  }
+
+  it('records the video_script persistence failure on the video step progress (non-fatal)', async () => {
+    setupHappyPath()
+    storeDeliverableMock.mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR', message: CHECK_VIOLATION },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    const records = videoProgressRecords()
+    const last = records[records.length - 1]
+    // Same terminal status as the video step already had — no new status.
+    expect(last.status).toBe('completed')
+    expect(last.error).toEqual(expect.stringContaining('video_script deliverable not persisted'))
+    expect(last.error).toEqual(expect.stringContaining('deliverables_type_check'))
+    expect(last.error).toEqual(expect.stringContaining('no video render job queued'))
+    expect(last).not.toHaveProperty('failedAtDepartment')
+
+    // Still non-fatal: report stored, run completed, never failed.
+    const storedTypes = storeDeliverableMock.mock.calls.map((c) => c[0].type)
+    expect(storedTypes).toContain('report')
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+    expect(updateStatusMock).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+  })
+
+  it('preserves a skipped video step status when recording the video_script persistence failure', async () => {
+    setupHappyPath()
+    videoMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'PROVIDER_NOT_CONFIGURED', message: 'No provider', retriable: false },
+    })
+    storeDeliverableMock.mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR', message: CHECK_VIOLATION },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    const records = videoProgressRecords()
+    const last = records[records.length - 1]
+    expect(last.status).toBe('skipped')
+    expect(last.error).toEqual(expect.stringContaining('video_script deliverable not persisted'))
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('includes the failure reason in the warning log when the video_script store fails', async () => {
+    setupHappyPath()
+    storeDeliverableMock.mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR', message: CHECK_VIOLATION },
+    })
+    const { logger } = await import('@/shared/lib/logger')
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      'AI Workforce pipeline failed to store video script deliverable',
+      expect.objectContaining({
+        runId: TEST_CTX.engagementRunId,
+        reason: expect.stringContaining('deliverables_type_check'),
+      })
+    )
+  })
+
+  it('records no video_script persistence error when the store succeeds', async () => {
+    setupHappyPath()
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    for (const r of videoProgressRecords()) {
+      expect(r).not.toHaveProperty('error')
+    }
+  })
+
   it('is non-fatal when enqueue fails: the campaign still completes', async () => {
     setupHappyPath()
     enqueueMock.mockRejectedValue(new Error('queue unavailable'))
