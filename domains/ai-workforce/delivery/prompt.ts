@@ -159,9 +159,10 @@ function buildCustomerSummary(profileName: string, names: string[], media: Media
         : media.images.length > 0
           ? ` Verified images from this campaign are included.`
           : ''
+  const verb = count === 1 ? 'has' : 'have'
   return (
-    `Your ${count} ${packageWord(count)} for ${profileName} (${list}) have been prepared ` +
-    `and are waiting for your review. Each includes a caption, hashtags, and a call to action.` +
+    `Your ${count} ${packageWord(count)} for ${profileName} (${list}) ${verb} been prepared ` +
+    `and ${count === 1 ? 'is' : 'are'} waiting for your review. Each includes a caption, hashtags, and a call to action.` +
     mediaLine
   )
 }
