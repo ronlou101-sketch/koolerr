@@ -1,11 +1,21 @@
 import { businessBrainService } from '@/domains/business-brain'
 import type { BusinessProfile } from '@/domains/ai-workforce/research'
+import {
+  PLATFORM_DISPLAY_NAMES,
+  resolveAllowedPlatforms,
+} from '@/domains/ai-workforce/publishing/platform-resolver'
+import { resolveBusinessTimezone } from './business-timezone'
 import type { OrganizationId } from '@/shared/types'
 
 /**
  * Rebuilds a BusinessProfile from Brain memories written by the AI Workforce wizard.
  * Looks for the most recent company_identity memory tagged source='ai-workforce-wizard'.
  * Returns null if no wizard profile has been stored yet.
+ *
+ * Report truth: `allowedPlatforms` is resolved from the stored `preferredPlatforms`
+ * (canonical IDs, fixed order, FB+IG default) and `timezone` from the stored `location`
+ * (supported service areas only; null when unknown). Stored values are read, never
+ * rewritten.
  */
 export async function buildBusinessProfileFromMemories(
   organizationId: OrganizationId
@@ -31,8 +41,11 @@ export async function buildBusinessProfileFromMemories(
   if (c.brandPersonality) notes.push(`Brand personality: ${c.brandPersonality}`)
   if (c.competitiveAdvantages) notes.push(`Competitive advantages: ${c.competitiveAdvantages}`)
   if (c.businessGoals) notes.push(`Business goals: ${c.businessGoals}`)
+  const allowedPlatforms = resolveAllowedPlatforms(c.preferredPlatforms)
   if (Array.isArray(c.preferredPlatforms) && c.preferredPlatforms.length > 0) {
-    notes.push(`Preferred platforms: ${(c.preferredPlatforms as string[]).join(', ')}`)
+    notes.push(
+      `Target platforms: ${allowedPlatforms.map((p) => PLATFORM_DISPLAY_NAMES[p]).join(', ')}`
+    )
   }
   if (c.contactEmail) notes.push(`Contact email: ${c.contactEmail}`)
 
@@ -43,5 +56,7 @@ export async function buildBusinessProfileFromMemories(
     website: c.website ? String(c.website) : undefined,
     serviceArea: c.serviceArea ? String(c.serviceArea) : undefined,
     notes: notes.length > 0 ? notes.join('. ') : undefined,
+    allowedPlatforms,
+    timezone: resolveBusinessTimezone(c.location),
   }
 }

@@ -1,142 +1,200 @@
 import type { ApprovalDecision } from '../approval/types'
-import type { PublishingPackage } from '../publishing/types'
-import type { DeliveryPackage } from './types'
+import { filterToAllowedPlatforms, PLATFORM_DISPLAY_NAMES } from '../publishing/platform-resolver'
+import type { PublishingPackage, SupportedPlatform } from '../publishing/types'
+import type { DeliveryPackage, MediaTruth } from './types'
 
 /**
  * System context injected into every delivery invocation.
- * Instructs the provider to return a customer-ready DeliveryPackage as JSON.
+ *
+ * Report truth (Architect a9838a2c + Founder-ratified inventory): the AI writes only the
+ * customer summary and text-only publishing steps. Platforms, media, schedule, quality
+ * summary, and status are built by the parser from verified run context.
  */
-export const DELIVERY_SYSTEM_CONTEXT = `You are Koolerr's Delivery Department — the final step before content reaches the customer.
-You receive an approved set of publishing packages and prepare a customer-ready delivery summary.
-Your output is displayed directly on the customer's Koolerr dashboard.
+export const DELIVERY_SYSTEM_CONTEXT = `You are Koolerr's Delivery Department. You summarise prepared social post packages for the business owner to review.
 You MUST respond with valid JSON only. No prose. No markdown. No code fences.
 The JSON must conform exactly to the schema provided in the user prompt.
-Write the customerSummary in first-person plural ("Your content is ready…") — warm, professional, and clear.
-Every publishingInstruction must be specific, actionable, and tailored to its platform.`
+The content has NOT been approved by the customer, published, or delivered. Never say it is approved, ready, published, or delivered.
+Never invent business claims, offers, prices, guarantees, credentials, response times, file names, paths, links, or account IDs.
+Only mention video, images, or uploads when the prompt states that verified media exists.`
 
-/** Formats a single approved package into a customer-facing summary line. */
-function summariseApprovedPackage(pkg: PublishingPackage): string {
-  return `  [${pkg.platform}] ${pkg.title} — ${pkg.videoReference} | ${pkg.publishDate} ${pkg.publishTime} ${pkg.timezone}`
+/** Default media truth when none was supplied: no verified media, video status unknown. */
+export const UNKNOWN_MEDIA_TRUTH: MediaTruth = { images: [], video: { state: 'unavailable' } }
+
+/** Approved packages restricted to the job's allowed platforms, in package order. */
+export function selectApprovedPackages(decision: ApprovalDecision): PublishingPackage[] {
+  const allowed = decision.sourcePublishingJob.allowedPlatforms
+  const approved = allowed
+    ? filterToAllowedPlatforms(decision.approvedPackages, allowed)
+    : decision.approvedPackages
+  const seen = new Set<SupportedPlatform>()
+  return decision.sourcePublishingJob.packages.filter((p) => {
+    if (!approved.includes(p.platform) || seen.has(p.platform)) return false
+    seen.add(p.platform)
+    return true
+  })
 }
 
-/** Serialises the approval decision and upstream context for the delivery prompt. */
-function summariseApproval(decision: ApprovalDecision): string {
+function displayName(platform: SupportedPlatform): string {
+  return PLATFORM_DISPLAY_NAMES[platform]
+}
+
+function preview(text: string, max = 120): string {
+  const clean = text.replace(/\s+/g, ' ').trim()
+  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean
+}
+
+/** Schedule text for one package — only from the business-timezone schedule. */
+export function packageScheduleText(pkg: PublishingPackage): string {
+  if (!pkg.publishDate || !pkg.timezone) return 'Not scheduled'
+  return pkg.publishTime
+    ? `${pkg.publishDate} at ${pkg.publishTime} (${pkg.timezone})`
+    : `${pkg.publishDate} (${pkg.timezone})`
+}
+
+/** The video-state line. The three states are never merged. */
+export function videoStateLine(media: MediaTruth): string {
+  switch (media.video.state) {
+    case 'verified':
+      return `Video: ${media.video.videos.length} verified video(s) available.`
+    case 'none':
+      return 'Video: not produced for this campaign.'
+    case 'unavailable':
+      return 'Video: status unavailable.'
+  }
+}
+
+function hasVerifiedMedia(media: MediaTruth): boolean {
+  return media.images.length > 0 || media.video.state === 'verified'
+}
+
+function mediaFacts(media: MediaTruth): string {
+  const images =
+    media.images.length > 0 ? `Verified images: ${media.images.length}.` : 'Verified images: none.'
+  return `${images} ${videoStateLine(media)}`
+}
+
+/** Serialises the approval decision and verified context for the delivery prompt. */
+function summariseApproval(
+  decision: ApprovalDecision,
+  approvedPkgs: PublishingPackage[],
+  media: MediaTruth
+): string {
   const strategy =
     decision.sourcePublishingJob.videoProductionBrief.sourceCreativeBrief.sourceStrategyBrief
   const profile = strategy.sourceResearchBrief.sourceProfile
-  const approvedCount = decision.approvedPackages.length
-
-  const approvedPkgs = decision.sourcePublishingJob.packages.filter((p) =>
-    decision.approvedPackages.includes(p.platform)
-  )
 
   return [
     `Business: ${profile.businessName} (${profile.businessCategory}) — ${profile.location}`,
+    `Business Facts (the ONLY source of business claims): ${profile.notes ?? 'none provided'}`,
     ``,
-    `Approval outcome: ${decision.overallDecision}`,
-    `Quality score: ${decision.qualityScore}/100 | Readability: ${decision.readabilityScore}/100 | Confidence: ${decision.confidence}%`,
-    `Approval notes: ${decision.approvalNotes}`,
+    `Prepared post packages (${approvedPkgs.length}):`,
+    approvedPkgs
+      .map((p) => `  [${displayName(p.platform)}] ${p.title} | ${packageScheduleText(p)}`)
+      .join('\n'),
     ``,
-    `Approved packages (${approvedCount}):`,
-    approvedPkgs.map(summariseApprovedPackage).join('\n'),
-    ``,
-    `Brand Positioning: ${strategy.brandPositioning}`,
-    `Core Messaging: ${strategy.coreMessaging}`,
-    `Hashtag recommendations: ${strategy.hashtagRecommendations.join(', ')}`,
-    `CTA library: ${strategy.ctaLibrary.join(' | ')}`,
+    `Media: ${mediaFacts(media)}`,
   ].join('\n')
 }
 
 /**
- * Builds the full delivery prompt from an ApprovalDecision.
- * Requests a JSON object with all DeliveryPackage content fields.
- * Metadata fields (packageId, generatedAt, deliveredAt, status, readyForCustomer)
- * are set by the service — not requested from the AI.
+ * Builds the delivery prompt. The AI is asked only for the customer summary and one
+ * text-only publishing step list per prepared platform; everything else is built by
+ * the parser from verified context.
  */
-export function buildDeliveryPrompt(approvalDecision: ApprovalDecision): string {
+export function buildDeliveryPrompt(
+  approvalDecision: ApprovalDecision,
+  mediaTruth: MediaTruth = UNKNOWN_MEDIA_TRUTH
+): string {
   const profile =
     approvalDecision.sourcePublishingJob.videoProductionBrief.sourceCreativeBrief
       .sourceStrategyBrief.sourceResearchBrief.sourceProfile
+  const approvedPkgs = selectApprovedPackages(approvalDecision)
+  const names = approvedPkgs.map((p) => displayName(p.platform))
+  const scheduled = approvedPkgs.some((p) => p.publishDate && p.timezone)
+  const instructionSchema = names
+    .map((n) => `    "${n}: <step-by-step instructions for posting the text package on ${n}>"`)
+    .join(',\n')
 
-  const approvedPkgs = approvalDecision.sourcePublishingJob.packages.filter((p) =>
-    approvalDecision.approvedPackages.includes(p.platform)
-  )
+  return `You are summarising prepared post packages for ${profile.businessName} to review.
 
-  const platformList = approvedPkgs.map((p) => p.platform).join(', ')
-
-  return `You are preparing the final customer delivery package for ${profile.businessName}.
-
-=== APPROVAL SUMMARY ===
-${summariseApproval(approvalDecision)}
+=== CONTEXT ===
+${summariseApproval(approvalDecision, approvedPkgs, mediaTruth)}
 
 === YOUR TASK ===
-Produce a complete Delivery Package as a JSON object with this exact structure (no markdown, no code fences):
+Return a JSON object with this exact structure (no markdown, no code fences):
 
 {
-  "customerSummary": "Your [X] social media content packages for ${profile.businessName} are approved and ready. [2-3 sentences describing what's included and what the customer should do next.]",
-  "deliverables": [
-    "Facebook video package — 30s spokesperson video with caption, hashtags, and CTA",
-    "Instagram Reel package — 30s reel with hook-optimised caption and hashtag set",
-    "TikTok package — 30s short-form video with native CTA and trending audio guidance",
-    "YouTube Shorts package — 30s short with channel-optimised title and description",
-    "LinkedIn package — professional tone video with industry insight caption",
-    "Google Business Profile package — local SEO-optimised post with single CTA button"
-  ],
-  "platformPackages": [
-    "Facebook (${profile.businessName}): Title · Caption preview · CTA · Schedule: [date time tz]",
-    "Instagram: Title · Caption preview · CTA · Schedule: [date time tz]",
-    "TikTok: Title · Caption preview · CTA · Schedule: [date time tz]",
-    "YouTube Shorts: Title · Caption preview · CTA · Schedule: [date time tz]",
-    "LinkedIn: Title · Caption preview · CTA · Schedule: [date time tz]",
-    "Google Business Profile: Title · Caption preview · CTA · Schedule: [date time tz]"
-  ],
-  "downloadLinks": [
-    "packages/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/facebook-package.zip",
-    "packages/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/instagram-package.zip",
-    "packages/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/tiktok-package.zip",
-    "packages/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/youtube-shorts-package.zip",
-    "packages/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/linkedin-package.zip",
-    "packages/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/google-business-profile-package.zip"
-  ],
-  "thumbnails": [
-    "thumbnails/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/facebook-thumb.jpg",
-    "thumbnails/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/instagram-thumb.jpg",
-    "thumbnails/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/tiktok-thumb.jpg",
-    "thumbnails/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/youtube-shorts-thumb.jpg",
-    "thumbnails/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/linkedin-thumb.jpg",
-    "thumbnails/${profile.businessName.toLowerCase().replace(/\\s+/g, '-')}/google-business-profile-thumb.jpg"
-  ],
+  "customerSummary": "<2-3 sentences to the business owner describing the prepared post packages and that they are waiting for their review>",
   "publishingInstructions": [
-    "Facebook: Log in to your Facebook Business page, click Create Post, upload the video file from your Facebook package, paste the caption, and schedule for the recommended date and time.",
-    "Instagram: Open Instagram Creator Studio, select your account, upload the video as a Reel, paste the caption and hashtags, then schedule for the recommended date and time.",
-    "TikTok: Log in to TikTok Business Center, click Create, upload the video, paste the caption with hashtags, add the recommended sound, and schedule for optimal posting time.",
-    "YouTube Shorts: Log in to YouTube Studio, click Upload, select the video, paste the title and description with hashtags in the first line, set visibility to Public, and publish at the recommended time.",
-    "LinkedIn: From your LinkedIn Company Page, click Start a post, upload the video, paste the professional caption, and schedule via LinkedIn's native scheduling or a third-party tool.",
-    "Google Business Profile: Log in to Google Business Profile, click Add update, select Add photos or video, upload the asset, paste the post text (no hashtags), and select the CTA button type."
-  ],
-  "recommendedSchedule": "Post across all platforms on [date] between 9:00-10:00 AM CST for peak engagement. Facebook and Instagram first (9:00 AM), LinkedIn at 9:30 AM for the professional morning window, TikTok and YouTube Shorts at 9:45 AM, and Google Business Profile last at 10:00 AM.",
-  "approvalMetadata": "Approved by Koolerr QA Lead on [date]. Quality score: ${approvalDecision.qualityScore}/100. Readability: ${approvalDecision.readabilityScore}/100. Confidence: ${approvalDecision.confidence}%. Platforms approved: ${platformList}. ${approvalDecision.approvalNotes}"
+${instructionSchema}
+  ]
 }
 
 Requirements:
-- customerSummary must be warm, professional, and written directly to the customer (use "Your content")
-- deliverables must have one entry per approved platform (${approvedPkgs.length} items)
-- platformPackages must have one entry per approved platform with title, caption preview, CTA, and schedule
-- downloadLinks and thumbnails must have one path per approved platform
-- publishingInstructions must be specific and step-by-step for each platform — no generic instructions
-- recommendedSchedule must reference the actual publish dates from the approved packages
-- approvalMetadata must reference the actual approval scores`
+- publishingInstructions: exactly one entry per platform listed above (${names.join(', ')}), each starting with the platform name — no other platforms
+- Instructions cover posting the caption, hashtags, and call to action as text${hasVerifiedMedia(mediaTruth) ? ' and attaching the verified media' : '; do NOT mention video, images, uploads, or files'}
+- ${scheduled ? 'Use only the schedule shown above; do not add other dates or times' : 'Do not mention any date, time, or timezone — the business timezone is unknown'}
+- Do not say the content is approved, ready, published, or delivered
+- Do not invent business claims, offers, prices, file names, links, or account IDs`
+}
+
+// ── Server-side truth checks ───────────────────────────────────────────────────
+
+const STATUS_CLAIM = /\b(approved|approval|ready|published|delivered|live)\b/i
+const MEDIA_MENTION =
+  /\b(video|videos|reel|reels|clip|footage|image|images|photo|photos|upload|attach|thumbnail|file|files)\b/i
+const FABRICATED_REFERENCE =
+  /\b[\w-]+\.(mp4|mov|jpg|jpeg|png|gif|zip|pdf)\b|https?:\/\/|\b(page[_ ]id|ad[_ ]account|channel[_ ]id|place[_ ]id|act_\d+)\b/i
+const SCHEDULE_MENTION =
+  /\b\d{1,2}:\d{2}\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\s?(am|pm)\b|\b(EST|EDT|CST|CDT|MST|MDT|PST|PDT|UTC|GMT|Central|Eastern|Pacific|Mountain)\b|\bChicago\b/i
+
+function fallbackSummary(profileName: string, names: string[]): string {
+  return (
+    `Your ${names.length} post package(s) for ${profileName} (${names.join(', ')}) have been prepared ` +
+    `and are waiting for your review. Each includes a caption, hashtags, and a call to action.`
+  )
+}
+
+function fallbackInstruction(name: string, scheduled: boolean): string {
+  return (
+    `${name}: open your ${name} account, create a new post, paste the caption and hashtags, ` +
+    `add the call to action, then ${scheduled ? 'publish or schedule it for the date and time shown' : 'publish it when you are ready'}.`
+  )
+}
+
+/** Builds the schedule section from the packages' business-timezone schedule only. */
+function buildRecommendedSchedule(pkgs: PublishingPackage[]): string {
+  const scheduled = pkgs.filter((p) => p.publishDate && p.timezone)
+  if (scheduled.length === 0) {
+    return 'Not scheduled: the business timezone could not be determined from the business location.'
+  }
+  return scheduled.map((p) => `${displayName(p.platform)}: ${packageScheduleText(p)}`).join('; ')
+}
+
+const OUTCOME_TEXT: Record<ApprovalDecision['overallDecision'], string> = {
+  APPROVED: 'passed',
+  REVISE: 'passed with revisions suggested',
+  REJECT: 'did not pass',
+}
+
+/** Server-built quality summary: scores only — no reviewer identity, role, or date. */
+function buildApprovalMetadata(decision: ApprovalDecision, names: string[]): string {
+  return (
+    `Automated quality check ${OUTCOME_TEXT[decision.overallDecision]} — quality ${decision.qualityScore}/100, ` +
+    `readability ${decision.readabilityScore}/100, confidence ${decision.confidence}%. ` +
+    `Platforms checked: ${names.join(', ')}. This is an automated check, not customer approval.`
+  )
 }
 
 /**
- * Parses the raw provider JSON response into the content fields of a DeliveryPackage.
- * Metadata fields (packageId, generatedAt, deliveredAt, status, readyForCustomer) are
- * set by the caller — this function validates and returns only the AI-generated content.
- * Throws if the response cannot be parsed or any required field is missing/invalid.
+ * Parses the provider response and builds the DeliveryPackage from verified context.
+ * The parser never sets a ready/delivered state: status is always 'prepared'.
+ * Throws if the response cannot be parsed or no approved package exists.
  */
 export function parseDeliveryPackage(
   rawContent: string,
-  sourceApprovalDecision: ApprovalDecision
+  sourceApprovalDecision: ApprovalDecision,
+  mediaTruth: MediaTruth = UNKNOWN_MEDIA_TRUTH
 ): DeliveryPackage {
   let parsed: Record<string, unknown>
 
@@ -153,52 +211,72 @@ export function parseDeliveryPackage(
     )
   }
 
-  const requiredStrings = ['customerSummary', 'recommendedSchedule', 'approvalMetadata'] as const
-
-  // Non-empty arrays — always required; the AI must produce content for each.
-  const requiredNonEmptyArrays = [
-    'deliverables',
-    'platformPackages',
-    'publishingInstructions',
-  ] as const
-
-  // Arrays required to be present but may be empty (no file storage yet in this phase).
-  const requiredArrays = ['downloadLinks', 'thumbnails'] as const
-
-  for (const field of requiredStrings) {
-    if (typeof parsed[field] !== 'string' || !parsed[field]) {
-      throw new Error(`[DELIVERY_DEPT] Missing or invalid string field "${field}"`)
-    }
+  if (typeof parsed.customerSummary !== 'string' || !parsed.customerSummary) {
+    throw new Error(`[DELIVERY_DEPT] Missing or invalid string field "customerSummary"`)
+  }
+  if (!Array.isArray(parsed.publishingInstructions)) {
+    throw new Error(`[DELIVERY_DEPT] Missing array field "publishingInstructions"`)
   }
 
-  for (const field of requiredNonEmptyArrays) {
-    if (!Array.isArray(parsed[field]) || (parsed[field] as unknown[]).length === 0) {
-      throw new Error(`[DELIVERY_DEPT] Missing or empty array field "${field}"`)
-    }
+  const approvedPkgs = selectApprovedPackages(sourceApprovalDecision)
+  if (approvedPkgs.length === 0) {
+    throw new Error('[DELIVERY_DEPT] Missing or empty array field "approvedPackages"')
   }
 
-  for (const field of requiredArrays) {
-    if (!Array.isArray(parsed[field])) {
-      throw new Error(`[DELIVERY_DEPT] Missing array field "${field}"`)
-    }
-  }
+  const profile =
+    sourceApprovalDecision.sourcePublishingJob.videoProductionBrief.sourceCreativeBrief
+      .sourceStrategyBrief.sourceResearchBrief.sourceProfile
+  const names = approvedPkgs.map((p) => displayName(p.platform))
+  const verifiedMedia = hasVerifiedMedia(mediaTruth)
+  const scheduled = approvedPkgs.some((p) => p.publishDate && p.timezone)
 
-  const now = new Date()
+  const isTruthful = (text: string): boolean =>
+    !STATUS_CLAIM.test(text) &&
+    !FABRICATED_REFERENCE.test(text) &&
+    (verifiedMedia || !MEDIA_MENTION.test(text)) &&
+    (scheduled || !SCHEDULE_MENTION.test(text))
+
+  const summary = parsed.customerSummary.trim()
+  const customerSummary =
+    summary && isTruthful(summary) ? summary : fallbackSummary(profile.businessName, names)
+
+  const aiInstructions = (parsed.publishingInstructions as unknown[]).filter(
+    (s): s is string => typeof s === 'string' && s.trim().length > 0
+  )
+  const publishingInstructions = names.map((name) => {
+    const match = aiInstructions.find((s) => s.trim().toLowerCase().startsWith(name.toLowerCase()))
+    return match && isTruthful(match) ? match.trim() : fallbackInstruction(name, scheduled)
+  })
+
+  const deliverables = [
+    ...approvedPkgs.map(
+      (p) => `${displayName(p.platform)} post package — caption, hashtags, and call to action`
+    ),
+    ...(mediaTruth.images.length > 0
+      ? [`Images: ${mediaTruth.images.length} verified image(s).`]
+      : []),
+    videoStateLine(mediaTruth),
+  ]
+
+  const platformPackages = approvedPkgs.map(
+    (p) =>
+      `${displayName(p.platform)}: ${p.title} · ${preview(p.caption)} · CTA: ${p.callToAction} · ` +
+      `Schedule: ${packageScheduleText(p)}`
+  )
 
   return {
     packageId: crypto.randomUUID(),
-    customerSummary: parsed.customerSummary as string,
-    deliverables: parsed.deliverables as string[],
-    platformPackages: parsed.platformPackages as string[],
-    downloadLinks: parsed.downloadLinks as string[],
-    thumbnails: parsed.thumbnails as string[],
-    publishingInstructions: parsed.publishingInstructions as string[],
-    recommendedSchedule: parsed.recommendedSchedule as string,
-    approvalMetadata: parsed.approvalMetadata as string,
-    generatedAt: now,
-    deliveredAt: now,
-    status: 'ready',
-    readyForCustomer: true,
+    customerSummary,
+    deliverables,
+    platformPackages,
+    downloadLinks: [],
+    thumbnails: mediaTruth.images.map((i) => i.imageUrl),
+    publishingInstructions,
+    recommendedSchedule: buildRecommendedSchedule(approvedPkgs),
+    approvalMetadata: buildApprovalMetadata(sourceApprovalDecision, names),
+    generatedAt: new Date(),
+    status: 'prepared',
+    mediaTruth,
     sourceApprovalDecision,
   }
 }

@@ -42,10 +42,15 @@ vi.mock('@/domains/workforce-engine', () => ({
 vi.mock('@/domains/deliverables', () => ({
   deliverablesService: {
     storeDeliverable: vi.fn().mockResolvedValue({ ok: true, value: { id: 'del_stub' } }),
+    submitForReview: vi.fn().mockResolvedValue({ ok: true, value: { id: 'del_stub' } }),
+    getDeliverable: vi.fn(),
   },
 }))
 vi.mock('@/domains/ai-workforce/render-jobs', () => ({
-  renderJobsService: { enqueue: vi.fn().mockResolvedValue({ ok: true, value: {} }) },
+  renderJobsService: {
+    enqueue: vi.fn().mockResolvedValue({ ok: true, value: {} }),
+    listByRun: vi.fn().mockResolvedValue({ ok: true, value: [] }),
+  },
 }))
 vi.mock('@/shared/lib/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn() },
@@ -88,7 +93,22 @@ const VIDEO_BRIEF = { id: 'vb_1', scripts: [], shotList: [] }
 const PUBLISHING_JOB = {
   id: 'pj_1',
   status: 'completed',
-  packages: [{ platform: 'facebook' }, { platform: 'instagram' }],
+  packages: [
+    {
+      platform: 'facebook',
+      title: 'Stay cool this week',
+      caption: 'Sunshine HVAC keeps Phoenix homes comfortable with expert AC repair.',
+      callToAction: 'Call Sunshine HVAC to book AC repair',
+      hashtags: ['#PhoenixHVAC'],
+    },
+    {
+      platform: 'instagram',
+      title: 'Cool homes, happy families',
+      caption: 'Expert AC repair for Phoenix homeowners from Sunshine HVAC.',
+      callToAction: 'Message us to book a repair',
+      hashtags: ['#ACRepair'],
+    },
+  ],
   videoProductionBrief: VIDEO_BRIEF,
   attempts: 1,
   employeeId: 'e1',
@@ -122,6 +142,9 @@ describe('runAIWorkforcePipeline()', () => {
   let updateStatusMock: ReturnType<typeof vi.fn>
   let storeDeliverableMock: ReturnType<typeof vi.fn>
   let enqueueMock: ReturnType<typeof vi.fn>
+  let submitForReviewMock: ReturnType<typeof vi.fn>
+  let getDeliverableMock: ReturnType<typeof vi.fn>
+  let listByRunMock: ReturnType<typeof vi.fn>
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -150,6 +173,17 @@ describe('runAIWorkforcePipeline()', () => {
     updateStatusMock = vi.mocked(workforceMod.workforceEngineService.updateEngagementRunStatus)
     storeDeliverableMock = vi.mocked(deliverablesMod.deliverablesService.storeDeliverable)
     enqueueMock = vi.mocked(renderJobsMod.renderJobsService.enqueue)
+    submitForReviewMock = vi.mocked(deliverablesMod.deliverablesService.submitForReview)
+    getDeliverableMock = vi.mocked(deliverablesMod.deliverablesService.getDeliverable)
+    listByRunMock = vi.mocked(renderJobsMod.renderJobsService.listByRun)
+    submitForReviewMock.mockResolvedValue({ ok: true, value: { id: 'del_stub' } })
+    listByRunMock.mockResolvedValue({ ok: true, value: [] })
+    getDeliverableMock.mockReset()
+    // Reset implementations overridden by earlier tests (clearAllMocks keeps them).
+    storeDeliverableMock.mockReset()
+    storeDeliverableMock.mockResolvedValue({ ok: true, value: { id: 'del_stub' } })
+    enqueueMock.mockReset()
+    enqueueMock.mockResolvedValue({ ok: true, value: {} })
   })
 
   function setupHappyPath() {
@@ -723,5 +757,235 @@ describe('runAIWorkforcePipeline()', () => {
     expect(deliveryMock).toHaveBeenCalledOnce()
     expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
     expect(updateStatusMock).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+  })
+
+  // -------------------------------------------------------------------------
+  // Report truth (Architect a9838a2c + Founder-ratified inventory)
+  // -------------------------------------------------------------------------
+
+  function progressFor(step: string) {
+    return storeMemoryMock.mock.calls
+      .map((c) => c[0].memory.content as Record<string, unknown>)
+      .filter((c) => c.step === step)
+  }
+
+  it('calls submitForReview exactly once after a successful report save', async () => {
+    setupHappyPath()
+    storeDeliverableMock.mockImplementation(async (input: { type: string }) => ({
+      ok: true,
+      value: { id: input.type === 'report' ? 'del_report' : 'del_stub' },
+    }))
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(submitForReviewMock).toHaveBeenCalledOnce()
+    expect(submitForReviewMock).toHaveBeenCalledWith(
+      'del_report',
+      TEST_CTX.organizationId,
+      TEST_CTX.tenantId
+    )
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('keeps the report as Draft with a visible warning when submitForReview fails', async () => {
+    setupHappyPath()
+    submitForReviewMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR', message: 'status update failed' },
+    })
+    const { logger } = await import('@/shared/lib/logger')
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(submitForReviewMock).toHaveBeenCalledOnce()
+    const delivery = progressFor('delivery')
+    const last = delivery[delivery.length - 1]
+    expect(last.status).toBe('completed')
+    expect(last.error).toEqual(expect.stringContaining('Report kept as Draft'))
+    expect(last.error).toEqual(expect.stringContaining('status update failed'))
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      'AI Workforce pipeline could not submit report for review',
+      expect.objectContaining({ reason: expect.stringContaining('status update failed') })
+    )
+    // The report still exists (Draft) and the run completes.
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('fails the run visibly and does not submit when the report save fails', async () => {
+    setupHappyPath()
+    storeDeliverableMock.mockImplementation(async (input: { type: string }) =>
+      input.type === 'report'
+        ? { ok: false, error: { code: 'INTERNAL_ERROR', message: 'db write failed' } }
+        : { ok: true, value: { id: 'del_stub' } }
+    )
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(submitForReviewMock).not.toHaveBeenCalled()
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+    expect(updateStatusMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'completed' })
+    )
+    expect(failedProgress()?.failedAtDepartment).toBe('delivery')
+    expect(failedProgress()?.failureReason).toContain('Report not saved')
+  })
+
+  it('fails the run visibly with zero usable items: no delivery, no report, no submit', async () => {
+    setupHappyPath()
+    publishingMock.mockResolvedValue({
+      ok: true,
+      value: {
+        ...PUBLISHING_JOB,
+        packages: [
+          { ...PUBLISHING_JOB.packages[0], caption: 'Get a FREE tune-up — guaranteed!' },
+          { ...PUBLISHING_JOB.packages[1], callToAction: '' },
+        ],
+      },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(deliveryMock).not.toHaveBeenCalled()
+    expect(storeDeliverableMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'report' })
+    )
+    expect(submitForReviewMock).not.toHaveBeenCalled()
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+    expect(failedProgress()?.failedAtDepartment).toBe('delivery')
+    expect(failedProgress()?.failureReason).toContain('No usable content item')
+    expect(failedProgress()?.failureReason).toContain('unsupported claim')
+  })
+
+  it('hands Delivery only the usable approved packages (one-item floor met)', async () => {
+    setupHappyPath()
+    publishingMock.mockResolvedValue({
+      ok: true,
+      value: {
+        ...PUBLISHING_JOB,
+        packages: [
+          PUBLISHING_JOB.packages[0],
+          { ...PUBLISHING_JOB.packages[1], caption: 'Watch our new video: sunshine-reel.mp4' },
+        ],
+      },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(deliveryMock).toHaveBeenCalledOnce()
+    expect(deliveryMock.mock.calls[0][0].approvalDecision.approvedPackages).toEqual(['facebook'])
+    expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'completed' }))
+  })
+
+  it('allows a claim that the Business Brain facts support', async () => {
+    setupHappyPath()
+    publishingMock.mockResolvedValue({
+      ok: true,
+      value: {
+        ...PUBLISHING_JOB,
+        packages: [{ ...PUBLISHING_JOB.packages[0], caption: 'Licensed AC repair in Phoenix.' }],
+      },
+    })
+    approvalMock.mockResolvedValue({
+      ok: true,
+      value: { approvalDecision: { ...APPROVAL_DECISION, approvedPackages: ['facebook'] } },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(
+      TEST_CTX,
+      {
+        ...TEST_PROFILE,
+        notes: `${TEST_PROFILE.notes} Competitive advantages: licensed and insured.`,
+      },
+      { retryBackoffMs: 0 }
+    )
+    expect(deliveryMock).toHaveBeenCalledOnce()
+  })
+
+  it('passes no schedule when the business timezone is unknown (no Chicago default)', async () => {
+    setupHappyPath()
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(publishingMock.mock.calls[0][0].schedule).toBeNull()
+  })
+
+  it('passes a business-timezone schedule for a supported service-area location', async () => {
+    setupHappyPath()
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(
+      TEST_CTX,
+      { ...TEST_PROFILE, location: 'West Palm Beach, FL', timezone: 'America/New_York' },
+      { retryBackoffMs: 0 }
+    )
+
+    const schedule = publishingMock.mock.calls[0][0].schedule
+    expect(schedule.timezone).toBe('America/New_York')
+    expect(schedule.publishDate).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it('reports only verified images and video "not produced" when no video job completed', async () => {
+    setupHappyPath()
+    listByRunMock.mockResolvedValue({
+      ok: true,
+      value: [
+        { kind: 'image', status: 'completed', resultDeliverableId: 'del_img_1' },
+        { kind: 'image', status: 'pending', resultDeliverableId: null },
+        { kind: 'image', status: 'failed', resultDeliverableId: null },
+        { kind: 'video', status: 'running', resultDeliverableId: null },
+      ],
+    })
+    getDeliverableMock.mockResolvedValue({
+      ok: true,
+      value: { id: 'del_img_1', type: 'image', content: { imageUrl: 'https://cdn.example/1.png' } },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(deliveryMock.mock.calls[0][0].mediaTruth).toEqual({
+      images: [{ deliverableId: 'del_img_1', imageUrl: 'https://cdn.example/1.png' }],
+      video: { state: 'none' },
+    })
+  })
+
+  it('reports video "unavailable" (never "none") when the media lookup fails', async () => {
+    setupHappyPath()
+    listByRunMock.mockResolvedValue({
+      ok: false,
+      error: { code: 'INTERNAL_ERROR', message: 'db down' },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(deliveryMock.mock.calls[0][0].mediaTruth).toEqual({
+      images: [],
+      video: { state: 'unavailable' },
+    })
+  })
+
+  it('reports a verified video only for a completed job with a resolvable video asset', async () => {
+    setupHappyPath()
+    listByRunMock.mockResolvedValue({
+      ok: true,
+      value: [{ kind: 'video', status: 'completed', resultDeliverableId: 'del_vid_1' }],
+    })
+    getDeliverableMock.mockResolvedValue({
+      ok: true,
+      value: { id: 'del_vid_1', type: 'video', content: { videoUrl: 'https://cdn.example/v.mp4' } },
+    })
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+
+    expect(deliveryMock.mock.calls[0][0].mediaTruth.video).toEqual({
+      state: 'verified',
+      videos: [{ deliverableId: 'del_vid_1', videoUrl: 'https://cdn.example/v.mp4' }],
+    })
+  })
+
+  it('adds no render-job writes beyond the existing bounded enqueue', async () => {
+    setupHappyPath()
+    const { runAIWorkforcePipeline } = await import('./pipeline')
+    await runAIWorkforcePipeline(TEST_CTX, TEST_PROFILE, { retryBackoffMs: 0 })
+    // Only the pre-existing bounded enqueue calls (1 video + 2 images).
+    expect(enqueueMock).toHaveBeenCalledTimes(3)
   })
 })

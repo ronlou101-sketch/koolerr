@@ -140,6 +140,14 @@ const TEST_PUBLISHING_JOB: PublishingJob = {
   id: 'pub-job-test-001',
   status: 'completed',
   videoProductionBrief: TEST_VIDEO_BRIEF,
+  allowedPlatforms: [
+    'facebook',
+    'instagram',
+    'tiktok',
+    'youtube-shorts',
+    'linkedin',
+    'google-business-profile',
+  ],
   packages: [
     makePackage('facebook'),
     makePackage('instagram'),
@@ -683,5 +691,46 @@ describe('ApprovalDepartmentService', () => {
       const service = new ApprovalDepartmentService(makeGateway(VALID_APPROVED_JSON))
       expect(service.listJobs()).toEqual([])
     })
+  })
+})
+
+// ── Report truth (Architect a9838a2c) ─────────────────────────────────────────
+
+describe('approval report truth', () => {
+  const FB_IG_JOB: PublishingJob = {
+    ...TEST_PUBLISHING_JOB,
+    allowedPlatforms: ['facebook', 'instagram'],
+    packages: [makePackage('facebook'), makePackage('instagram')],
+  }
+
+  it('drops approved/rejected platforms outside the allowed set (no AI-added platforms)', () => {
+    const raw = JSON.stringify({
+      ...JSON.parse(VALID_APPROVED_JSON),
+      approvedPackages: ['facebook', 'tiktok', 'linkedin', 'instagram', 'facebook'],
+      rejectedPackages: ['youtube-shorts'],
+    })
+    const decision = parseApprovalDecision(raw, FB_IG_JOB)
+    expect(decision.approvedPackages).toEqual(['facebook', 'instagram'])
+    expect(decision.rejectedPackages).toEqual([])
+  })
+
+  it('defaults to Facebook + Instagram when the job has no allowed platforms', () => {
+    const legacy: PublishingJob = { ...TEST_PUBLISHING_JOB, allowedPlatforms: undefined }
+    const decision = parseApprovalDecision(VALID_APPROVED_JSON, legacy)
+    expect(decision.approvedPackages).toEqual(['facebook', 'instagram'])
+  })
+
+  it('has no prefilled APPROVED example values in the schema', () => {
+    const prompt = buildApprovalPrompt(FB_IG_JOB)
+    expect(prompt).not.toMatch(/"overallDecision":\s*"APPROVED"/)
+    expect(prompt).not.toMatch(/"readyForDelivery":\s*true/)
+    expect(prompt).not.toMatch(/"qualityScore":\s*\d/)
+  })
+
+  it('lists only the allowed platforms and states that no media is verified', () => {
+    const prompt = buildApprovalPrompt(FB_IG_JOB)
+    expect(prompt).toContain('[facebook]')
+    expect(prompt).not.toContain('[tiktok]')
+    expect(prompt).toMatch(/Verified media: none/)
   })
 })

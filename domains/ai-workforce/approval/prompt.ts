@@ -1,5 +1,5 @@
 import type { PublishingJob, PublishingPackage, SupportedPlatform } from '../publishing/types'
-import { SUPPORTED_PLATFORMS } from '../publishing/types'
+import { filterToAllowedPlatforms, resolveAllowedPlatforms } from '../publishing/platform-resolver'
 import type { ApprovalDecision, ApprovalOutcome } from './types'
 
 /**
@@ -17,17 +17,28 @@ overallDecision must be exactly one of: APPROVED, REVISE, or REJECT.`
 /** Formats a single package into a compact review summary. */
 function summarisePackage(pkg: PublishingPackage): string {
   const captionPreview = pkg.caption.length > 180 ? pkg.caption.slice(0, 180) + '…' : pkg.caption
+  const scheduling = pkg.publishDate
+    ? `${pkg.publishDate} ${pkg.publishTime} ${pkg.timezone}`.replace(/\s+/g, ' ').trim()
+    : 'not scheduled (business timezone unknown — no dates or times may appear)'
   return [
     `[${pkg.platform}]`,
     `  Title: ${pkg.title}`,
     `  Caption: ${captionPreview}`,
     `  CTA: ${pkg.callToAction}`,
     `  Hashtags: ${pkg.hashtags.join(', ') || '(none)'}`,
-    `  Scheduling: ${pkg.publishDate} ${pkg.publishTime} ${pkg.timezone}`,
-    `  Video reference: ${pkg.videoReference}`,
-    `  Delivery assets: ${pkg.deliveryAssets.join(', ')}`,
+    `  Scheduling: ${scheduling}`,
     `  Approval required: ${pkg.approvalRequired}`,
   ].join('\n')
+}
+
+/** Allowed platforms for a publishing job (shared resolver). */
+export function resolveApprovalPlatforms(job: PublishingJob): SupportedPlatform[] {
+  const profile =
+    job.videoProductionBrief.sourceCreativeBrief.sourceStrategyBrief.sourceResearchBrief
+      .sourceProfile
+  return job.allowedPlatforms && job.allowedPlatforms.length > 0
+    ? resolveAllowedPlatforms(job.allowedPlatforms)
+    : resolveAllowedPlatforms(profile.allowedPlatforms)
 }
 
 /** Serialises the publishing job and its upstream chain into a review summary. */
@@ -38,6 +49,9 @@ function summarisePublishingJob(job: PublishingJob): string {
 
   return [
     `Business: ${profile.businessName} (${profile.businessCategory}) — ${profile.location}`,
+    `Business Facts (the ONLY permitted source of business claims): ${profile.notes ?? 'none provided'}`,
+    `Allowed platforms: ${resolveApprovalPlatforms(job).join(', ')}`,
+    `Verified media: none — no video, image, or file has been produced or verified`,
     ``,
     `Brand Positioning: ${strategy.brandPositioning}`,
     `Core Messaging: ${strategy.coreMessaging}`,
@@ -52,13 +66,14 @@ function summarisePublishingJob(job: PublishingJob): string {
 
 /**
  * Builds the full approval prompt from a PublishingJob.
- * The prompt requests a structured ApprovalDecision as JSON.
+ * The prompt requests a structured ApprovalDecision as JSON. The schema carries no
+ * pre-filled verdict, scores, notes, or platform list — the reviewer must decide.
  */
 export function buildApprovalPrompt(publishingJob: PublishingJob): string {
   const profile =
     publishingJob.videoProductionBrief.sourceCreativeBrief.sourceStrategyBrief.sourceResearchBrief
       .sourceProfile
-  const platforms = publishingJob.packages.map((p) => p.platform)
+  const allowed = resolveApprovalPlatforms(publishingJob)
 
   return `You are conducting a quality review and approval decision for ${profile.businessName}'s publishing packages.
 
@@ -70,28 +85,29 @@ ${summarisePublishingJob(publishingJob)}
 2. Platform compliance — Does each package meet the specific requirements, tone, and format of its platform?
 3. Content quality — Are captions compelling, well-written, and free of factual errors or typos?
 4. CTA effectiveness — Is every call-to-action clear, native to the platform, and conversion-focused?
-5. Scheduling correctness — Are publish dates, times, and timezones properly specified?
-6. Asset completeness — Are video references and delivery assets correctly populated?
-7. Compliance and safety — Is there anything legally or ethically problematic in any package?
+5. Scheduling correctness — If a schedule is given, is it consistent? If the timezone is unknown, the copy must contain no dates or times.
+6. Truthfulness — Every business claim (offers, discounts, free services, pricing, guarantees, hours/availability such as 24/7, response times, credentials, policies) must appear in the Business Facts. Any invented claim is a complianceIssue.
+7. No fabrication — No file names, file paths, account/page/ad/channel IDs, or references to a video, image, or download (none exists). Any such reference is a criticalIssue.
+8. Compliance and safety — Is there anything legally or ethically problematic in any package?
 
 === YOUR TASK ===
-Produce a complete Approval Decision as a JSON object with this exact structure (no markdown, no code fences):
+Produce an Approval Decision as a JSON object with this structure (no markdown, no code fences). Replace every value with your own assessment of THESE packages:
 
 {
-  "overallDecision": "APPROVED",
-  "confidence": 90,
-  "qualityScore": 88,
-  "readabilityScore": 92,
-  "readyForDelivery": true,
-  "criticalIssues": [],
-  "brandingIssues": [],
-  "complianceIssues": [],
-  "platformIssues": [],
-  "requiredChanges": [],
-  "revisionInstructions": "No revisions required.",
-  "approvalNotes": "All packages meet brand, quality, and platform standards. Ready for delivery.",
-  "approvedPackages": ${JSON.stringify(platforms)},
-  "rejectedPackages": []
+  "overallDecision": "one of APPROVED, REVISE, REJECT",
+  "confidence": "integer 0-100",
+  "qualityScore": "integer 0-100",
+  "readabilityScore": "integer 0-100",
+  "readyForDelivery": "boolean — true only for APPROVED",
+  "criticalIssues": ["each blocking issue you found"],
+  "brandingIssues": ["each branding issue you found"],
+  "complianceIssues": ["each compliance or truthfulness issue you found"],
+  "platformIssues": ["each platform issue you found"],
+  "requiredChanges": ["each change required before delivery"],
+  "revisionInstructions": "Specific revision steps for these packages",
+  "approvalNotes": "Your specific assessment of these packages and the reason for your decision",
+  "approvedPackages": ["platform ids that passed review"],
+  "rejectedPackages": ["platform ids that failed review"]
 }
 
 Outcome rules:
@@ -100,16 +116,16 @@ Outcome rules:
 - REJECT: qualityScore < 60 OR criticalIssues OR complianceIssues exist → readyForDelivery must be false; criticalIssues or complianceIssues must be non-empty
 
 Package-level fields:
-- approvedPackages: platform identifiers from this list that passed review — ${JSON.stringify(SUPPORTED_PLATFORMS)}
-- rejectedPackages: platform identifiers that failed and must be reworked
+- approvedPackages: platform identifiers from this list that passed review — ${JSON.stringify(allowed)}
+- rejectedPackages: platform identifiers from this list that failed and must be reworked
 
 Requirements:
 - overallDecision must be exactly "APPROVED", "REVISE", or "REJECT"
 - confidence, qualityScore, and readabilityScore must be integers 0–100
 - readyForDelivery must be a boolean (true only for APPROVED)
-- approvedPackages and rejectedPackages must only contain values from: ${SUPPORTED_PLATFORMS.join(', ')}
-- All issue arrays may be empty for APPROVED decisions
-- revisionInstructions and approvalNotes must be non-empty strings`
+- approvedPackages and rejectedPackages must only contain values from: ${allowed.join(', ')}
+- Issue arrays are empty only when you found no issue of that kind
+- revisionInstructions and approvalNotes must be non-empty strings written for these specific packages`
 }
 
 /**
@@ -191,8 +207,15 @@ export function parseApprovalDecision(
     requiredChanges: parsed.requiredChanges as string[],
     revisionInstructions: parsed.revisionInstructions as string,
     approvalNotes: parsed.approvalNotes as string,
-    approvedPackages: parsed.approvedPackages as SupportedPlatform[],
-    rejectedPackages: parsed.rejectedPackages as SupportedPlatform[],
+    // Shared resolver: platforms outside the allowed set are discarded, never expanded.
+    approvedPackages: filterToAllowedPlatforms(
+      parsed.approvedPackages as unknown[],
+      resolveApprovalPlatforms(sourcePublishingJob)
+    ),
+    rejectedPackages: filterToAllowedPlatforms(
+      parsed.rejectedPackages as unknown[],
+      resolveApprovalPlatforms(sourcePublishingJob)
+    ),
     generatedAt: new Date(),
     sourcePublishingJob,
   }

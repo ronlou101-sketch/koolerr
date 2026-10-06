@@ -464,3 +464,26 @@ describe('StrategyDepartmentService', () => {
     })
   })
 })
+
+// ── Report truth (Architect a9838a2c) ─────────────────────────────────────────
+
+describe('strategy report truth', () => {
+  it('allows offerRecommendations to be empty (relaxed field)', () => {
+    const raw = JSON.parse(VALID_STRATEGY_JSON) as Record<string, unknown>
+    raw.offerRecommendations = []
+    const brief = parseStrategyBrief(JSON.stringify(raw), TEST_RESEARCH_BRIEF)
+    expect(brief.offerRecommendations).toEqual([])
+  })
+
+  it('still requires other array fields to be non-empty', () => {
+    const raw = JSON.parse(VALID_STRATEGY_JSON) as Record<string, unknown>
+    raw.ctaLibrary = []
+    expect(() => parseStrategyBrief(JSON.stringify(raw), TEST_RESEARCH_BRIEF)).toThrow('ctaLibrary')
+  })
+
+  it('names the Business Brain facts as the only claim source and avoids seasonal ties', () => {
+    const prompt = buildStrategyPrompt(TEST_RESEARCH_BRIEF)
+    expect(prompt).toContain('Business Facts (the ONLY source of business claims)')
+    expect(prompt).toMatch(/season, month, or date/)
+  })
+})

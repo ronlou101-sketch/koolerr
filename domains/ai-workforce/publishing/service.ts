@@ -11,7 +11,13 @@ import type {
   TrustRule,
 } from '@/shared/types'
 import { WORKFORCE_REGISTRY } from '../employees'
-import { buildPublishingPrompt, parsePublishingPackages, PUBLISHING_SYSTEM_CONTEXT } from './prompt'
+import {
+  buildPublishingPrompt,
+  parsePublishingPackages,
+  PUBLISHING_SYSTEM_CONTEXT,
+  resolvePublishingPlatforms,
+} from './prompt'
+import type { PublishingPromptOptions } from './prompt'
 import type {
   PublishingError,
   PublishingErrorCode,
@@ -58,6 +64,8 @@ export class PublishingDepartmentService implements IPublishingDepartmentService
       id: jobId,
       status: 'running',
       videoProductionBrief: request.videoProductionBrief,
+      allowedPlatforms: resolvePublishingPlatforms(request.videoProductionBrief),
+      schedule: request.schedule ?? null,
       packages: [],
       attempts: 0,
       employeeId: employee.id,
@@ -187,7 +195,11 @@ export class PublishingDepartmentService implements IPublishingDepartmentService
     job: PublishingJob,
     providerId: ModelProvider
   ): Promise<PublishingPackage[]> {
-    const prompt = buildPublishingPrompt(request.videoProductionBrief)
+    const options: PublishingPromptOptions = {
+      allowedPlatforms: job.allowedPlatforms,
+      schedule: job.schedule ?? null,
+    }
+    const prompt = buildPublishingPrompt(request.videoProductionBrief, options)
 
     const response = await this.gateway.invoke({
       tenantId: request.tenantId,
@@ -202,7 +214,7 @@ export class PublishingDepartmentService implements IPublishingDepartmentService
       maxTokens: 8192,
     })
 
-    return parsePublishingPackages(response.content, request.videoProductionBrief)
+    return parsePublishingPackages(response.content, request.videoProductionBrief, options)
   }
 
   private ensureTrustRule(employeeId: DigitalEmployeeId, organizationId: OrganizationId): void {

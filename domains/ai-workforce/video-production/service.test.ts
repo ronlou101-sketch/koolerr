@@ -2,7 +2,13 @@ import { describe, expect, it, vi } from 'vitest'
 import type { IModelGateway, GatewayResponse } from '@/shared/model-gateway'
 import type { ModelProvider } from '@/shared/types'
 import { VideoProductionDepartmentService } from './service'
-import { buildVideoProductionPrompt, parseVideoProductionBrief } from './prompt'
+import {
+  buildVideoProductionPrompt,
+  buildVideoScriptPrompt,
+  parseVideoProductionBrief,
+  parseVideoScript,
+  VIDEO_UNVERIFIED_PRODUCTION_FIELDS,
+} from './prompt'
 import type { VideoProductionRequest } from './types'
 import type { CreativeBrief } from '../creative/types'
 import type { StrategyBrief } from '../strategy/types'
@@ -271,11 +277,11 @@ describe('buildVideoProductionPrompt()', () => {
     expect(prompt).toContain('Jump cuts every 2-3s') // editingInstructions
   })
 
-  it('includes HeyGen and Higgsfield as rendering targets in the prompt', () => {
+  it('is a concept brief: names no rendering tools or providers', () => {
     const prompt = buildVideoProductionPrompt(TEST_CREATIVE_BRIEF)
-    expect(prompt).toContain('HeyGen')
-    expect(prompt).toContain('Higgsfield')
-    expect(prompt).toContain('ElevenLabs')
+    expect(prompt).not.toContain('HeyGen')
+    expect(prompt).not.toContain('Higgsfield')
+    expect(prompt).not.toContain('ElevenLabs')
   })
 
   it('includes all 17 output field names in the schema', () => {
@@ -311,19 +317,20 @@ describe('parseVideoProductionBrief()', () => {
   it('parses a valid JSON response into a VideoProductionBrief', () => {
     const brief = parseVideoProductionBrief(VALID_PRODUCTION_JSON, TEST_CREATIVE_BRIEF)
     expect(brief.productionPlan).toContain('Sunrise Plumbing')
-    expect(brief.renderQueue).toHaveLength(3)
+    // Unverified production fields are never taken from AI output.
+    expect(brief.renderQueue).toEqual([])
     expect(brief.sceneTimeline).toHaveLength(4)
-    expect(brief.avatarAssignments).toHaveLength(3)
-    expect(brief.voiceAssignments).toHaveLength(3)
+    expect(brief.avatarAssignments).toEqual([])
+    expect(brief.voiceAssignments).toEqual([])
     expect(brief.cameraMovements).toHaveLength(3)
     expect(brief.motionEffects).toHaveLength(3)
     expect(brief.transitions).toHaveLength(3)
     expect(brief.captionTimeline).toHaveLength(3)
     expect(brief.bRollTimeline).toHaveLength(3)
     expect(brief.musicTimeline).toHaveLength(3)
-    expect(brief.assetManifest).toHaveLength(3)
+    expect(brief.assetManifest).toEqual([])
     expect(brief.qualityChecklist).toHaveLength(3)
-    expect(brief.exportTargets).toHaveLength(3)
+    expect(brief.exportTargets).toEqual([])
     expect(brief.approvalChecklist).toHaveLength(3)
     expect(brief.generatedAt).toBeInstanceOf(Date)
     expect(brief.sourceCreativeBrief).toBe(TEST_CREATIVE_BRIEF)
@@ -354,10 +361,10 @@ describe('parseVideoProductionBrief()', () => {
 
   it('throws when a required array field is empty', () => {
     const incomplete = JSON.parse(VALID_PRODUCTION_JSON) as Record<string, unknown>
-    incomplete.renderQueue = []
+    incomplete.sceneTimeline = []
     expect(() =>
       parseVideoProductionBrief(JSON.stringify(incomplete), TEST_CREATIVE_BRIEF)
-    ).toThrow('renderQueue')
+    ).toThrow('sceneTimeline')
   })
 
   it('throws when sceneTimeline is missing', () => {
@@ -368,12 +375,13 @@ describe('parseVideoProductionBrief()', () => {
     ).toThrow('sceneTimeline')
   })
 
-  it('throws when exportTargets is missing', () => {
+  it('does not require the unverified production fields (relaxed: always empty)', () => {
     const incomplete = JSON.parse(VALID_PRODUCTION_JSON) as Record<string, unknown>
-    delete incomplete.exportTargets
-    expect(() =>
-      parseVideoProductionBrief(JSON.stringify(incomplete), TEST_CREATIVE_BRIEF)
-    ).toThrow('exportTargets')
+    for (const field of VIDEO_UNVERIFIED_PRODUCTION_FIELDS) delete incomplete[field]
+    const brief = parseVideoProductionBrief(JSON.stringify(incomplete), TEST_CREATIVE_BRIEF)
+    for (const field of VIDEO_UNVERIFIED_PRODUCTION_FIELDS) {
+      expect(brief[field]).toEqual([])
+    }
   })
 
   it('throws when approvalChecklist is missing', () => {
@@ -398,7 +406,7 @@ describe('VideoProductionDepartmentService', () => {
 
       expect(result.value.status).toBe('completed')
       expect(result.value.videoProductionBrief).toBeDefined()
-      expect(result.value.videoProductionBrief!.renderQueue).toHaveLength(3)
+      expect(result.value.videoProductionBrief!.renderQueue).toEqual([])
       expect(result.value.videoProductionBrief!.sceneTimeline).toHaveLength(4)
       expect(result.value.creativeBrief).toBe(TEST_CREATIVE_BRIEF)
       expect(result.value.attempts).toBe(1)
@@ -644,5 +652,58 @@ describe('VideoProductionDepartmentService', () => {
       if (result.ok) return
       expect(result.error.message).toMatch(/Video script generation failed/)
     })
+  })
+})
+
+// ── Report truth: video script platform via the shared resolver ───────────────
+
+describe('video script platform (shared resolver)', () => {
+  it('defaults to Facebook + Instagram and falls back to the first allowed platform', () => {
+    const script = parseVideoScript(
+      JSON.stringify({ title: 'T', script: 'S', platform: 'tiktok', estimatedDurationSec: 30 })
+    )
+    expect(script.platform).toBe('facebook')
+  })
+
+  it('normalizes aliases to canonical IDs within the allowed set', () => {
+    const script = parseVideoScript(
+      JSON.stringify({ title: 'T', script: 'S', platform: 'YouTube Shorts' }),
+      ['instagram', 'youtube-shorts']
+    )
+    expect(script.platform).toBe('youtube-shorts')
+  })
+
+  it('offers only the allowed platforms in the script prompt', () => {
+    const prompt = buildVideoScriptPrompt(TEST_CREATIVE_BRIEF)
+    expect(prompt).toContain('exactly one of: facebook, instagram')
+    expect(prompt).not.toContain('tiktok')
+  })
+
+  it('writeScript uses the profile allowed platforms', async () => {
+    const brief: CreativeBrief = {
+      ...TEST_CREATIVE_BRIEF,
+      sourceStrategyBrief: {
+        ...TEST_CREATIVE_BRIEF.sourceStrategyBrief,
+        sourceResearchBrief: {
+          ...TEST_CREATIVE_BRIEF.sourceStrategyBrief.sourceResearchBrief,
+          sourceProfile: {
+            ...TEST_CREATIVE_BRIEF.sourceStrategyBrief.sourceResearchBrief.sourceProfile,
+            allowedPlatforms: ['linkedin'],
+          },
+        },
+      },
+    }
+    const json = JSON.stringify({ title: 'T', script: 'S', platform: 'instagram' })
+    const service = new VideoProductionDepartmentService(makeGateway(json))
+    const result = await service.writeScript({
+      tenantId: TEST_REQUEST.tenantId,
+      organizationId: TEST_REQUEST.organizationId,
+      workforceId: TEST_REQUEST.workforceId,
+      engagementRunId: TEST_REQUEST.engagementRunId,
+      creativeBrief: brief,
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.platform).toBe('linkedin')
   })
 })

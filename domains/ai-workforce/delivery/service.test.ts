@@ -3,7 +3,7 @@ import type { IModelGateway, GatewayResponse } from '@/shared/model-gateway'
 import type { ModelProvider } from '@/shared/types'
 import { DeliveryDepartmentService } from './service'
 import { buildDeliveryPrompt, parseDeliveryPackage } from './prompt'
-import type { DeliveryRequest } from './types'
+import type { DeliveryRequest, MediaTruth } from './types'
 import type { ApprovalDecision } from '../approval/types'
 import type { PublishingJob, PublishingPackage } from '../publishing/types'
 import type { VideoProductionBrief } from '../video-production/types'
@@ -141,6 +141,14 @@ const TEST_PUBLISHING_JOB: PublishingJob = {
   id: 'pub-job-test-001',
   status: 'completed',
   videoProductionBrief: TEST_VIDEO_BRIEF,
+  allowedPlatforms: [
+    'facebook',
+    'instagram',
+    'tiktok',
+    'youtube-shorts',
+    'linkedin',
+    'google-business-profile',
+  ],
   packages: [
     makePackage('facebook'),
     makePackage('instagram'),
@@ -190,6 +198,29 @@ const TEST_REQUEST: DeliveryRequest = {
   engagementRunId: 'run_test' as ReturnType<typeof String> as never,
   approvalDecision: TEST_APPROVAL_DECISION,
 }
+
+// Facebook + Instagram default, with no schedule (business timezone unknown).
+const FB_IG_JOB: PublishingJob = {
+  ...TEST_PUBLISHING_JOB,
+  allowedPlatforms: ['facebook', 'instagram'],
+  packages: [makePackage('facebook'), makePackage('instagram')].map((p) => ({
+    ...p,
+    publishDate: '',
+    publishTime: '',
+    timezone: '',
+    thumbnailReference: '',
+    videoReference: '',
+    deliveryAssets: [],
+  })),
+}
+
+const FB_IG_DECISION: ApprovalDecision = {
+  ...TEST_APPROVAL_DECISION,
+  approvedPackages: ['facebook', 'instagram'],
+  sourcePublishingJob: FB_IG_JOB,
+}
+
+const NO_MEDIA: MediaTruth = { images: [], video: { state: 'none' } }
 
 // ── Fixtures — valid JSON response ────────────────────────────────────────────
 
@@ -273,50 +304,50 @@ describe('buildDeliveryPrompt()', () => {
     expect(prompt).toContain('Austin, TX')
   })
 
-  it('includes the approval outcome and scores', () => {
+  it('lists each approved platform by display name', () => {
     const prompt = buildDeliveryPrompt(TEST_APPROVAL_DECISION)
-    expect(prompt).toContain('APPROVED')
-    expect(prompt).toContain('88/100') // qualityScore
-    expect(prompt).toContain('91/100') // readabilityScore
-    expect(prompt).toContain('92%') // confidence
+    for (const name of [
+      'Facebook',
+      'Instagram',
+      'TikTok',
+      'YouTube Shorts',
+      'LinkedIn',
+      'Google Business Profile',
+    ]) {
+      expect(prompt).toContain(name)
+    }
   })
 
-  it('includes all 6 approved platform names', () => {
+  it('asks the AI only for the summary and publishing instructions', () => {
     const prompt = buildDeliveryPrompt(TEST_APPROVAL_DECISION)
-    expect(prompt).toContain('facebook')
-    expect(prompt).toContain('instagram')
-    expect(prompt).toContain('tiktok')
-    expect(prompt).toContain('youtube-shorts')
-    expect(prompt).toContain('linkedin')
-    expect(prompt).toContain('google-business-profile')
-  })
-
-  it('includes all required DeliveryPackage content field names in the schema', () => {
-    const prompt = buildDeliveryPrompt(TEST_APPROVAL_DECISION)
-    const fields = [
-      'customerSummary',
+    expect(prompt).toContain('"customerSummary"')
+    expect(prompt).toContain('"publishingInstructions"')
+    for (const field of [
       'deliverables',
       'platformPackages',
       'downloadLinks',
       'thumbnails',
-      'publishingInstructions',
       'recommendedSchedule',
       'approvalMetadata',
-    ]
-    for (const field of fields) {
-      expect(prompt).toContain(field)
+    ]) {
+      expect(prompt).not.toContain(`"${field}"`)
     }
   })
 
-  it('includes branding context from the strategy brief', () => {
-    const prompt = buildDeliveryPrompt(TEST_APPROVAL_DECISION)
-    expect(prompt).toContain('Call now for a free estimate') // ctaLibrary
-    expect(prompt).toContain('#AustinPlumber') // hashtagRecommendations
+  it('has no CST, QA Lead, approved-and-ready, video, or fake path wording', () => {
+    const prompt = buildDeliveryPrompt(FB_IG_DECISION)
+    expect(prompt).not.toMatch(/CST|Chicago/)
+    expect(prompt).not.toMatch(/QA Lead/)
+    expect(prompt).not.toMatch(/approved and ready/i)
+    expect(prompt).not.toMatch(/\.zip|\.jpg|\.mp4|packages\//)
+    expect(prompt).not.toMatch(/30s|spokesperson video|Reel package/)
   })
 
-  it('surfaces the approval notes in the summary section', () => {
-    const prompt = buildDeliveryPrompt(TEST_APPROVAL_DECISION)
-    expect(prompt).toContain('All six platform packages meet brand alignment')
+  it('states the video status truthfully', () => {
+    expect(buildDeliveryPrompt(FB_IG_DECISION)).toContain('Video: status unavailable.')
+    expect(buildDeliveryPrompt(FB_IG_DECISION, NO_MEDIA)).toContain(
+      'Video: not produced for this campaign.'
+    )
   })
 })
 
@@ -326,23 +357,24 @@ describe('parseDeliveryPackage()', () => {
   it('parses a valid JSON response into a DeliveryPackage', () => {
     const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, TEST_APPROVAL_DECISION)
     expect(pkg.customerSummary).toContain('Sunrise Plumbing')
-    expect(pkg.deliverables).toHaveLength(6)
+    // One per approved platform + the video-state line.
+    expect(pkg.deliverables).toHaveLength(7)
     expect(pkg.platformPackages).toHaveLength(6)
-    expect(pkg.downloadLinks).toHaveLength(6)
-    expect(pkg.thumbnails).toHaveLength(6)
+    expect(pkg.downloadLinks).toEqual([])
+    expect(pkg.thumbnails).toEqual([])
     expect(pkg.publishingInstructions).toHaveLength(6)
     expect(pkg.recommendedSchedule).toBeTruthy()
     expect(pkg.approvalMetadata).toBeTruthy()
   })
 
-  it('sets metadata fields correctly', () => {
+  it('sets metadata fields correctly and never a ready/delivered state', () => {
     const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, TEST_APPROVAL_DECISION)
     expect(typeof pkg.packageId).toBe('string')
     expect(pkg.packageId.length).toBeGreaterThan(0)
-    expect(pkg.status).toBe('ready')
-    expect(pkg.readyForCustomer).toBe(true)
+    expect(pkg.status).toBe('prepared')
+    expect(pkg).not.toHaveProperty('readyForCustomer')
+    expect(pkg).not.toHaveProperty('deliveredAt')
     expect(pkg.generatedAt).toBeInstanceOf(Date)
-    expect(pkg.deliveredAt).toBeInstanceOf(Date)
     expect(pkg.sourceApprovalDecision).toBe(TEST_APPROVAL_DECISION)
   })
 
@@ -356,16 +388,7 @@ describe('parseDeliveryPackage()', () => {
     const wrapped = '```json\n' + VALID_DELIVERY_JSON + '\n```'
     const pkg = parseDeliveryPackage(wrapped, TEST_APPROVAL_DECISION)
     expect(pkg.customerSummary).toBeTruthy()
-    expect(pkg.deliverables).toHaveLength(6)
-  })
-
-  it('allows empty downloadLinks and thumbnails arrays', () => {
-    const minimal = JSON.parse(VALID_DELIVERY_JSON) as Record<string, unknown>
-    minimal.downloadLinks = []
-    minimal.thumbnails = []
-    const pkg = parseDeliveryPackage(JSON.stringify(minimal), TEST_APPROVAL_DECISION)
-    expect(pkg.downloadLinks).toEqual([])
-    expect(pkg.thumbnails).toEqual([])
+    expect(pkg.platformPackages).toHaveLength(6)
   })
 
   it('throws when response is not valid JSON', () => {
@@ -385,43 +408,152 @@ describe('parseDeliveryPackage()', () => {
     )
   })
 
-  it('throws when deliverables array is empty', () => {
+  it('throws when publishingInstructions is not an array', () => {
     const bad = JSON.parse(VALID_DELIVERY_JSON) as Record<string, unknown>
-    bad.deliverables = []
-    expect(() => parseDeliveryPackage(JSON.stringify(bad), TEST_APPROVAL_DECISION)).toThrow(
-      'deliverables'
-    )
-  })
-
-  it('throws when platformPackages is missing', () => {
-    const bad = JSON.parse(VALID_DELIVERY_JSON) as Record<string, unknown>
-    delete bad.platformPackages
-    expect(() => parseDeliveryPackage(JSON.stringify(bad), TEST_APPROVAL_DECISION)).toThrow(
-      'platformPackages'
-    )
-  })
-
-  it('throws when publishingInstructions is empty', () => {
-    const bad = JSON.parse(VALID_DELIVERY_JSON) as Record<string, unknown>
-    bad.publishingInstructions = []
+    delete bad.publishingInstructions
     expect(() => parseDeliveryPackage(JSON.stringify(bad), TEST_APPROVAL_DECISION)).toThrow(
       'publishingInstructions'
     )
   })
 
-  it('throws when downloadLinks is not an array', () => {
-    const bad = JSON.parse(VALID_DELIVERY_JSON) as Record<string, unknown>
-    delete bad.downloadLinks
-    expect(() => parseDeliveryPackage(JSON.stringify(bad), TEST_APPROVAL_DECISION)).toThrow(
-      'downloadLinks'
+  it('throws when no approved package remains', () => {
+    const none: ApprovalDecision = { ...FB_IG_DECISION, approvedPackages: [] }
+    expect(() => parseDeliveryPackage(VALID_DELIVERY_JSON, none)).toThrow('approvedPackages')
+  })
+})
+
+// ── Report truth (Architect a9838a2c) ─────────────────────────────────────────
+
+describe('delivery report truth', () => {
+  it('ignores AI-supplied links, thumbnails, deliverables, schedule, and approval text', () => {
+    const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, NO_MEDIA)
+    const text = JSON.stringify({ ...pkg, sourceApprovalDecision: undefined })
+    expect(pkg.downloadLinks).toEqual([])
+    expect(pkg.thumbnails).toEqual([])
+    expect(text).not.toMatch(/\.zip|\.jpg|\.mp4|packages\/|thumbnails\//)
+    expect(text).not.toMatch(/QA Lead/)
+    expect(text).not.toMatch(/CST|Chicago/)
+    expect(text).not.toMatch(/approved and ready/i)
+  })
+
+  it('only includes approved platforms that are in the allowed set', () => {
+    const decision: ApprovalDecision = {
+      ...FB_IG_DECISION,
+      approvedPackages: ['facebook', 'tiktok', 'instagram'],
+    }
+    const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, decision, NO_MEDIA)
+    expect(pkg.platformPackages.map((p) => p.split(':')[0])).toEqual(['Facebook', 'Instagram'])
+    expect(pkg.publishingInstructions.map((p) => p.split(':')[0])).toEqual([
+      'Facebook',
+      'Instagram',
+    ])
+    expect(JSON.stringify(pkg.deliverables)).not.toContain('TikTok')
+  })
+
+  it('replaces untruthful AI text (status, video, schedule claims) with plain text', () => {
+    const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, NO_MEDIA)
+    expect(pkg.customerSummary).not.toMatch(/approved|ready|video/i)
+    expect(pkg.customerSummary).toContain('waiting for your review')
+    for (const line of pkg.publishingInstructions) {
+      expect(line).not.toMatch(/video|upload|CST|9:00/i)
+    }
+  })
+
+  it('keeps truthful AI text', () => {
+    const raw = JSON.stringify({
+      customerSummary: 'Two post packages for Sunrise Plumbing are prepared for your review.',
+      publishingInstructions: [
+        'Facebook: open your Page, create a post, and paste the caption.',
+        'Instagram: create a new post and paste the caption and hashtags.',
+      ],
+    })
+    const pkg = parseDeliveryPackage(raw, FB_IG_DECISION, NO_MEDIA)
+    expect(pkg.customerSummary).toBe(
+      'Two post packages for Sunrise Plumbing are prepared for your review.'
+    )
+    expect(pkg.publishingInstructions[0]).toBe(
+      'Facebook: open your Page, create a post, and paste the caption.'
     )
   })
 
-  it('throws when recommendedSchedule is missing', () => {
-    const bad = JSON.parse(VALID_DELIVERY_JSON) as Record<string, unknown>
-    delete bad.recommendedSchedule
-    expect(() => parseDeliveryPackage(JSON.stringify(bad), TEST_APPROVAL_DECISION)).toThrow(
-      'recommendedSchedule'
+  it('omits the schedule when the business timezone is unknown', () => {
+    const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, NO_MEDIA)
+    expect(pkg.recommendedSchedule).toContain('Not scheduled')
+    for (const line of pkg.platformPackages) expect(line).toContain('Schedule: Not scheduled')
+  })
+
+  it('builds the schedule from the business-timezone schedule only', () => {
+    const scheduled: ApprovalDecision = {
+      ...FB_IG_DECISION,
+      sourcePublishingJob: {
+        ...FB_IG_JOB,
+        packages: FB_IG_JOB.packages.map((p) => ({
+          ...p,
+          publishDate: '2026-10-13',
+          publishTime: '10:00',
+          timezone: 'America/New_York',
+        })),
+      },
+    }
+    const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, scheduled, NO_MEDIA)
+    expect(pkg.recommendedSchedule).toBe(
+      'Facebook: 2026-10-13 at 10:00 (America/New_York); Instagram: 2026-10-13 at 10:00 (America/New_York)'
+    )
+  })
+
+  it('builds the quality summary server-side with no reviewer identity or date', () => {
+    const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, NO_MEDIA)
+    expect(pkg.approvalMetadata).toBe(
+      'Automated quality check passed — quality 88/100, readability 91/100, confidence 92%. ' +
+        'Platforms checked: Facebook, Instagram. This is an automated check, not customer approval.'
+    )
+  })
+
+  it('shows only verified images', () => {
+    const media: MediaTruth = {
+      images: [{ deliverableId: 'del_img_1', imageUrl: 'https://cdn.example/img1.png' }],
+      video: { state: 'none' },
+    }
+    const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, media)
+    expect(pkg.thumbnails).toEqual(['https://cdn.example/img1.png'])
+    expect(pkg.deliverables).toContain('Images: 1 verified image(s).')
+    const none = parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, NO_MEDIA)
+    expect(none.thumbnails).toEqual([])
+    expect(none.deliverables.join(' ')).not.toContain('Images:')
+  })
+
+  it('keeps the three video states distinct', () => {
+    const verified: MediaTruth = {
+      images: [],
+      video: {
+        state: 'verified',
+        videos: [{ deliverableId: 'del_vid_1', videoUrl: 'https://cdn.example/v.mp4' }],
+      },
+    }
+    const states = [
+      parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, verified),
+      parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, NO_MEDIA),
+      parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION),
+    ].map((p) => p.deliverables[p.deliverables.length - 1])
+    expect(states).toEqual([
+      'Video: 1 verified video(s) available.',
+      'Video: not produced for this campaign.',
+      'Video: status unavailable.',
+    ])
+  })
+
+  it('passes media truth through the service', async () => {
+    const service = new DeliveryDepartmentService(makeGateway(VALID_DELIVERY_JSON))
+    const result = await service.prepareDelivery({
+      ...TEST_REQUEST,
+      approvalDecision: FB_IG_DECISION,
+      mediaTruth: NO_MEDIA,
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.deliveryPackage!.mediaTruth).toEqual(NO_MEDIA)
+    expect(result.value.deliveryPackage!.deliverables).toContain(
+      'Video: not produced for this campaign.'
     )
   })
 })
@@ -443,7 +575,7 @@ describe('DeliveryDepartmentService', () => {
       expect(result.value.attempts).toBe(1)
     })
 
-    it('delivery package is ready for the customer', async () => {
+    it('delivery package is prepared (never ready/delivered)', async () => {
       const service = new DeliveryDepartmentService(makeGateway(VALID_DELIVERY_JSON))
       const result = await service.prepareDelivery(TEST_REQUEST)
 
@@ -451,9 +583,9 @@ describe('DeliveryDepartmentService', () => {
       if (!result.ok) return
 
       const pkg = result.value.deliveryPackage!
-      expect(pkg.status).toBe('ready')
-      expect(pkg.readyForCustomer).toBe(true)
-      expect(pkg.deliverables).toHaveLength(6)
+      expect(pkg.status).toBe('prepared')
+      expect(pkg).not.toHaveProperty('readyForCustomer')
+      expect(pkg.deliverables).toHaveLength(7)
       expect(pkg.platformPackages).toHaveLength(6)
       expect(pkg.publishingInstructions).toHaveLength(6)
     })
@@ -469,7 +601,7 @@ describe('DeliveryDepartmentService', () => {
       expect(typeof pkg.packageId).toBe('string')
       expect(pkg.packageId.length).toBeGreaterThan(0)
       expect(pkg.generatedAt).toBeInstanceOf(Date)
-      expect(pkg.deliveredAt).toBeInstanceOf(Date)
+      expect(pkg).not.toHaveProperty('deliveredAt')
     })
 
     it('records the provider that produced the result', async () => {
@@ -642,7 +774,7 @@ describe('DeliveryDepartmentService', () => {
       expect(retrieved!.id).toBe(result.value.id)
       expect(retrieved!.status).toBe('completed')
       expect(retrieved!.deliveryPackage).toBeDefined()
-      expect(retrieved!.deliveryPackage!.readyForCustomer).toBe(true)
+      expect(retrieved!.deliveryPackage!.status).toBe('prepared')
     })
 
     it('returns undefined for an unknown job ID', () => {
