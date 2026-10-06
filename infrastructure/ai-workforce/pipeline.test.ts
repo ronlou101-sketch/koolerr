@@ -851,6 +851,11 @@ describe('runAIWorkforcePipeline()', () => {
     )
     expect(submitForReviewMock).not.toHaveBeenCalled()
     expect(updateStatusMock).toHaveBeenCalledWith(expect.objectContaining({ status: 'failed' }))
+    // Approval must not be left "running" when the floor fails (B3).
+    const approval = storeMemoryMock.mock.calls
+      .map((c) => c[0].memory.content as { step: string; status: string })
+      .filter((c) => c.step === 'approval')
+    expect(approval[approval.length - 1]?.status).toBe('completed')
     expect(failedProgress()?.failedAtDepartment).toBe('delivery')
     expect(failedProgress()?.failureReason).toContain('No usable content item')
     expect(failedProgress()?.failureReason).toContain('unsupported claim')

@@ -450,16 +450,23 @@ describe('delivery report truth', () => {
     expect(JSON.stringify(pkg.deliverables)).not.toContain('TikTok')
   })
 
-  it('replaces untruthful AI text (status, video, schedule claims) with plain text', () => {
+  it('always builds the summary and posting steps from verified context (ignores AI text)', () => {
     const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, NO_MEDIA)
-    expect(pkg.customerSummary).not.toMatch(/approved|ready|video/i)
-    expect(pkg.customerSummary).toContain('waiting for your review')
+    expect(pkg.customerSummary).toBe(
+      'Your 2 post packages for Sunrise Plumbing (Facebook, Instagram) have been prepared ' +
+        'and are waiting for your review. Each includes a caption, hashtags, and a call to action.'
+    )
+    expect(pkg.customerSummary).not.toMatch(/approved|ready|video|Chicago|CST|2023|QA Lead/i)
+    expect(pkg.publishingInstructions).toEqual([
+      'Facebook: open your Facebook account, create a new post, paste the caption and hashtags, add the call to action, then publish it at a time that works for you.',
+      'Instagram: open your Instagram account, create a new post, paste the caption and hashtags, add the call to action, then publish it at a time that works for you.',
+    ])
     for (const line of pkg.publishingInstructions) {
-      expect(line).not.toMatch(/video|upload|CST|9:00/i)
+      expect(line).not.toMatch(/video|upload|CST|Chicago|2023|\bready\b|approved/i)
     }
   })
 
-  it('keeps truthful AI text', () => {
+  it('ignores even truthful-looking AI summary and instructions', () => {
     const raw = JSON.stringify({
       customerSummary: 'Two post packages for Sunrise Plumbing are prepared for your review.',
       publishingInstructions: [
@@ -468,12 +475,43 @@ describe('delivery report truth', () => {
       ],
     })
     const pkg = parseDeliveryPackage(raw, FB_IG_DECISION, NO_MEDIA)
-    expect(pkg.customerSummary).toBe(
+    expect(pkg.customerSummary).toContain('Your 2 post packages for Sunrise Plumbing')
+    expect(pkg.customerSummary).not.toBe(
       'Two post packages for Sunrise Plumbing are prepared for your review.'
     )
-    expect(pkg.publishingInstructions[0]).toBe(
+    expect(pkg.publishingInstructions[0]).toContain('open your Facebook account')
+    expect(pkg.publishingInstructions[0]).not.toBe(
       'Facebook: open your Page, create a post, and paste the caption.'
     )
+  })
+
+  it('mentions verified media only when it exists, and a schedule only when known', () => {
+    const media: MediaTruth = {
+      images: [{ deliverableId: 'del_img_1', imageUrl: 'https://cdn.example/img1.png' }],
+      video: { state: 'none' },
+    }
+    const withMedia = parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, media)
+    expect(withMedia.customerSummary).toContain('Verified images from this campaign are included.')
+    expect(withMedia.publishingInstructions[0]).toContain('attach the verified image(s)')
+    expect(withMedia.publishingInstructions[0]).toContain('at a time that works for you')
+
+    const scheduled: ApprovalDecision = {
+      ...FB_IG_DECISION,
+      sourcePublishingJob: {
+        ...FB_IG_JOB,
+        packages: FB_IG_JOB.packages.map((p) => ({
+          ...p,
+          publishDate: '2026-10-13',
+          publishTime: '10:00',
+          timezone: 'America/New_York',
+        })),
+      },
+    }
+    const withSchedule = parseDeliveryPackage(VALID_DELIVERY_JSON, scheduled, NO_MEDIA)
+    expect(withSchedule.publishingInstructions[0]).toContain(
+      'publish or schedule it for the date and time shown'
+    )
+    expect(withSchedule.publishingInstructions[0]).not.toMatch(/\bready\b/i)
   })
 
   it('omits the schedule when the business timezone is unknown', () => {
@@ -505,7 +543,7 @@ describe('delivery report truth', () => {
     const pkg = parseDeliveryPackage(VALID_DELIVERY_JSON, FB_IG_DECISION, NO_MEDIA)
     expect(pkg.approvalMetadata).toBe(
       'Automated quality check passed — quality 88/100, readability 91/100, confidence 92%. ' +
-        'Platforms checked: Facebook, Instagram. This is an automated check, not customer approval.'
+        'Platforms checked: Facebook, Instagram. This is an automated check, not a customer decision.'
     )
   })
 

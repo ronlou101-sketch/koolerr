@@ -704,6 +704,9 @@ export async function runAIWorkforcePipeline(
     videoVerified: mediaTruth.video.state === 'verified',
     scheduled: schedule !== null,
   })
+  // Approval finished once packages are selected (or none remain). Record it before
+  // the floor check so a zero-item failure does not leave the step showing "running".
+  await recordProgress(ctx, 'approval', 'completed')
   if (usable.length === 0) {
     await failPipeline(
       ctx,
@@ -718,7 +721,6 @@ export async function runAIWorkforcePipeline(
     ...approvalDecision,
     approvedPackages: usable.map((p) => p.platform),
   }
-  await recordProgress(ctx, 'approval', 'completed')
 
   // ── Step 7: Delivery ────────────────────────────────────────────────────────
   await recordProgress(ctx, 'delivery', 'running')

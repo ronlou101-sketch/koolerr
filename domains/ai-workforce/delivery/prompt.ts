@@ -138,27 +138,54 @@ Requirements:
 - Do not invent business claims, offers, prices, file names, links, or account IDs`
 }
 
-// ── Server-side truth checks ───────────────────────────────────────────────────
+// ── Server-built customer text (never taken from AI) ───────────────────────────
 
-const STATUS_CLAIM = /\b(approved|approval|ready|published|delivered|live)\b/i
-const MEDIA_MENTION =
-  /\b(video|videos|reel|reels|clip|footage|image|images|photo|photos|upload|attach|thumbnail|file|files)\b/i
-const FABRICATED_REFERENCE =
-  /\b[\w-]+\.(mp4|mov|jpg|jpeg|png|gif|zip|pdf)\b|https?:\/\/|\b(page[_ ]id|ad[_ ]account|channel[_ ]id|place[_ ]id|act_\d+)\b/i
-const SCHEDULE_MENTION =
-  /\b\d{1,2}:\d{2}\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\s?(am|pm)\b|\b(EST|EDT|CST|CDT|MST|MDT|PST|PDT|UTC|GMT|Central|Eastern|Pacific|Mountain)\b|\bChicago\b/i
+function packageWord(count: number): string {
+  return count === 1 ? 'post package' : 'post packages'
+}
 
-function fallbackSummary(profileName: string, names: string[]): string {
+/**
+ * Customer summary built only from verified run context: business name, resolved
+ * platforms, and what media actually exists. Never dates, claims, or status words.
+ */
+function buildCustomerSummary(profileName: string, names: string[], media: MediaTruth): string {
+  const count = names.length
+  const list = names.join(', ')
+  const mediaLine =
+    media.video.state === 'verified' && media.images.length > 0
+      ? ` Verified images and video from this campaign are included.`
+      : media.video.state === 'verified'
+        ? ` Verified video from this campaign is included.`
+        : media.images.length > 0
+          ? ` Verified images from this campaign are included.`
+          : ''
   return (
-    `Your ${names.length} post package(s) for ${profileName} (${names.join(', ')}) have been prepared ` +
-    `and are waiting for your review. Each includes a caption, hashtags, and a call to action.`
+    `Your ${count} ${packageWord(count)} for ${profileName} (${list}) have been prepared ` +
+    `and are waiting for your review. Each includes a caption, hashtags, and a call to action.` +
+    mediaLine
   )
 }
 
-function fallbackInstruction(name: string, scheduled: boolean): string {
+/**
+ * One posting-step line per platform, built from verified context only.
+ * Mentions attaching media only when verified media exists; mentions a schedule
+ * only when the business-timezone schedule is present.
+ */
+function buildPublishingInstruction(name: string, scheduled: boolean, media: MediaTruth): string {
+  const mediaStep =
+    media.video.state === 'verified' && media.images.length > 0
+      ? 'attach the verified images and video, '
+      : media.video.state === 'verified'
+        ? 'attach the verified video, '
+        : media.images.length > 0
+          ? 'attach the verified image(s), '
+          : ''
+  const finish = scheduled
+    ? 'then publish or schedule it for the date and time shown'
+    : 'then publish it at a time that works for you'
   return (
     `${name}: open your ${name} account, create a new post, paste the caption and hashtags, ` +
-    `add the call to action, then ${scheduled ? 'publish or schedule it for the date and time shown' : 'publish it when you are ready'}.`
+    `add the call to action, ${mediaStep}${finish}.`
   )
 }
 
@@ -182,7 +209,7 @@ function buildApprovalMetadata(decision: ApprovalDecision, names: string[]): str
   return (
     `Automated quality check ${OUTCOME_TEXT[decision.overallDecision]} — quality ${decision.qualityScore}/100, ` +
     `readability ${decision.readabilityScore}/100, confidence ${decision.confidence}%. ` +
-    `Platforms checked: ${names.join(', ')}. This is an automated check, not customer approval.`
+    `Platforms checked: ${names.join(', ')}. This is an automated check, not a customer decision.`
   )
 }
 
@@ -227,26 +254,15 @@ export function parseDeliveryPackage(
     sourceApprovalDecision.sourcePublishingJob.videoProductionBrief.sourceCreativeBrief
       .sourceStrategyBrief.sourceResearchBrief.sourceProfile
   const names = approvedPkgs.map((p) => displayName(p.platform))
-  const verifiedMedia = hasVerifiedMedia(mediaTruth)
   const scheduled = approvedPkgs.some((p) => p.publishDate && p.timezone)
 
-  const isTruthful = (text: string): boolean =>
-    !STATUS_CLAIM.test(text) &&
-    !FABRICATED_REFERENCE.test(text) &&
-    (verifiedMedia || !MEDIA_MENTION.test(text)) &&
-    (scheduled || !SCHEDULE_MENTION.test(text))
-
-  const summary = parsed.customerSummary.trim()
-  const customerSummary =
-    summary && isTruthful(summary) ? summary : fallbackSummary(profile.businessName, names)
-
-  const aiInstructions = (parsed.publishingInstructions as unknown[]).filter(
-    (s): s is string => typeof s === 'string' && s.trim().length > 0
+  // Customer-facing summary and posting steps are always built from verified run
+  // context. AI text for these fields is discarded so invented dates, timezones,
+  // offers, and status words cannot reach the report (Architect a9838a2c).
+  const customerSummary = buildCustomerSummary(profile.businessName, names, mediaTruth)
+  const publishingInstructions = names.map((name) =>
+    buildPublishingInstruction(name, scheduled, mediaTruth)
   )
-  const publishingInstructions = names.map((name) => {
-    const match = aiInstructions.find((s) => s.trim().toLowerCase().startsWith(name.toLowerCase()))
-    return match && isTruthful(match) ? match.trim() : fallbackInstruction(name, scheduled)
-  })
 
   const deliverables = [
     ...approvedPkgs.map(
