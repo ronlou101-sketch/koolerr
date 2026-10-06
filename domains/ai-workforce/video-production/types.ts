@@ -1,5 +1,6 @@
 import type { EngagementRunId, OrganizationId, TenantId, WorkforceId } from '@/shared/types'
 import type { CreativeBrief } from '../creative/types'
+import type { SupportedPlatform } from '../publishing/types'
 
 // ── Video script ─────────────────────────────────────────────────────────────
 
@@ -15,7 +16,8 @@ export interface VideoScript {
   title: string
   /** The spoken script — the render prompt for a HeyGen spokesperson video. */
   script: string
-  platform: string
+  /** Always a canonical platform inside the campaign's allowed set (shared resolver). */
+  platform: SupportedPlatform
   estimatedDurationSec: number
 }
 
@@ -32,6 +34,10 @@ export interface VideoScript {
  *   - sceneTimeline[]      → Higgsfield scene-by-scene production sequence (Phase 5)
  *
  * 17 structured fields covering every dimension of video production orchestration.
+ *
+ * Report truth: this brief is a CONCEPT only. renderQueue, avatarAssignments,
+ * voiceAssignments, assetManifest and exportTargets are always empty because no
+ * verified render records exist when it is planned; it never establishes a video.
  */
 export interface VideoProductionBrief {
   // ── Plan & Settings ─────────────────────────────────────────────────────────

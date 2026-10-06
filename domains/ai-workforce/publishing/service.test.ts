@@ -31,6 +31,7 @@ const TEST_RESEARCH_BRIEF: ResearchBrief = {
     businessCategory: 'Plumbing Services',
     location: 'Austin, TX',
     website: 'https://sunriseplumbing.com',
+    allowedPlatforms: [...SUPPORTED_PLATFORMS],
   },
 }
 
@@ -277,7 +278,8 @@ describe('buildPublishingPrompt()', () => {
     const prompt = buildPublishingPrompt(TEST_VIDEO_BRIEF)
     expect(prompt).toContain('Same-day service, upfront pricing') // coreMessaging
     expect(prompt).toContain('#AustinPlumber') // hashtagRecommendations
-    expect(prompt).toContain('sunrise-plumbing-reel-v1.mp4') // exportTargets
+    // Unverified export file names never reach the prompt.
+    expect(prompt).not.toContain('sunrise-plumbing-reel-v1.mp4')
   })
 
   it('includes all 6 platform names in the prompt', () => {
@@ -287,7 +289,7 @@ describe('buildPublishingPrompt()', () => {
     }
   })
 
-  it('includes all 18 PublishingPackage field names in the schema', () => {
+  it('requests only text-copy fields in the schema (no asset, metadata, or schedule fields)', () => {
     const prompt = buildPublishingPrompt(TEST_VIDEO_BRIEF)
     const fields = [
       'platform',
@@ -295,22 +297,24 @@ describe('buildPublishingPrompt()', () => {
       'caption',
       'hashtags',
       'callToAction',
-      'thumbnailReference',
-      'videoReference',
-      'publishDate',
-      'publishTime',
-      'timezone',
       'audience',
       'category',
       'tags',
-      'schedulingInstructions',
       'publishingChecklist',
-      'platformMetadata',
       'approvalRequired',
-      'deliveryAssets',
     ]
     for (const field of fields) {
       expect(prompt).toContain(field)
+    }
+    for (const field of [
+      'thumbnailReference',
+      'videoReference',
+      'deliveryAssets',
+      'platformMetadata',
+      'publishDate',
+      'publishTime',
+    ]) {
+      expect(prompt).not.toContain(`"${field}"`)
     }
   })
 
@@ -354,8 +358,11 @@ describe('parsePublishingPackages()', () => {
     for (const pkg of packages) {
       expect(Array.isArray(pkg.publishingChecklist)).toBe(true)
       expect(pkg.publishingChecklist.length).toBeGreaterThan(0)
-      expect(Array.isArray(pkg.deliveryAssets)).toBe(true)
-      expect(pkg.deliveryAssets.length).toBeGreaterThan(0)
+      // Asset fields are never filled from AI output (no fake files/paths/IDs).
+      expect(pkg.deliveryAssets).toEqual([])
+      expect(pkg.videoReference).toBe('')
+      expect(pkg.thumbnailReference).toBe('')
+      expect(pkg.platformMetadata).toBe('{}')
     }
   })
 
@@ -637,5 +644,86 @@ describe('PublishingDepartmentService', () => {
       const service = new PublishingDepartmentService(makeGateway(VALID_PUBLISHING_JSON))
       expect(service.listJobs()).toEqual([])
     })
+  })
+})
+
+// ── Report truth (Architect a9838a2c) ─────────────────────────────────────────
+
+describe('publishing report truth', () => {
+  const FB_IG_BRIEF: VideoProductionBrief = {
+    ...TEST_VIDEO_BRIEF,
+    sourceCreativeBrief: {
+      ...TEST_CREATIVE_BRIEF,
+      sourceStrategyBrief: {
+        ...TEST_STRATEGY_BRIEF,
+        sourceResearchBrief: {
+          ...TEST_RESEARCH_BRIEF,
+          sourceProfile: { ...TEST_RESEARCH_BRIEF.sourceProfile, allowedPlatforms: undefined },
+        },
+      },
+    },
+  }
+
+  it('defaults to Facebook + Instagram and drops AI-added platforms', () => {
+    const prompt = buildPublishingPrompt(FB_IG_BRIEF)
+    expect(prompt).not.toContain('"tiktok"')
+    const packages = parsePublishingPackages(VALID_PUBLISHING_JSON, FB_IG_BRIEF)
+    expect(packages.map((p) => p.platform)).toEqual(['facebook', 'instagram'])
+  })
+
+  it('drops duplicate platforms', () => {
+    const raw = JSON.stringify({
+      packages: [makePackage('facebook'), makePackage('facebook'), makePackage('instagram')],
+    })
+    const packages = parsePublishingPackages(raw, FB_IG_BRIEF)
+    expect(packages.map((p) => p.platform)).toEqual(['facebook', 'instagram'])
+  })
+
+  it('throws when no package matches an allowed platform', () => {
+    const raw = JSON.stringify({ packages: [makePackage('tiktok')] })
+    expect(() => parsePublishingPackages(raw, FB_IG_BRIEF)).toThrow('allowed platforms')
+  })
+
+  it('omits date, time, and timezone when the business timezone is unknown', () => {
+    const prompt = buildPublishingPrompt(FB_IG_BRIEF)
+    expect(prompt).not.toContain('Chicago')
+    expect(prompt).not.toContain('CST')
+    const packages = parsePublishingPackages(VALID_PUBLISHING_JSON, FB_IG_BRIEF)
+    for (const pkg of packages) {
+      expect(pkg.publishDate).toBe('')
+      expect(pkg.publishTime).toBe('')
+      expect(pkg.timezone).toBe('')
+      expect(pkg.schedulingInstructions).toContain('Not scheduled')
+      expect(JSON.stringify(pkg)).not.toMatch(/Chicago|CST/)
+    }
+  })
+
+  it('uses the business-timezone schedule, never the AI timezone', () => {
+    const schedule = { timezone: 'America/New_York', publishDate: '2026-10-13' }
+    const packages = parsePublishingPackages(VALID_PUBLISHING_JSON, FB_IG_BRIEF, { schedule })
+    for (const pkg of packages) {
+      expect(pkg.publishDate).toBe('2026-10-13')
+      expect(pkg.timezone).toBe('America/New_York')
+      expect(pkg.publishTime).toBe('09:00')
+      expect(JSON.stringify(pkg)).not.toMatch(/Chicago|CST/)
+    }
+  })
+
+  it('passes the request schedule through the service', async () => {
+    const gateway = makeGateway(VALID_PUBLISHING_JSON)
+    const service = new PublishingDepartmentService(gateway)
+    const schedule = { timezone: 'America/New_York', publishDate: '2026-10-13' }
+    const result = await service.preparePackages({
+      ...TEST_REQUEST,
+      videoProductionBrief: FB_IG_BRIEF,
+      schedule,
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.allowedPlatforms).toEqual(['facebook', 'instagram'])
+    expect(result.value.packages.map((p) => p.timezone)).toEqual([
+      'America/New_York',
+      'America/New_York',
+    ])
   })
 })

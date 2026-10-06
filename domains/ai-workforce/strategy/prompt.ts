@@ -15,7 +15,8 @@ You receive a completed Research Brief and transform it into a production bluepr
 You decide WHAT content to create, HOW to position the brand, and HOW to convert attention into customers.
 You MUST respond with valid JSON only. No prose. No markdown. No code fences.
 The JSON must conform exactly to the schema provided in the user prompt.
-Every array field must contain at least 3 specific, actionable items tailored to the business.`
+Every array field must contain at least 3 specific, actionable items tailored to the business — except offerRecommendations, which may be empty.
+Never invent business claims: offers, discounts, pricing, guarantees, hours or availability (e.g. 24/7), response times, credentials, or policies may only come from the business facts you are given.`
 
 /**
  * Serialises a ResearchBrief into a compact prompt-safe string.
@@ -26,6 +27,7 @@ function summariseResearch(brief: ResearchBrief): string {
     `Business: ${brief.sourceProfile.businessName} (${brief.sourceProfile.businessCategory})`,
     `Location: ${brief.sourceProfile.location}`,
     brief.sourceProfile.website ? `Website: ${brief.sourceProfile.website}` : null,
+    `Business Facts (the ONLY source of business claims): ${brief.sourceProfile.notes ?? 'none provided'}`,
     ``,
     `Company Overview: ${brief.companyOverview}`,
     `Industry Overview: ${brief.industryOverview}`,
@@ -40,7 +42,9 @@ function summariseResearch(brief: ResearchBrief): string {
     `Trending Social Ideas: ${brief.trendingSocialMediaIdeas.join(', ')}`,
     ``,
     `Marketing Angles: ${brief.recommendedMarketingAngles.join(' | ')}`,
-    `Offers: ${brief.recommendedOffers.join(' | ')}`,
+    `Offers stated by the business: ${
+      brief.recommendedOffers.length > 0 ? brief.recommendedOffers.join(' | ') : 'none'
+    }`,
     `CTAs: ${brief.recommendedCallsToAction.join(' | ')}`,
   ]
     .filter((l) => l !== null)
@@ -109,7 +113,11 @@ Requirements:
 - customerPersonas must have 2-3 entries
 - monthlyContentCalendar must have exactly 4 entries (weeks 1-4)
 - weeklyPostingSchedule must include all 7 days
-- All content must be conversion-focused, not generic`
+- All content must be conversion-focused, not generic
+- Business claims come ONLY from the Business Facts above: never invent offers, discounts, free services, pricing, guarantees, hours/availability (e.g. 24/7), response times, credentials, or policies
+- offerRecommendations must contain only offers stated by the business; if none are stated, return an empty array []
+- ctaLibrary and captionIdeas must not promise any offer, discount, guarantee, or availability the business has not stated
+- Do not tie campaign ideas to a specific season, month, or date`
 }
 
 /**
@@ -152,9 +160,11 @@ export function parseStrategyBrief(
     'ctaLibrary',
     'hashtagRecommendations',
     'campaignIdeas',
-    'offerRecommendations',
     'successMetrics',
   ] as const
+  // Fabrication-pressure field: must be an array but may be empty when the business
+  // states no offers (report-truth policy — offers come only from the Business Brain).
+  const emptyAllowedArrayFields = ['offerRecommendations'] as const
 
   for (const field of requiredStringFields) {
     if (typeof parsed[field] !== 'string' || !parsed[field]) {
@@ -167,6 +177,12 @@ export function parseStrategyBrief(
       throw new Error(
         `[STRATEGY_DEPT] Missing or empty array field "${field}" in strategy response`
       )
+    }
+  }
+
+  for (const field of emptyAllowedArrayFields) {
+    if (!Array.isArray(parsed[field])) {
+      throw new Error(`[STRATEGY_DEPT] Missing array field "${field}" in strategy response`)
     }
   }
 

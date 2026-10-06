@@ -16,13 +16,23 @@ import {
 } from '@/domains/ai-workforce/video-production'
 import type { VideoProductionBrief } from '@/domains/ai-workforce/video-production'
 import { publishingDepartment } from '@/domains/ai-workforce/publishing'
+import type { PublishingPackage, PublishingSchedule } from '@/domains/ai-workforce/publishing/types'
+import { resolveAllowedPlatforms } from '@/domains/ai-workforce/publishing/platform-resolver'
 import { approvalDepartment } from '@/domains/ai-workforce/approval'
+import type { ApprovalDecision } from '@/domains/ai-workforce/approval'
 import { deliveryDepartment } from '@/domains/ai-workforce/delivery'
+import type {
+  MediaTruth,
+  VerifiedImageAsset,
+  VerifiedVideoAsset,
+} from '@/domains/ai-workforce/delivery/types'
 import { businessBrainService } from '@/domains/business-brain'
 import { workforceEngineService } from '@/domains/workforce-engine'
 import { deliverablesService } from '@/domains/deliverables'
 import { renderJobsService } from '@/domains/ai-workforce/render-jobs'
 import { logger } from '@/shared/lib/logger'
+import { PlatformErrorCode } from '@/shared/types/errors'
+import { addDaysToDate, formatDateInTimezone, resolveBusinessTimezone } from './business-timezone'
 
 export interface AIWorkforcePipelineContext {
   tenantId: TenantId
@@ -177,6 +187,188 @@ function validateDeliveryHandoff(
   )
 }
 
+/** Days between the run date (in the business timezone) and the scheduled publish date. */
+const SCHEDULE_LEAD_DAYS = 7
+
+/**
+ * Builds the publishing schedule from the business timezone. Returns null (no date,
+ * no time, no timezone in the report) when the timezone is unknown — never a guess.
+ */
+export function buildPublishingSchedule(
+  profile: Pick<BusinessProfile, 'timezone' | 'location'>,
+  now: Date = new Date()
+): PublishingSchedule | null {
+  const timezone =
+    profile.timezone !== undefined ? profile.timezone : resolveBusinessTimezone(profile.location)
+  const runDate = formatDateInTimezone(now, timezone ?? null)
+  if (!timezone || !runDate) return null
+  return { timezone, publishDate: addDaysToDate(runDate, SCHEDULE_LEAD_DAYS) }
+}
+
+/**
+ * Business claims that may appear in a package only when the Business Brain facts
+ * contain the same kind of claim. A package claiming one the facts lack is unusable.
+ */
+const CLAIM_PATTERNS: ReadonlyArray<readonly [string, RegExp]> = [
+  ['free offer', /\bfree\b/i],
+  ['guarantee', /\bguarantee/i],
+  ['24/7 availability', /\b24\s*\/\s*7\b|\b24-7\b|\b24 hours\b|around the clock/i],
+  ['discount', /\bdiscount|\d+\s*%\s*off\b|\bcoupon|\bpromo code/i],
+  ['loyalty program', /\bloyalty\b/i],
+  ['price', /\$\s?\d/],
+  [
+    'credential',
+    /\b(licensed|certified|insured|bonded|accredited|award-winning)\b|#1\b|\bnumber one\b/i,
+  ],
+  ['response time', /\bwithin \d+\s*(minutes?|mins?|hours?)\b|\bsame[- ]day\b/i],
+]
+
+/** File names, paths, links, and platform account IDs that no app record backs. */
+const FABRICATED_REFERENCE =
+  /\b[\w-]+\.(mp4|mov|jpg|jpeg|png|gif|zip|pdf)\b|\b(page[_ ]id|ad[_ ]account|channel[_ ]id|place[_ ]id|act_\d+)\b/i
+const MEDIA_REFERENCE = /\b(watch|video|videos|reel|reels|clip|footage|thumbnail)\b/i
+const SCHEDULE_REFERENCE =
+  /\b\d{1,2}:\d{2}\b|\b\d{1,2}\s?(am|pm)\b|\b(EST|EDT|CST|CDT|MST|MDT|PST|PDT)\b|\bChicago\b/i
+const PLATFORM_MENTIONS: ReadonlyArray<readonly [string, RegExp]> = [
+  ['facebook', /\bfacebook\b/i],
+  ['instagram', /\binstagram\b/i],
+  ['tiktok', /\btik\s?tok\b/i],
+  ['youtube-shorts', /\byoutube\b/i],
+  ['linkedin', /\blinkedin\b/i],
+  ['google-business-profile', /\bgoogle business\b/i],
+  ['unsupported', /\btwitter\b|\bthreads\b|\bpinterest\b|\bsnapchat\b/i],
+]
+
+export interface UsableItemContext {
+  allowedPlatforms: readonly string[]
+  /** Business Brain facts — the only source of business claims. */
+  factsText: string
+  videoVerified: boolean
+  scheduled: boolean
+}
+
+/**
+ * Returns the reason a package is not a usable content item, or null when it is:
+ * an approved package targeted to one allowed platform, with non-empty copy and CTA,
+ * no unsupported claims, no fabricated reference, and no unverified asset reference.
+ */
+export function unusableReason(pkg: PublishingPackage, ctx: UsableItemContext): string | null {
+  if (!ctx.allowedPlatforms.includes(pkg.platform)) return `${pkg.platform}: platform not allowed`
+  if (!pkg.caption?.trim() || !pkg.callToAction?.trim()) {
+    return `${pkg.platform}: missing caption or call to action`
+  }
+  const text = [pkg.title, pkg.caption, pkg.callToAction, ...(pkg.hashtags ?? [])].join(' ')
+  for (const [label, pattern] of CLAIM_PATTERNS) {
+    if (pattern.test(text) && !pattern.test(ctx.factsText)) {
+      return `${pkg.platform}: unsupported claim (${label})`
+    }
+  }
+  if (FABRICATED_REFERENCE.test(text)) return `${pkg.platform}: fabricated file, path, or ID`
+  if (!ctx.videoVerified && MEDIA_REFERENCE.test(text)) {
+    return `${pkg.platform}: references unverified media`
+  }
+  if (!ctx.scheduled && SCHEDULE_REFERENCE.test(text)) {
+    return `${pkg.platform}: states a time without a known business timezone`
+  }
+  for (const [platform, pattern] of PLATFORM_MENTIONS) {
+    if (
+      platform !== pkg.platform &&
+      !ctx.allowedPlatforms.includes(platform) &&
+      pattern.test(text)
+    ) {
+      return `${pkg.platform}: mentions an unsupported platform`
+    }
+  }
+  return null
+}
+
+/** Usable approved packages (deduped, in package order) plus reasons for the rest. */
+export function selectUsablePackages(
+  decision: Pick<ApprovalDecision, 'approvedPackages'>,
+  packages: readonly PublishingPackage[],
+  ctx: UsableItemContext
+): { usable: PublishingPackage[]; reasons: string[] } {
+  const usable: PublishingPackage[] = []
+  const reasons: string[] = []
+  const seen = new Set<string>()
+  for (const pkg of packages) {
+    if (!decision.approvedPackages.includes(pkg.platform) || seen.has(pkg.platform)) continue
+    seen.add(pkg.platform)
+    const reason = unusableReason(pkg, ctx)
+    if (reason) reasons.push(reason)
+    else usable.push(pkg)
+  }
+  return { usable, reasons }
+}
+
+function nonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+/**
+ * Gathers verified media for the run from app records only: a completed render job
+ * whose result deliverable resolves with a non-empty asset URL. Pending, queued, and
+ * failed jobs are omitted. A failed lookup yields video 'unavailable' — never 'none'.
+ */
+export async function gatherMediaTruth(ctx: AIWorkforcePipelineContext): Promise<MediaTruth> {
+  const unavailable: MediaTruth = { images: [], video: { state: 'unavailable' } }
+  let jobs
+  try {
+    const listed = await renderJobsService.listByRun(ctx.engagementRunId)
+    if (!listed.ok) return unavailable
+    jobs = listed.value
+  } catch {
+    return unavailable
+  }
+
+  const images: VerifiedImageAsset[] = []
+  const videos: VerifiedVideoAsset[] = []
+  let videoLookupFailed = false
+
+  for (const job of jobs) {
+    if (job.status !== 'completed' || !job.resultDeliverableId) continue
+    try {
+      const found = await deliverablesService.getDeliverable(
+        job.resultDeliverableId,
+        ctx.organizationId
+      )
+      if (!found.ok) {
+        if (job.kind === 'video' && found.error.code !== PlatformErrorCode.NOT_FOUND) {
+          videoLookupFailed = true
+        }
+        continue
+      }
+      const content = found.value.content as Record<string, unknown>
+      if (
+        job.kind === 'image' &&
+        found.value.type === 'image' &&
+        nonEmptyString(content.imageUrl)
+      ) {
+        images.push({ deliverableId: found.value.id, imageUrl: content.imageUrl })
+      }
+      if (
+        job.kind === 'video' &&
+        found.value.type === 'video' &&
+        nonEmptyString(content.videoUrl)
+      ) {
+        videos.push({ deliverableId: found.value.id, videoUrl: content.videoUrl })
+      }
+    } catch {
+      if (job.kind === 'video') videoLookupFailed = true
+    }
+  }
+
+  return {
+    images,
+    video:
+      videos.length > 0
+        ? { state: 'verified', videos }
+        : videoLookupFailed
+          ? { state: 'unavailable' }
+          : { state: 'none' },
+  }
+}
+
 /**
  * Sequences all 7 AI Workforce departments for a single engagement run.
  *
@@ -196,6 +388,8 @@ export async function runAIWorkforcePipeline(
 ): Promise<void> {
   const { tenantId, organizationId, workforceId, engagementRunId } = ctx
   const backoffMs = options.retryBackoffMs ?? DEFAULT_RETRY_BACKOFF_MS
+  const allowedPlatforms = resolveAllowedPlatforms(profile.allowedPlatforms)
+  const schedule = buildPublishingSchedule(profile)
 
   await workforceEngineService.updateEngagementRunStatus({
     tenantId,
@@ -440,6 +634,7 @@ export async function runAIWorkforcePipeline(
         workforceId,
         engagementRunId,
         videoProductionBrief,
+        schedule,
       })
       if (r.ok) return { ok: true as const, value: r.value }
       return { ok: false as const, message: r.error.message }
@@ -495,7 +690,37 @@ export async function runAIWorkforcePipeline(
     await failPipeline(ctx, 'approval', handoffError)
     return
   }
+
+  // ── One-usable-item floor ───────────────────────────────────────────────────
+  // A report is stored only when at least one approved package is a usable content
+  // item. Zero usable items fails the run visibly — never an empty or padded report.
+  const mediaTruth = await gatherMediaTruth(ctx)
+  const factsText = [profile.businessName, profile.serviceArea, profile.website, profile.notes]
+    .filter(Boolean)
+    .join(' ')
+  const { usable, reasons } = selectUsablePackages(approvalDecision, publishingJob.packages, {
+    allowedPlatforms,
+    factsText,
+    videoVerified: mediaTruth.video.state === 'verified',
+    scheduled: schedule !== null,
+  })
+  // Approval finished once packages are selected (or none remain). Record it before
+  // the floor check so a zero-item failure does not leave the step showing "running".
   await recordProgress(ctx, 'approval', 'completed')
+  if (usable.length === 0) {
+    await failPipeline(
+      ctx,
+      'delivery',
+      sanitizeFailureReason(
+        `No usable content item: ${reasons.join('; ') || 'no approved package'}. No report stored.`
+      )
+    )
+    return
+  }
+  const deliveryDecision: ApprovalDecision = {
+    ...approvalDecision,
+    approvedPackages: usable.map((p) => p.platform),
+  }
 
   // ── Step 7: Delivery ────────────────────────────────────────────────────────
   await recordProgress(ctx, 'delivery', 'running')
@@ -508,7 +733,8 @@ export async function runAIWorkforcePipeline(
         organizationId,
         workforceId,
         engagementRunId,
-        approvalDecision,
+        approvalDecision: deliveryDecision,
+        mediaTruth,
       })
       if (r.ok && r.value.deliveryPackage) {
         return { ok: true as const, value: r.value.deliveryPackage }
@@ -529,7 +755,10 @@ export async function runAIWorkforcePipeline(
   const deliveryPackage = delivery.value
 
   // ── Store Deliverable ───────────────────────────────────────────────────────
-  await deliverablesService.storeDeliverable({
+  // The report is saved as Draft. A failed save is a visible run failure (no report
+  // exists). After a successful save, submitForReview is called exactly once; if it
+  // fails, the report stays Draft and a visible warning is recorded.
+  const stored = await deliverablesService.storeDeliverable({
     tenantId,
     organizationId,
     engagementRunId,
@@ -538,6 +767,34 @@ export async function runAIWorkforcePipeline(
     content: deliveryPackage as unknown as Record<string, unknown>,
     attributedTo: ['delivery-manager' as DigitalEmployeeId],
   })
+  if (!stored.ok) {
+    await failPipeline(
+      ctx,
+      'delivery',
+      `Report not saved: ${sanitizeFailureReason(stored.error.message)}`
+    )
+    return
+  }
+
+  const submitted = await deliverablesService.submitForReview(
+    stored.value.id,
+    organizationId,
+    tenantId
+  )
+  if (!submitted.ok) {
+    const reason = sanitizeFailureReason(submitted.error.message)
+    logger.warn('AI Workforce pipeline could not submit report for review', {
+      runId: engagementRunId,
+      deliverableId: stored.value.id,
+      reason,
+    })
+    await recordProgress(
+      ctx,
+      'delivery',
+      'completed',
+      `Report kept as Draft: submit for review failed: ${reason}`
+    )
+  }
 
   await workforceEngineService.updateEngagementRunStatus({
     tenantId,

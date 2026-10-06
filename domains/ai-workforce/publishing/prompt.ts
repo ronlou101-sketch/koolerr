@@ -1,49 +1,70 @@
 import type { VideoProductionBrief } from '../video-production/types'
-import type { PublishingPackage, SupportedPlatform } from './types'
-import { SUPPORTED_PLATFORMS } from './types'
+import type { PublishingPackage, PublishingSchedule, SupportedPlatform } from './types'
+import {
+  PLATFORM_DISPLAY_NAMES,
+  resolveAllowedPlatforms,
+  toAllowedPlatform,
+} from './platform-resolver'
 
 /**
  * System context injected into every publishing package invocation.
- * Instructs the provider to return a full set of platform-specific packages as JSON.
+ * Instructs the provider to return platform-specific packages as JSON.
  */
 export const PUBLISHING_SYSTEM_CONTEXT = `You are Koolerr's Publishing Department — the content delivery intelligence team.
-You receive a completed Video Production Brief and translate it into optimised publishing packages for every supported social platform.
+You receive a completed video concept brief and write optimised text post packages for the campaign's allowed platforms only.
 You understand the unique requirements, audience expectations, and format constraints of each platform.
 You MUST respond with valid JSON only. No prose. No markdown. No code fences.
 The JSON must conform exactly to the schema provided in the user prompt.
 Every package must be genuinely optimised for its target platform — no generic copy-paste across platforms.
-Captions, hashtags, and CTAs must differ meaningfully per platform.`
+Captions, hashtags, and CTAs must differ meaningfully per platform.
+Never invent business claims, file names, file paths, account or page IDs, or media that does not exist.`
+
+/** Options that ground a publishing prompt/parse in the run's verified context. */
+export interface PublishingPromptOptions {
+  /** Allowed platforms (shared resolver). Defaults to the profile's resolved set. */
+  allowedPlatforms?: readonly SupportedPlatform[]
+  /** Business-timezone schedule; null/absent → dates and times omitted. */
+  schedule?: PublishingSchedule | null
+}
+
+function profileOf(brief: VideoProductionBrief) {
+  return brief.sourceCreativeBrief.sourceStrategyBrief.sourceResearchBrief.sourceProfile
+}
+
+/** Resolves the allowed platform set for a brief via the shared resolver. */
+export function resolvePublishingPlatforms(
+  brief: VideoProductionBrief,
+  options: PublishingPromptOptions = {}
+): SupportedPlatform[] {
+  return options.allowedPlatforms && options.allowedPlatforms.length > 0
+    ? resolveAllowedPlatforms(options.allowedPlatforms)
+    : resolveAllowedPlatforms(profileOf(brief).allowedPlatforms)
+}
 
 /**
- * Serialises the production brief fields most relevant to publishing.
- * Keeps the prompt focused on assets, timelines, and quality decisions.
+ * Serialises the concept brief fields most relevant to publishing.
+ * No media has been produced or verified at this stage, so none is referenced.
  */
 function summariseProduction(brief: VideoProductionBrief): string {
-  const business =
-    brief.sourceCreativeBrief.sourceStrategyBrief.sourceResearchBrief.sourceProfile.businessName
-  const category =
-    brief.sourceCreativeBrief.sourceStrategyBrief.sourceResearchBrief.sourceProfile.businessCategory
-  const location =
-    brief.sourceCreativeBrief.sourceStrategyBrief.sourceResearchBrief.sourceProfile.location
+  const profile = profileOf(brief)
+  const strategy = brief.sourceCreativeBrief.sourceStrategyBrief
 
   return [
-    `Business: ${business} (${category}) — ${location}`,
+    `Business: ${profile.businessName} (${profile.businessCategory}) — ${profile.location}`,
+    `Business Facts (the ONLY source of business claims): ${profile.notes ?? 'none provided'}`,
     ``,
-    `Production Plan: ${brief.productionPlan}`,
-    `Estimated Runtime: ${brief.estimatedRuntime}`,
-    ``,
+    `Video Concept: ${brief.productionPlan}`,
     `Scene Timeline: ${brief.sceneTimeline.join(' | ')}`,
     `Hook Variations (from Creative Brief): ${brief.sourceCreativeBrief.hookVariations.join(' | ')}`,
     `Call to Action: ${brief.sourceCreativeBrief.callToAction}`,
     ``,
-    `Export Targets: ${brief.exportTargets.join(' | ')}`,
-    `Asset Manifest: ${brief.assetManifest.join(' | ')}`,
+    `Media: no video, image, or file has been produced or verified for this campaign.`,
     ``,
-    `Brand Positioning: ${brief.sourceCreativeBrief.sourceStrategyBrief.brandPositioning}`,
-    `Core Messaging: ${brief.sourceCreativeBrief.sourceStrategyBrief.coreMessaging}`,
-    `Hashtag Recommendations: ${brief.sourceCreativeBrief.sourceStrategyBrief.hashtagRecommendations.join(', ')}`,
-    `Caption Ideas: ${brief.sourceCreativeBrief.sourceStrategyBrief.captionIdeas.join(' | ')}`,
-    `CTA Library: ${brief.sourceCreativeBrief.sourceStrategyBrief.ctaLibrary.join(' | ')}`,
+    `Brand Positioning: ${strategy.brandPositioning}`,
+    `Core Messaging: ${strategy.coreMessaging}`,
+    `Hashtag Recommendations: ${strategy.hashtagRecommendations.join(', ')}`,
+    `Caption Ideas: ${strategy.captionIdeas.join(' | ')}`,
+    `CTA Library: ${strategy.ctaLibrary.join(' | ')}`,
     ``,
     `Approval Checklist: ${brief.approvalChecklist.join(' | ')}`,
   ].join('\n')
@@ -69,52 +90,59 @@ const PLATFORM_HINTS: Record<SupportedPlatform, string> = {
 }
 
 /**
- * Builds the full publishing prompt from a VideoProductionBrief.
- * The prompt requests a JSON object with one package per supported platform.
+ * Builds the publishing prompt from a VideoProductionBrief.
+ * Requests exactly one text post package per ALLOWED platform. Asset references,
+ * platform IDs, dates, timezone, and scheduling text are set by the service — never
+ * requested from the model.
  */
-export function buildPublishingPrompt(videoProductionBrief: VideoProductionBrief): string {
-  const business =
-    videoProductionBrief.sourceCreativeBrief.sourceStrategyBrief.sourceResearchBrief.sourceProfile
-      .businessName
+export function buildPublishingPrompt(
+  videoProductionBrief: VideoProductionBrief,
+  options: PublishingPromptOptions = {}
+): string {
+  const business = profileOf(videoProductionBrief).businessName
+  const platforms = resolvePublishingPlatforms(videoProductionBrief, options)
+  const schedule = options.schedule ?? null
 
-  const platformSchemas = SUPPORTED_PLATFORMS.map((platform) => {
-    return `    {
+  const timeLine = schedule
+    ? `      "publishTime": "HH:MM — best local posting time in ${schedule.timezone}",\n`
+    : ''
+
+  const platformSchemas = platforms
+    .map((platform) => {
+      return `    {
       "platform": "${platform}",
-      "title": "Platform-optimised title for ${platform} (${PLATFORM_HINTS[platform].split(':')[1].split(',')[0].trim()})",
-      "caption": "Platform-specific caption — tailored format, voice, and length for ${platform}",
+      "title": "Platform-optimised title for ${PLATFORM_DISPLAY_NAMES[platform]} (${PLATFORM_HINTS[platform].split(':')[1].split(',')[0].trim()})",
+      "caption": "Platform-specific caption — tailored format, voice, and length for ${PLATFORM_DISPLAY_NAMES[platform]}",
       "hashtags": ["relevant-hashtag-1", "relevant-hashtag-2", "relevant-hashtag-3"],
-      "callToAction": "Platform-native CTA text for ${platform}",
-      "thumbnailReference": "filename from assetManifest or descriptive reference",
-      "videoReference": "filename from exportTargets for ${platform}",
-      "publishDate": "YYYY-MM-DD",
-      "publishTime": "HH:MM",
-      "timezone": "America/Chicago",
-      "audience": "Platform-specific audience targeting description for ${platform}",
-      "category": "Platform category or content type for ${platform}",
+      "callToAction": "Platform-native CTA text for ${PLATFORM_DISPLAY_NAMES[platform]}",
+${timeLine}      "audience": "Platform-specific audience targeting description for ${PLATFORM_DISPLAY_NAMES[platform]}",
+      "category": "Platform category or content type for ${PLATFORM_DISPLAY_NAMES[platform]}",
       "tags": ["content-tag-1", "content-tag-2"],
-      "schedulingInstructions": "When and how to schedule this ${platform} post for maximum reach",
       "publishingChecklist": [
-        "Checklist item 1 specific to ${platform}",
-        "Checklist item 2 specific to ${platform}",
-        "Checklist item 3 specific to ${platform}"
+        "Checklist item 1 specific to ${PLATFORM_DISPLAY_NAMES[platform]}",
+        "Checklist item 2 specific to ${PLATFORM_DISPLAY_NAMES[platform]}",
+        "Checklist item 3 specific to ${PLATFORM_DISPLAY_NAMES[platform]}"
       ],
-      "platformMetadata": "JSON string of ${platform}-specific API fields: ad account, page ID, audience targeting params, etc.",
-      "approvalRequired": true,
-      "deliveryAssets": ["asset-filename-1", "asset-filename-2"]
+      "approvalRequired": true
     }`
-  }).join(',\n')
+    })
+    .join(',\n')
 
-  return `You are creating a complete publishing package for ${business} across all supported platforms.
-Use ONLY the production brief below — do not invent assets not referenced in it.
+  const scheduleRequirement = schedule
+    ? `- publishTime must be HH:MM local time in ${schedule.timezone}; do not write any date, timezone name, or abbreviation anywhere in the copy`
+    : `- The business timezone is unknown: do not write any date, time, timezone, or schedule anywhere in the copy`
 
-=== VIDEO PRODUCTION BRIEF ===
+  return `You are creating publishing packages for ${business} for these platforms only: ${platforms.join(', ')}.
+Use ONLY the brief below — do not invent assets, media, or facts not stated in it.
+
+=== VIDEO CONCEPT BRIEF ===
 ${summariseProduction(videoProductionBrief)}
 
 === PLATFORM REQUIREMENTS ===
-${SUPPORTED_PLATFORMS.map((p) => `${p}: ${PLATFORM_HINTS[p]}`).join('\n')}
+${platforms.map((p) => `${p}: ${PLATFORM_HINTS[p]}`).join('\n')}
 
 === YOUR TASK ===
-Produce a complete set of publishing packages as a JSON object with this exact structure:
+Produce publishing packages as a JSON object with this exact structure:
 
 {
   "packages": [
@@ -123,17 +151,19 @@ ${platformSchemas}
 }
 
 Requirements:
-- Produce EXACTLY one package per platform: facebook, instagram, tiktok, youtube-shorts, linkedin, google-business-profile
+- Produce EXACTLY one package per platform listed above (${platforms.join(', ')}) — no other platforms
 - Every package must be genuinely optimised for its platform — different caption length, tone, hashtag count, and CTA
-- All asset references must correspond to items in the exportTargets or assetManifest above
-- publishDate should be 7 days from today in YYYY-MM-DD format
-- publishTime should be optimised for each platform's peak engagement window
-- approvalRequired must be true for all packages in this phase
-- platformMetadata must be a valid JSON string (not a nested object)`
+- Write text post copy only: do not reference, attach, or promise any video, reel, image, file, link, or download — none has been produced
+- Business claims come ONLY from the Business Facts: never invent offers, discounts, free services, pricing, guarantees, hours/availability (e.g. 24/7), response times, credentials, or policies
+- Never include file names, file paths, URLs you were not given, or account/page/ad/channel IDs
+${scheduleRequirement}
+- approvalRequired must be true for all packages in this phase`
 }
 
+const HH_MM = /^([01]\d|2[0-3]):[0-5]\d$/
+
 /**
- * Validates a single package's required fields.
+ * Validates a single package's model-generated fields.
  * Throws with the field name if anything is missing or invalid.
  */
 function validatePackage(pkg: Record<string, unknown>, index: number): void {
@@ -142,19 +172,12 @@ function validatePackage(pkg: Record<string, unknown>, index: number): void {
     'title',
     'caption',
     'callToAction',
-    'thumbnailReference',
-    'videoReference',
-    'publishDate',
-    'publishTime',
-    'timezone',
     'audience',
     'category',
-    'schedulingInstructions',
-    'platformMetadata',
   ] as const
 
-  // Non-empty arrays — these are always required regardless of platform.
-  const requiredNonEmptyArrays = ['publishingChecklist', 'deliveryAssets'] as const
+  // Non-empty arrays — always required regardless of platform.
+  const requiredNonEmptyArrays = ['publishingChecklist'] as const
 
   // Arrays that must be present but may be empty (e.g. hashtags on Google Business Profile).
   const requiredArrays = ['hashtags', 'tags'] as const
@@ -184,14 +207,30 @@ function validatePackage(pkg: Record<string, unknown>, index: number): void {
   }
 }
 
+/** Service-built scheduling text — truthful, from the run schedule only. */
+function schedulingText(schedule: PublishingSchedule | null, publishTime: string): string {
+  if (!schedule) {
+    return 'Not scheduled: the business timezone could not be determined from its location.'
+  }
+  return publishTime
+    ? `Publish on ${schedule.publishDate} at ${publishTime} (${schedule.timezone}).`
+    : `Publish on ${schedule.publishDate} (${schedule.timezone}); choose a posting time.`
+}
+
 /**
- * Parses the raw provider JSON response into a typed array of PublishingPackages.
- * Throws if the response cannot be parsed, is missing the packages array,
- * or any package is missing required fields.
+ * Parses the raw provider JSON response into typed PublishingPackages.
+ *
+ * Report truth: packages for platforms outside the allowed set are dropped (the model
+ * can never add a platform); duplicates keep the first package. Asset references,
+ * platform metadata, dates, timezone, and scheduling text are set here from verified
+ * run context — any model-supplied values for them are discarded.
+ * Throws if the response cannot be parsed, a package is invalid, or no package
+ * targets an allowed platform.
  */
 export function parsePublishingPackages(
   rawContent: string,
-  _sourceVideoProductionBrief: VideoProductionBrief
+  sourceVideoProductionBrief: VideoProductionBrief,
+  options: PublishingPromptOptions = {}
 ): PublishingPackage[] {
   let parsed: Record<string, unknown>
 
@@ -216,24 +255,46 @@ export function parsePublishingPackages(
 
   rawPackages.forEach((pkg, i) => validatePackage(pkg, i))
 
-  return rawPackages.map((pkg) => ({
-    platform: pkg.platform as SupportedPlatform,
-    title: pkg.title as string,
-    caption: pkg.caption as string,
-    hashtags: pkg.hashtags as string[],
-    tags: pkg.tags as string[],
-    callToAction: pkg.callToAction as string,
-    audience: pkg.audience as string,
-    category: pkg.category as string,
-    thumbnailReference: pkg.thumbnailReference as string,
-    videoReference: pkg.videoReference as string,
-    deliveryAssets: pkg.deliveryAssets as string[],
-    publishDate: pkg.publishDate as string,
-    publishTime: pkg.publishTime as string,
-    timezone: pkg.timezone as string,
-    schedulingInstructions: pkg.schedulingInstructions as string,
-    platformMetadata: pkg.platformMetadata as string,
-    approvalRequired: pkg.approvalRequired as boolean,
-    publishingChecklist: pkg.publishingChecklist as string[],
-  }))
+  const allowed = resolvePublishingPlatforms(sourceVideoProductionBrief, options)
+  const schedule = options.schedule ?? null
+  const seen = new Set<SupportedPlatform>()
+  const packages: PublishingPackage[] = []
+
+  for (const pkg of rawPackages) {
+    const platform = toAllowedPlatform(pkg.platform, allowed)
+    if (!platform || seen.has(platform)) continue
+    seen.add(platform)
+
+    const rawTime = typeof pkg.publishTime === 'string' ? pkg.publishTime.trim() : ''
+    const publishTime = schedule && HH_MM.test(rawTime) ? rawTime : ''
+
+    packages.push({
+      platform,
+      title: pkg.title as string,
+      caption: pkg.caption as string,
+      hashtags: pkg.hashtags as string[],
+      tags: pkg.tags as string[],
+      callToAction: pkg.callToAction as string,
+      audience: pkg.audience as string,
+      category: pkg.category as string,
+      thumbnailReference: '',
+      videoReference: '',
+      deliveryAssets: [],
+      publishDate: schedule ? schedule.publishDate : '',
+      publishTime,
+      timezone: schedule ? schedule.timezone : '',
+      schedulingInstructions: schedulingText(schedule, publishTime),
+      platformMetadata: '{}',
+      approvalRequired: pkg.approvalRequired as boolean,
+      publishingChecklist: pkg.publishingChecklist as string[],
+    })
+  }
+
+  if (packages.length === 0) {
+    throw new Error(
+      `[PUBLISHING_DEPT] Response missing or empty packages for allowed platforms (${allowed.join(', ')})`
+    )
+  }
+
+  return packages
 }

@@ -47,18 +47,25 @@ export interface PublishingPackage {
   category: string
 
   // ── Asset References ────────────────────────────────────────────────────────
+  // Report truth: only verified assets may be referenced. No verified asset exists at
+  // publishing time, so these are always empty ('' / []) — never model-generated.
   thumbnailReference: string
   videoReference: string
   deliveryAssets: string[]
 
   // ── Scheduling ──────────────────────────────────────────────────────────────
+  // Set by the service from the run's business-timezone schedule, never by the model.
+  // All three are '' when the business timezone is unknown (dates/times omitted).
   publishDate: string
   publishTime: string
   timezone: string
   schedulingInstructions: string
 
   // ── Platform Config ─────────────────────────────────────────────────────────
-  /** Platform-specific API configuration fields serialised as a JSON string. */
+  /**
+   * Platform-specific API configuration fields serialised as a JSON string. Always '{}':
+   * no platform accounts are connected, so page/ad/channel IDs would be fabricated.
+   */
   platformMetadata: string
   approvalRequired: boolean
   publishingChecklist: string[]
@@ -77,6 +84,10 @@ export interface PublishingJob {
   id: string
   status: PublishingJobStatus
   videoProductionBrief: VideoProductionBrief
+  /** Allowed platforms for this job (shared resolver). Absent on legacy jobs → resolver. */
+  allowedPlatforms?: SupportedPlatform[]
+  /** Business-timezone schedule used for the packages; null when the timezone is unknown. */
+  schedule?: PublishingSchedule | null
   /** One package per supported platform. Populated on completion. */
   packages: PublishingPackage[]
   error?: string
@@ -105,6 +116,17 @@ export interface PublishingError {
 
 // ── Request ────────────────────────────────────────────────────────────────────
 
+/**
+ * The run's schedule in the business's own timezone. Only present when the timezone
+ * was derived from the business location; otherwise dates and times are omitted.
+ */
+export interface PublishingSchedule {
+  /** IANA timezone of the business, e.g. 'America/New_York'. */
+  timezone: string
+  /** Calendar publish date (YYYY-MM-DD) in that timezone. */
+  publishDate: string
+}
+
 /** Everything needed to dispatch a publishing job through the platform. */
 export interface PublishingRequest {
   tenantId: TenantId
@@ -112,6 +134,8 @@ export interface PublishingRequest {
   workforceId: WorkforceId
   engagementRunId: EngagementRunId
   videoProductionBrief: VideoProductionBrief
+  /** Business-timezone schedule. Absent/null → customer-facing dates and times omitted. */
+  schedule?: PublishingSchedule | null
   /** Defaults to 'delivery-manager'. */
   preferredEmployee?: 'delivery-manager'
 }

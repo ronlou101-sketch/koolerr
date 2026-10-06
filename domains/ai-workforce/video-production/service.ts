@@ -25,6 +25,7 @@ import {
   VIDEO_PRODUCTION_SYSTEM_CONTEXT,
   VIDEO_SCRIPT_WRITER_SYSTEM_CONTEXT,
 } from './prompt'
+import { resolveAllowedPlatforms } from '../publishing/platform-resolver'
 import type { CreativeBrief } from '../creative/types'
 import type {
   VideoProductionBrief,
@@ -360,7 +361,15 @@ export class VideoProductionDepartmentService implements IVideoProductionDepartm
           provider: providerId,
           maxTokens: 2048,
         })
-        return ok(parseVideoScript(response.content))
+        return ok(
+          parseVideoScript(
+            response.content,
+            resolveAllowedPlatforms(
+              request.creativeBrief.sourceStrategyBrief.sourceResearchBrief.sourceProfile
+                .allowedPlatforms
+            )
+          )
+        )
       } catch (error) {
         lastError = String(error)
         if (this.isNonRetriable(lastError)) break

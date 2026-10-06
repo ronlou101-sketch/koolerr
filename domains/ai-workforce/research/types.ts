@@ -1,4 +1,5 @@
 import type { EngagementRunId, OrganizationId, TenantId, WorkforceId } from '@/shared/types'
+import type { SupportedPlatform } from '../publishing/types'
 
 // ── Input ──────────────────────────────────────────────────────────────────────
 
@@ -10,6 +11,16 @@ export interface BusinessProfile {
   website?: string
   serviceArea?: string
   notes?: string
+  /**
+   * The campaign's allowed platforms (canonical IDs, canonical order), resolved from the
+   * Business Brain selection by the shared platform resolver. Absent → resolver default.
+   */
+  allowedPlatforms?: SupportedPlatform[]
+  /**
+   * The business's IANA timezone derived from its verified location, or null when it
+   * cannot be determined. Never assumed: unknown → customer-facing dates/times omitted.
+   */
+  timezone?: string | null
 }
 
 // ── Output ─────────────────────────────────────────────────────────────────────

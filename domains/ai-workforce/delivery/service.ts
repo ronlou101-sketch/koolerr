@@ -185,7 +185,7 @@ export class DeliveryDepartmentService implements IDeliveryDepartmentService {
     job: DeliveryJob,
     providerId: ModelProvider
   ): Promise<DeliveryPackage> {
-    const prompt = buildDeliveryPrompt(request.approvalDecision)
+    const prompt = buildDeliveryPrompt(request.approvalDecision, request.mediaTruth)
 
     const response = await this.gateway.invoke({
       tenantId: request.tenantId,
@@ -200,7 +200,7 @@ export class DeliveryDepartmentService implements IDeliveryDepartmentService {
       maxTokens: 4096,
     })
 
-    return parseDeliveryPackage(response.content, request.approvalDecision)
+    return parseDeliveryPackage(response.content, request.approvalDecision, request.mediaTruth)
   }
 
   private ensureTrustRule(employeeId: DigitalEmployeeId, organizationId: OrganizationId): void {

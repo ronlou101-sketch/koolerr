@@ -531,3 +531,28 @@ describe('CreativeDepartmentService', () => {
     })
   })
 })
+
+// ── Report truth (Architect a9838a2c) ─────────────────────────────────────────
+
+describe('creative report truth', () => {
+  it('allows publishingAssets to be empty (relaxed field)', () => {
+    const raw = JSON.parse(VALID_CREATIVE_JSON) as Record<string, unknown>
+    raw.publishingAssets = []
+    const brief = parseCreativeBrief(JSON.stringify(raw), TEST_STRATEGY_BRIEF)
+    expect(brief.publishingAssets).toEqual([])
+  })
+
+  it('still requires imagePrompts to be non-empty', () => {
+    const raw = JSON.parse(VALID_CREATIVE_JSON) as Record<string, unknown>
+    raw.imagePrompts = []
+    expect(() => parseCreativeBrief(JSON.stringify(raw), TEST_STRATEGY_BRIEF)).toThrow(
+      'imagePrompts'
+    )
+  })
+
+  it('asks for asset specs only — no file names — on the target platforms', () => {
+    const prompt = buildCreativePrompt(TEST_STRATEGY_BRIEF)
+    expect(prompt).toContain('Target Platforms: Facebook, Instagram')
+    expect(prompt).not.toMatch(/\.mp4|\.jpg|\.png/)
+  })
+})

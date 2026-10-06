@@ -330,3 +330,34 @@ describe('ResearchDepartmentService', () => {
     })
   })
 })
+
+// ── Report truth (Architect a9838a2c) ─────────────────────────────────────────
+
+describe('research report truth', () => {
+  it('allows recommendedOffers to be empty (relaxed field)', () => {
+    const raw = JSON.parse(VALID_BRIEF_JSON) as Record<string, unknown>
+    raw.recommendedOffers = []
+    const brief = parseResearchBrief(JSON.stringify(raw), TEST_PROFILE)
+    expect(brief.recommendedOffers).toEqual([])
+  })
+
+  it('still requires recommendedOffers to be an array', () => {
+    const raw = JSON.parse(VALID_BRIEF_JSON) as Record<string, unknown>
+    delete raw.recommendedOffers
+    expect(() => parseResearchBrief(JSON.stringify(raw), TEST_PROFILE)).toThrow('recommendedOffers')
+  })
+
+  it('still requires other array fields to be non-empty', () => {
+    const raw = JSON.parse(VALID_BRIEF_JSON) as Record<string, unknown>
+    raw.customerPainPoints = []
+    expect(() => parseResearchBrief(JSON.stringify(raw), TEST_PROFILE)).toThrow(
+      'customerPainPoints'
+    )
+  })
+
+  it('restricts claims to the business profile and lists target platforms', () => {
+    const prompt = buildResearchPrompt(TEST_PROFILE)
+    expect(prompt).toMatch(/Target Platforms: Facebook, Instagram/)
+    expect(prompt).toMatch(/invent/i)
+  })
+})

@@ -1,3 +1,4 @@
+import { PLATFORM_DISPLAY_NAMES, resolveAllowedPlatforms } from '../publishing/platform-resolver'
 import type { StrategyBrief } from '../strategy/types'
 import type { CreativeBrief } from './types'
 
@@ -10,7 +11,8 @@ You receive a completed Strategy Brief and translate it into a production bluepr
 You decide HOW things should look, sound, and feel — and provide exact instructions for every production tool.
 You MUST respond with valid JSON only. No prose. No markdown. No code fences.
 The JSON must conform exactly to the schema provided in the user prompt.
-Every array field must contain at least 3 specific, production-ready items.`
+Every array field must contain at least 3 specific, production-ready items — except publishingAssets, which may be empty.
+Never invent business claims (offers, discounts, pricing, guarantees, hours/availability, credentials, policies), file names, file paths, or asset IDs.`
 
 /**
  * Serialises the key strategy fields used for creative brief generation.
@@ -22,6 +24,12 @@ function summariseStrategy(brief: StrategyBrief): string {
   return [
     `Business: ${brief.sourceResearchBrief.sourceProfile.businessName} (${brief.sourceResearchBrief.sourceProfile.businessCategory})`,
     `Location: ${brief.sourceResearchBrief.sourceProfile.location}`,
+    `Business Facts (the ONLY source of business claims): ${brief.sourceResearchBrief.sourceProfile.notes ?? 'none provided'}`,
+    `Target Platforms: ${resolveAllowedPlatforms(
+      brief.sourceResearchBrief.sourceProfile.allowedPlatforms
+    )
+      .map((p) => PLATFORM_DISPLAY_NAMES[p])
+      .join(', ')}`,
     ``,
     `Brand Positioning: ${brief.brandPositioning}`,
     `Core Messaging: ${brief.coreMessaging}`,
@@ -37,7 +45,9 @@ function summariseStrategy(brief: StrategyBrief): string {
     `Script Outlines: ${brief.scriptOutlines.join(' | ')}`,
     ``,
     `CTAs: ${brief.ctaLibrary.join(' | ')}`,
-    `Offers: ${brief.offerRecommendations.join(' | ')}`,
+    `Offers stated by the business: ${
+      brief.offerRecommendations.length > 0 ? brief.offerRecommendations.join(' | ') : 'none'
+    }`,
     `Campaign Ideas: ${brief.campaignIdeas.join(' | ')}`,
     `Hashtags: ${brief.hashtagRecommendations.join(', ')}`,
   ].join('\n')
@@ -110,9 +120,7 @@ Produce a complete Creative Brief as a JSON object with this exact structure (no
   "callToAction": "The single most compelling CTA for ${businessName} — exact words, placement, and visual treatment",
   "editingInstructions": "2-3 sentence post-production guide — cut style, pacing, colour grading, audio mix, and final output specs",
   "publishingAssets": [
-    "Asset 1: format, dimensions, duration, platform, purpose",
-    "Asset 2: format, dimensions, duration, platform, purpose",
-    "Asset 3: format, dimensions, duration, platform, purpose"
+    "Planned asset spec: format, dimensions, duration, target platform, purpose (no file names)"
   ]
 }
 
@@ -121,7 +129,8 @@ Requirements:
 - scenePrompts and imagePrompts must be detailed enough to pass directly to Higgsfield
 - videoPrompts must be detailed enough to configure a HeyGen spokesperson video
 - hookVariations must be immediately usable as opening lines — no placeholders
-- publishingAssets must list every deliverable with platform and spec`
+- publishingAssets are planned specs only — never file names, file paths, or asset IDs — and only for the Target Platforms; return [] if none are needed
+- callToAction and hookVariations must not promise any offer, discount, guarantee, or availability that the Business Facts do not state`
 }
 
 /**
@@ -167,8 +176,9 @@ export function parseCreativeBrief(
     'hookVariations',
     'thumbnailIdeas',
     'bRollIdeas',
-    'publishingAssets',
   ] as const
+  // Fabrication-pressure field: must be an array but may be empty (report-truth policy).
+  const emptyAllowedArrayFields = ['publishingAssets'] as const
 
   for (const field of requiredStringFields) {
     if (typeof parsed[field] !== 'string' || !parsed[field]) {
@@ -181,6 +191,12 @@ export function parseCreativeBrief(
       throw new Error(
         `[CREATIVE_DEPT] Missing or empty array field "${field}" in creative response`
       )
+    }
+  }
+
+  for (const field of emptyAllowedArrayFields) {
+    if (!Array.isArray(parsed[field])) {
+      throw new Error(`[CREATIVE_DEPT] Missing array field "${field}" in creative response`)
     }
   }
 

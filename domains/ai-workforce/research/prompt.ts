@@ -1,3 +1,4 @@
+import { PLATFORM_DISPLAY_NAMES, resolveAllowedPlatforms } from '../publishing/platform-resolver'
 import type { BusinessProfile, ResearchBrief } from './types'
 
 /**
@@ -8,7 +9,8 @@ export const RESEARCH_SYSTEM_CONTEXT = `You are Koolerr's Research Department �
 Your task is to produce a comprehensive, structured research brief for a local business.
 You MUST respond with valid JSON only. No prose. No markdown. No code fences.
 The JSON must conform exactly to the schema provided in the user prompt.
-Every array field must contain at least 3 specific, actionable items.`
+Every array field must contain at least 3 specific, actionable items — except recommendedOffers, which may be empty.
+Never invent business claims: offers, discounts, pricing, guarantees, hours or availability (e.g. 24/7), response times, credentials, or policies may only come from the business profile you are given.`
 
 /**
  * Builds the structured research prompt from a business profile.
@@ -22,6 +24,9 @@ export function buildResearchPrompt(profile: BusinessProfile): string {
     profile.website ? `Website: ${profile.website}` : null,
     profile.serviceArea ? `Service Area: ${profile.serviceArea}` : null,
     profile.notes ? `Additional Notes: ${profile.notes}` : null,
+    `Target Platforms: ${resolveAllowedPlatforms(profile.allowedPlatforms)
+      .map((p) => PLATFORM_DISPLAY_NAMES[p])
+      .join(', ')}`,
   ]
     .filter(Boolean)
     .join('\n')
@@ -51,7 +56,10 @@ Requirements:
 - Every item must be specific to ${profile.businessName} and ${profile.location}
 - Competitor analysis must name real or likely local competitors
 - SEO opportunities must include search terms customers actually use
-- All recommendations must be actionable within 30 days`
+- All recommendations must be actionable within 30 days
+- Business claims come ONLY from the profile above: never invent offers, discounts, free services, pricing, guarantees, hours/availability (e.g. 24/7), response times, credentials, or policies
+- recommendedOffers must list only offers explicitly stated in the profile; if the profile states none, return an empty array []
+- recommendedCallsToAction must not promise any offer, discount, guarantee, or availability that the profile does not state`
 }
 
 /**
@@ -83,6 +91,7 @@ export function parseResearchBrief(
     'industryOverview',
     'localMarketAnalysis',
   ] as const
+  // Arrays that must be present and non-empty.
   const requiredArrayFields = [
     'competitorAnalysis',
     'customerPainPoints',
@@ -91,9 +100,11 @@ export function parseResearchBrief(
     'highPerformingContentTopics',
     'trendingSocialMediaIdeas',
     'recommendedMarketingAngles',
-    'recommendedOffers',
     'recommendedCallsToAction',
   ] as const
+  // Fabrication-pressure field: must be an array but may be empty when the business
+  // profile states no offers (report-truth policy — offers come only from the Brain).
+  const emptyAllowedArrayFields = ['recommendedOffers'] as const
 
   for (const field of requiredStringFields) {
     if (typeof parsed[field] !== 'string' || !parsed[field]) {
@@ -106,6 +117,12 @@ export function parseResearchBrief(
       throw new Error(
         `[RESEARCH_DEPT] Missing or empty array field "${field}" in research response`
       )
+    }
+  }
+
+  for (const field of emptyAllowedArrayFields) {
+    if (!Array.isArray(parsed[field])) {
+      throw new Error(`[RESEARCH_DEPT] Missing array field "${field}" in research response`)
     }
   }
 

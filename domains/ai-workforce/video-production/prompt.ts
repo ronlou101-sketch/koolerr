@@ -1,17 +1,40 @@
 import type { CreativeBrief } from '../creative/types'
+import type { SupportedPlatform } from '../publishing/types'
+import { resolveAllowedPlatforms, toAllowedPlatform } from '../publishing/platform-resolver'
 import type { VideoProductionBrief, VideoScript } from './types'
+
+/**
+ * Report-truth: the video brief is a CONCEPT only. These fields describe produced or
+ * render-ready media (render jobs, avatar/voice IDs, asset files, export files). No
+ * verified render records exist when the brief is planned, so they are always empty —
+ * the model's output for them is discarded rather than trusted.
+ */
+export const VIDEO_UNVERIFIED_PRODUCTION_FIELDS = [
+  'renderQueue',
+  'avatarAssignments',
+  'voiceAssignments',
+  'assetManifest',
+  'exportTargets',
+] as const
+
+/** Allowed platforms for a creative brief, via the shared platform resolver. */
+function allowedPlatformsFor(brief: CreativeBrief): SupportedPlatform[] {
+  return resolveAllowedPlatforms(
+    brief.sourceStrategyBrief.sourceResearchBrief.sourceProfile.allowedPlatforms
+  )
+}
 
 /**
  * System context injected into every video production plan invocation.
  * Instructs the provider to return the full VideoProductionBrief as structured JSON.
  */
-export const VIDEO_PRODUCTION_SYSTEM_CONTEXT = `You are Koolerr's Video Production Department — the production orchestration intelligence.
-You receive a completed Creative Brief and translate it into a complete video production package.
-You decide WHAT gets rendered, WHEN, HOW, and in WHAT ORDER — producing exact instructions for every production tool.
+export const VIDEO_PRODUCTION_SYSTEM_CONTEXT = `You are Koolerr's Video Production Department — the video concept team.
+You receive a completed Creative Brief and turn it into a video CONCEPT brief: concept, angle, script direction, and talking points.
+Nothing has been filmed, rendered, or produced. Never state or imply that a video, file, or render exists.
+Never name production tools or providers, avatar IDs, voice IDs, file names, file paths, render jobs, or upload/publishing instructions.
 You MUST respond with valid JSON only. No prose. No markdown. No code fences.
 The JSON must conform exactly to the schema provided in the user prompt.
-Every array field must contain at least 3 specific, actionable production items.
-All render instructions must be specific enough to execute without further clarification.`
+Every array field must contain at least 3 specific items — except renderQueue, avatarAssignments, voiceAssignments, assetManifest, and exportTargets, which must be empty arrays.`
 
 /**
  * Serialises the key creative fields used for production plan generation.
@@ -37,14 +60,13 @@ function summariseCreative(brief: CreativeBrief): string {
     `Shot List: ${brief.shotList.join(' | ')}`,
     `Storyboard: ${brief.storyboard.join(' | ')}`,
     ``,
-    `Scene Prompts (Higgsfield): ${brief.scenePrompts.join(' | ')}`,
-    `Image Prompts (Higgsfield): ${brief.imagePrompts.join(' | ')}`,
-    `Video Prompts (HeyGen): ${brief.videoPrompts.join(' | ')}`,
+    `Scene Ideas: ${brief.scenePrompts.join(' | ')}`,
+    `Spokesperson Talking Points: ${brief.videoPrompts.join(' | ')}`,
     ``,
     `Hook Variations: ${brief.hookVariations.join(' | ')}`,
     `B-Roll Ideas: ${brief.bRollIdeas.join(' | ')}`,
     ``,
-    `Publishing Assets: ${brief.publishingAssets.join(' | ')}`,
+    `Target Platforms: ${allowedPlatformsFor(brief).join(', ')}`,
   ].join('\n')
 }
 
@@ -55,100 +77,79 @@ function summariseCreative(brief: CreativeBrief): string {
 export function buildVideoProductionPrompt(creativeBrief: CreativeBrief): string {
   const business = creativeBrief.sourceStrategyBrief.sourceResearchBrief.sourceProfile.businessName
 
-  return `You are producing a complete video production package for the following business.
-Use ONLY the creative brief below — do not invent assets not supported by it.
+  return `You are producing a video CONCEPT brief for the following business.
+Use ONLY the creative brief below. This is a concept — no video has been filmed, rendered, or produced.
 
 === CREATIVE BRIEF ===
 ${summariseCreative(creativeBrief)}
 
 === YOUR TASK ===
-Produce a complete Video Production Brief as a JSON object with this exact structure (no markdown, no code fences):
+Produce a Video Concept Brief as a JSON object with this exact structure (no markdown, no code fences):
 
 {
-  "productionPlan": "3-4 sentence master production plan — sequence, tools, and execution strategy for all ${business} video assets",
-  "renderSettings": "2-3 sentence technical render configuration — resolution, frame rate, codec, colour space, and output quality settings",
-  "estimatedRuntime": "Total estimated production runtime with breakdown — e.g. '4h 30m total: HeyGen 1h, Higgsfield 2h, ElevenLabs 30m, Post-processing 1h'",
-  "renderQueue": [
-    "Render job 1: tool, scene ID, duration, priority, dependencies",
-    "Render job 2: tool, scene ID, duration, priority, dependencies",
-    "Render job 3: tool, scene ID, duration, priority, dependencies"
-  ],
+  "productionPlan": "3-4 sentence video concept for ${business} — the angle, the story, and the key talking points (a concept only; nothing has been produced)",
+  "renderSettings": "Concept-level format notes only — orientation and intended length. No tools, providers, codecs, or render configuration.",
+  "estimatedRuntime": "Intended video length only, e.g. '30 seconds' — no production-time estimates",
+  "renderQueue": [],
   "sceneTimeline": [
-    "Scene 1: [0:00-0:03] Hook — HeyGen avatar intro, voice-over track A, caption layer 1",
-    "Scene 2: [0:03-0:10] Problem — Higgsfield B-roll, music bed, caption layer 2",
-    "Scene 3: [0:10-0:25] Solution — HeyGen spokesperson, Higgsfield overlay, voice-over track B",
-    "Scene 4: [0:25-0:30] CTA — Full screen graphic, ${business} logo, CTA text"
+    "Scene 1: [0:00-0:03] Hook — what is shown and what is said",
+    "Scene 2: [0:03-0:10] Problem — what is shown and what is said",
+    "Scene 3: [0:10-0:25] Solution — what is shown and what is said",
+    "Scene 4: [0:25-0:30] Call to action — what is shown and what is said"
   ],
-  "avatarAssignments": [
-    "Avatar assignment 1: scene reference, avatar ID/type, script excerpt, delivery instruction, clothing",
-    "Avatar assignment 2: scene reference, avatar ID/type, script excerpt, delivery instruction, clothing",
-    "Avatar assignment 3: scene reference, avatar ID/type, script excerpt, delivery instruction, clothing"
-  ],
-  "voiceAssignments": [
-    "Voice assignment 1: scene reference, voice type, script text, emotion, pace, ElevenLabs settings",
-    "Voice assignment 2: scene reference, voice type, script text, emotion, pace, ElevenLabs settings",
-    "Voice assignment 3: scene reference, voice type, script text, emotion, pace, ElevenLabs settings"
-  ],
+  "avatarAssignments": [],
+  "voiceAssignments": [],
   "cameraMovements": [
-    "Camera move 1: scene, movement type (pan/tilt/zoom/static), speed, start position, end position, purpose",
-    "Camera move 2: scene, movement type, speed, start position, end position, purpose",
-    "Camera move 3: scene, movement type, speed, start position, end position, purpose"
+    "Camera idea 1: scene, movement, purpose",
+    "Camera idea 2: scene, movement, purpose",
+    "Camera idea 3: scene, movement, purpose"
   ],
   "motionEffects": [
-    "Motion effect 1: scene, effect type, duration, intensity, trigger point",
-    "Motion effect 2: scene, effect type, duration, intensity, trigger point",
-    "Motion effect 3: scene, effect type, duration, intensity, trigger point"
+    "Motion idea 1: scene, effect, purpose",
+    "Motion idea 2: scene, effect, purpose",
+    "Motion idea 3: scene, effect, purpose"
   ],
   "transitions": [
-    "Transition 1: between scenes X and Y, type (cut/fade/dissolve/wipe), duration, direction",
-    "Transition 2: between scenes Y and Z, type, duration, direction",
-    "Transition 3: between scenes Z and CTA, type, duration, direction"
+    "Transition idea 1: between which scenes, style",
+    "Transition idea 2: between which scenes, style",
+    "Transition idea 3: between which scenes, style"
   ],
   "captionTimeline": [
-    "Caption 1: [0:00-0:03] text content, position, font, size, colour, animation style",
-    "Caption 2: [0:03-0:10] text content, position, font, size, colour, animation style",
-    "Caption 3: [0:10-0:25] text content, position, font, size, colour, animation style"
+    "Caption 1: [0:00-0:03] on-screen text",
+    "Caption 2: [0:03-0:10] on-screen text",
+    "Caption 3: [0:10-0:25] on-screen text"
   ],
   "bRollTimeline": [
-    "B-roll 1: [timecode] scene description, source (Higgsfield prompt reference), duration, audio treatment",
-    "B-roll 2: [timecode] scene description, source, duration, audio treatment",
-    "B-roll 3: [timecode] scene description, source, duration, audio treatment"
+    "B-roll idea 1: scene description and purpose",
+    "B-roll idea 2: scene description and purpose",
+    "B-roll idea 3: scene description and purpose"
   ],
   "musicTimeline": [
-    "Music cue 1: [0:00-0:30] track description, tempo, mood, volume level (-18dB), fade in/out",
-    "Music cue 2: [timecode] stinger or accent, usage, volume, trigger",
-    "Music cue 3: [timecode] CTA music swell, description, volume, duration"
+    "Music idea 1: mood, tempo, where it is used",
+    "Music idea 2: mood, tempo, where it is used",
+    "Music idea 3: mood, tempo, where it is used"
   ],
-  "assetManifest": [
-    "Asset 1: type, filename convention, source tool, dimensions, duration, purpose",
-    "Asset 2: type, filename convention, source tool, dimensions, duration, purpose",
-    "Asset 3: type, filename convention, source tool, dimensions, duration, purpose"
-  ],
+  "assetManifest": [],
   "qualityChecklist": [
-    "QC item 1: check description, pass criteria, tool or reviewer responsible",
-    "QC item 2: check description, pass criteria, tool or reviewer responsible",
-    "QC item 3: check description, pass criteria, tool or reviewer responsible"
+    "Concept check 1: what to check and the pass criteria",
+    "Concept check 2: what to check and the pass criteria",
+    "Concept check 3: what to check and the pass criteria"
   ],
-  "exportTargets": [
-    "Export 1: platform, format, resolution, frame rate, bitrate, filename, delivery method",
-    "Export 2: platform, format, resolution, frame rate, bitrate, filename, delivery method",
-    "Export 3: platform, format, resolution, frame rate, bitrate, filename, delivery method"
-  ],
+  "exportTargets": [],
   "approvalChecklist": [
-    "Approval item 1: checkpoint description, approver role, criteria, stage gate",
-    "Approval item 2: checkpoint description, approver role, criteria, stage gate",
-    "Approval item 3: checkpoint description, approver role, criteria, stage gate"
+    "Review point 1: what the business should confirm before any production",
+    "Review point 2: what the business should confirm before any production",
+    "Review point 3: what the business should confirm before any production"
   ]
 }
 
 Requirements:
-- All content must be specific to ${business}
-- renderQueue items must reference specific HeyGen or Higgsfield jobs
-- sceneTimeline must align with the storyboard from the Creative Brief
-- avatarAssignments must reference HeyGen avatar configuration
-- voiceAssignments must reference ElevenLabs voice settings
-- exportTargets must list every deliverable with platform and technical spec
-- approvalChecklist must cover brand alignment, technical quality, and content accuracy`
+- All content must be specific to ${business} and use only facts from the creative brief
+- renderQueue, avatarAssignments, voiceAssignments, assetManifest, and exportTargets MUST be empty arrays []
+- Never name production tools or providers, avatar IDs, voice IDs, file names, file paths, render jobs, upload paths, or publishing instructions
+- Never state or imply that a video has been produced, rendered, or is available
+- Do not invent offers, discounts, guarantees, hours/availability, or credentials
+- sceneTimeline must align with the storyboard from the Creative Brief`
 }
 
 // ── Video script writer ──────────────────────────────────────────────────────
@@ -169,6 +170,7 @@ You MUST respond with valid JSON only. No prose. No markdown. No code fences.`
  */
 export function buildVideoScriptPrompt(creativeBrief: CreativeBrief): string {
   const business = creativeBrief.sourceStrategyBrief.sourceResearchBrief.sourceProfile.businessName
+  const platforms = allowedPlatformsFor(creativeBrief)
 
   return `Write one spokesperson video script for ${business}, using ONLY the creative brief below.
 
@@ -181,7 +183,7 @@ Return a JSON object with this exact structure (no markdown, no code fences):
 {
   "title": "Short title for this script",
   "script": "The full spoken script — natural spoken words only, opening with a hook from the brief's Hook Variations and closing with the Call to Action",
-  "platform": "the primary target platform, e.g. facebook, instagram, tiktok, youtube",
+  "platform": "exactly one of: ${platforms.join(', ')}",
   "estimatedDurationSec": 45
 }
 
@@ -196,7 +198,10 @@ Requirements:
  * (non-JSON) response is treated as the script itself, with sensible defaults — so a
  * usable script is always produced rather than failing the artifact.
  */
-export function parseVideoScript(rawContent: string): VideoScript {
+export function parseVideoScript(
+  rawContent: string,
+  allowedPlatforms: readonly SupportedPlatform[] = resolveAllowedPlatforms(undefined)
+): VideoScript {
   const cleaned = rawContent
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```\s*$/, '')
@@ -222,10 +227,11 @@ export function parseVideoScript(rawContent: string): VideoScript {
     typeof parsed?.title === 'string' && parsed.title.trim()
       ? (parsed.title as string)
       : 'Spokesperson Script'
-  const platform =
-    typeof parsed?.platform === 'string' && parsed.platform.trim()
-      ? (parsed.platform as string)
-      : 'facebook'
+  // Shared resolver: an out-of-set or missing platform is discarded and replaced by
+  // the first allowed platform — the model can never introduce its own platform.
+  const allowed =
+    allowedPlatforms.length > 0 ? allowedPlatforms : resolveAllowedPlatforms(undefined)
+  const platform = toAllowedPlatform(parsed?.platform, allowed) ?? allowed[0]
   const estimatedDurationSec =
     typeof parsed?.estimatedDurationSec === 'number' && parsed.estimatedDurationSec > 0
       ? (parsed.estimatedDurationSec as number)
@@ -260,19 +266,14 @@ export function parseVideoProductionBrief(
   const requiredStringFields = ['productionPlan', 'renderSettings', 'estimatedRuntime'] as const
 
   const requiredArrayFields = [
-    'renderQueue',
     'sceneTimeline',
-    'avatarAssignments',
-    'voiceAssignments',
     'cameraMovements',
     'motionEffects',
     'transitions',
     'captionTimeline',
     'bRollTimeline',
     'musicTimeline',
-    'assetManifest',
     'qualityChecklist',
-    'exportTargets',
     'approvalChecklist',
   ] as const
 
@@ -296,19 +297,20 @@ export function parseVideoProductionBrief(
     productionPlan: parsed.productionPlan as string,
     renderSettings: parsed.renderSettings as string,
     estimatedRuntime: parsed.estimatedRuntime as string,
-    renderQueue: parsed.renderQueue as string[],
+    // Concept-only brief: unverified production fields are never trusted (always []).
+    renderQueue: [],
     sceneTimeline: parsed.sceneTimeline as string[],
-    avatarAssignments: parsed.avatarAssignments as string[],
-    voiceAssignments: parsed.voiceAssignments as string[],
+    avatarAssignments: [],
+    voiceAssignments: [],
     cameraMovements: parsed.cameraMovements as string[],
     motionEffects: parsed.motionEffects as string[],
     transitions: parsed.transitions as string[],
     captionTimeline: parsed.captionTimeline as string[],
     bRollTimeline: parsed.bRollTimeline as string[],
     musicTimeline: parsed.musicTimeline as string[],
-    assetManifest: parsed.assetManifest as string[],
+    assetManifest: [],
     qualityChecklist: parsed.qualityChecklist as string[],
-    exportTargets: parsed.exportTargets as string[],
+    exportTargets: [],
     approvalChecklist: parsed.approvalChecklist as string[],
     generatedAt: new Date(),
     sourceCreativeBrief,

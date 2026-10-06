@@ -3,17 +3,54 @@ import type { ApprovalDecision } from '../approval/types'
 
 // ── Output ─────────────────────────────────────────────────────────────────────
 
-export type DeliveryStatus = 'preparing' | 'ready' | 'delivered' | 'failed'
+/**
+ * Preparation state of a delivery package. This is NOT the report's customer-facing
+ * status: Draft / Ready for review / Customer-approved are owned by app state (the
+ * deliverable row). 'Delivered' does not exist here — a package can never claim it.
+ */
+export type DeliveryStatus = 'preparing' | 'prepared' | 'failed'
+
+// ── Verified media (report truth) ──────────────────────────────────────────────
+
+/** An image proven by app records: completed render job + resolvable image deliverable. */
+export interface VerifiedImageAsset {
+  deliverableId: string
+  imageUrl: string
+}
+
+/** A video proven by app records: completed render job + resolvable video deliverable. */
+export interface VerifiedVideoAsset {
+  deliverableId: string
+  videoUrl: string
+}
 
 /**
- * A customer-ready delivery package produced by the Delivery Manager.
+ * The three distinct video states. 'none' means the lookup succeeded and found no
+ * verified video ("not produced"); 'unavailable' means the lookup failed — it is never
+ * converted into 'none'.
+ */
+export type VideoTruth =
+  | { state: 'verified'; videos: VerifiedVideoAsset[] }
+  | { state: 'none' }
+  | { state: 'unavailable' }
+
+/** Verified media facts for a run, gathered from app records by the pipeline. */
+export interface MediaTruth {
+  /** Only completed images with a resolvable asset; pending/queued/failed are omitted. */
+  images: VerifiedImageAsset[]
+  video: VideoTruth
+}
+
+/**
+ * A delivery package prepared by the Delivery Manager for the business to review.
  * Aggregates all approved publishing packages into a single customer-facing
  * deliverable for the Koolerr dashboard.
  *
  * The Delivery Department prepares and packages — it does NOT publish directly
  * to any platform. Platform API integrations belong to a later phase.
  *
- * 13 structured fields covering every dimension of the customer handoff.
+ * Built from verified run context: only allowed platforms, verified media, and the
+ * business-timezone schedule. It never establishes approval, readiness, or delivery.
  */
 export interface DeliveryPackage {
   // ── Identity ─────────────────────────────────────────────────────────────────
@@ -27,23 +64,23 @@ export interface DeliveryPackage {
   deliverables: string[]
   /** Per-platform package descriptions formatted for the customer dashboard. */
   platformPackages: string[]
-  /** Download link paths or identifiers for each deliverable asset. */
+  /** Download links — always empty: there is no file storage, so links would be fabricated. */
   downloadLinks: string[]
-  /** Thumbnail references for preview display on the customer dashboard. */
+  /** Verified image URLs only (completed render + resolvable asset); otherwise empty. */
   thumbnails: string[]
   /** Step-by-step publishing instructions for each platform. */
   publishingInstructions: string[]
-  /** AI-recommended posting schedule across all platforms. */
+  /** Posting schedule built from the packages' business-timezone schedule (never AI text). */
   recommendedSchedule: string
-  /** Human-readable summary of the approval outcome and scores. */
+  /** Automated quality-check summary built from scores (no reviewer identity or date). */
   approvalMetadata: string
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────────
   generatedAt: Date
-  deliveredAt: Date
+  /** Preparation state only — never a customer-facing or delivery status. */
   status: DeliveryStatus
-  /** True when all required fields are present and the package is ready for the customer. */
-  readyForCustomer: boolean
+  /** The verified media facts this package was built from. */
+  mediaTruth: MediaTruth
 
   sourceApprovalDecision: ApprovalDecision
 }
@@ -92,6 +129,8 @@ export interface DeliveryRequest {
   engagementRunId: EngagementRunId
   /** The APPROVED ApprovalDecision gate-keeping this delivery. */
   approvalDecision: ApprovalDecision
+  /** Verified media facts. Absent → no media, video status 'unavailable'. */
+  mediaTruth?: MediaTruth
   /** Defaults to 'delivery-manager'. */
   preferredEmployee?: 'delivery-manager'
 }
